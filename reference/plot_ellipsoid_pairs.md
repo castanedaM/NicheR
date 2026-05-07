@@ -55,3 +55,50 @@ which would make niche widths appear identical across dimensions even
 when they differ. If neither `background` nor `prediction` is provided,
 each panel shows only the ellipsoid boundary and limits come from that
 boundary alone, which is the intended behavior for a boundary-only view.
+
+## Examples
+
+``` r
+range_df <- data.frame(bio_1 = c(15, 25),
+                       bio_12 = c(500, 1500),
+                       bio_15 = c(60, 80))
+ell3d <- nicheR::build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# \donttest{
+# Boundary only
+nicheR::plot_ellipsoid_pairs(ell3d, col_ell = "#e10000", lwd = 2)
+
+
+# With background: global limits shared across all panels
+ma_bios <- terra::rast(
+  system.file("extdata/ma_bios.tif", package = "nicheR"))
+back_df <- as.data.frame(ma_bios, xy = TRUE)
+
+nicheR::plot_ellipsoid_pairs(ell3d,
+                             background = back_df,
+                             col_ell = "#e10000", col_bg = "grey70",
+                             lwd = 2, pch = 20, cex_bg = 0.3)
+
+
+# With truncated suitability predictions
+pred_trunc <- predict(ell3d,
+                      newdata = back_df[, ell3d$var_names],
+                      include_suitability = FALSE,
+                      include_mahalanobis = FALSE,
+                      suitability_truncated = TRUE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
+#> Done: Prediction completed successfully. Returned columns: bio_1, bio_12, bio_15, suitability_trunc
+
+nicheR::plot_ellipsoid_pairs(ell3d,
+                             prediction = pred_trunc,
+                             col_layer  = "suitability_trunc",
+                             col_bg  = "#d4d4d4",
+                             col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
+
+# }
+```

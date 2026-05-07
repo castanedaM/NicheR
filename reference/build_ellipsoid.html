@@ -112,40 +112,95 @@ $$\Sigma = \mathrm{diag}(\sigma_1^2,\dots,\sigma_n^2).$$</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">rng</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                  bio2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu">build_ellipsoid</span><span class="op">(</span>range <span class="op">=</span> <span class="va">rng</span>, cl <span class="op">=</span> <span class="fl">0.95</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="print.html">print</a></span><span class="op">(</span><span class="va">ell</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Two-dimensional ellipsoid from environmental ranges</span></span></span>
+<span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell2d</span> <span class="op">&lt;-</span> <span class="fu">build_ellipsoid</span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span><span class="va">ell2d</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> nicheR Ellipsoid Object</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dimensions:        2D</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chi-square cutoff: 5.991</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Centroid (mu):     15, 25</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chi-square cutoff: 9.21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Centroid (mu):     25, 2250</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Covariance matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       bio1  bio2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> bio1 2.778 0.000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> bio2 0.000 2.778</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        bio_1   bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1      1      0.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_12     0 173611.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Covariance Limits:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              min   max</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> bio1-bio2 -2.778 2.778</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   min     max</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1-bio_12 -416.667 416.667</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid semi-axis lengths:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4.08, 4.08</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1264.523, 3.035</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid axis endpoints:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 1:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          bio1  bio2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a   15 20.92</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b   15 29.08</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          bio_1   bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a    25  985.477</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b    25 3514.523</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 2:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           bio1 bio2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a 19.08   25</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b 10.92   25</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           bio_1 bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a 28.035   2250</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b 21.965   2250</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid volume:  52.285</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid volume:  12056.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Three-dimensional ellipsoid</span></span></span>
+<span class="r-in"><span><span class="va">range_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_15 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">70</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell3d</span> <span class="op">&lt;-</span> <span class="fu">build_ellipsoid</span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_3d</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span><span class="va">ell3d</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> nicheR Ellipsoid Object</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Dimensions:        3D</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chi-square cutoff: 11.345</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Centroid (mu):     25, 2250, 60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Covariance matrix:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        bio_1   bio_12 bio_15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1      1      0.0  0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_12     0 173611.1  0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_15     0      0.0 11.111</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Covariance Limits:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    min    max</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1-bio_12  -208.333  412.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1-bio_15    -1.667    3.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_12-bio_15 -694.444 1375.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid semi-axis lengths:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1403.423, 11.227, 3.368</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid axis endpoints:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 1:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          bio_1   bio_12 bio_15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a    25  846.577     60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b    25 3653.423     60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 2:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          bio_1 bio_12 bio_15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a    25   2250 48.773</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b    25   2250 71.227</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 3:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           bio_1 bio_12 bio_15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a 21.632   2250     60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b 28.368   2250     60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid volume:  222308.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

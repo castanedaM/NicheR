@@ -99,3 +99,69 @@ weights used when drawing points:
 When `strict = NULL`, the function auto-detects truncation by checking
 whether the layer name contains `"trunc"` or whether the proportion of
 zeros or `NA`s exceeds 25%.
+
+## Examples
+
+``` r
+range_df <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500))
+ell <- build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# \donttest{
+ma_bios <- terra::rast(
+  system.file("extdata/ma_bios.tif", package = "nicheR"))
+back_df <- as.data.frame(ma_bios, xy = TRUE)
+
+pred_df <- predict(ell,
+                   newdata = back_df,
+                   include_suitability = TRUE,
+                   include_mahalanobis = FALSE,
+                   suitability_truncated = TRUE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Identified spatial columns: x, y
+#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15
+#> Step: Using 2 predictor variables: bio_1, bio_12
+#> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability, suitability_trunc
+
+# Centroid strategy: samples cluster near the niche center
+occ_centroid <- nicheR::sample_data(n_occ = 100,
+                            prediction = pred_df,
+                            prediction_layer = "suitability_trunc",
+                            sampling = "centroid",
+                            method = "suitability",
+                            strict = TRUE)
+#> Starting: sample_data()
+#> Done: sampled 100 points.
+head(occ_centroid)
+#>               x         y    bio_1 bio_12 suitability suitability_trunc
+#> 34303 -62.91667  6.250000 25.82385   2194  0.70581667        0.70581667
+#> 23138 -83.75000 13.916667 25.35428   2647  0.59650286        0.59650286
+#> 21688 -85.41667 14.916667 24.15773   1828  0.41996126        0.41996126
+#> 34500 -70.08333  6.083333 27.15791   2325  0.09589722        0.09589722
+#> 33770 -71.75000  6.583333 25.07655   2536  0.78780669        0.78780669
+#> 26248 -85.41667 11.750000 26.53833   1641  0.10525463        0.10525463
+
+# Edge strategy: samples spread toward the niche boundary
+occ_edge <- nicheR::sample_data(n_occ = 100,
+                        prediction = pred_df,
+                        prediction_layer = "suitability_trunc",
+                        sampling = "edge",
+                        method = "mahalanobis",
+                        strict = TRUE)
+#> Starting: sample_data()
+#> Done: sampled 100 points.
+
+# Random strategy: samples distributed uniformly across suitable area
+occ_random <- nicheR::sample_data(n_occ = 100,
+                          prediction = pred_df,
+                          prediction_layer = "suitability_trunc",
+                          sampling = "random")
+#> Starting: sample_data()
+#> Step: auto-detected a likely truncated prediction surface. Setting 'strict = TRUE' and removing NA and zero values. You can override this behavior with the 'strict' argument...
+#> Done: sampled 100 points.
+# }
+```

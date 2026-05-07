@@ -83,3 +83,52 @@ The function performs the following steps:
 to build the composite bias surface,
 [`sample_biased_data`](https://castanedam.github.io/nicheR/reference/sample_biased_data.md)
 to sample occurrences from the output.
+
+## Examples
+
+``` r
+# \donttest{
+range_df <- data.frame(bio_1 = c(22, 28),
+                       bio_12 = c(1000, 3500),
+                       bio_15 = c(50, 70))
+ell <- build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+ma_bios <- terra::rast(
+  system.file("extdata/ma_bios.tif", package = "nicheR"))
+
+pred_rast <- predict(ell,
+                     newdata = ma_bios,
+                     include_suitability = TRUE,
+                     include_mahalanobis = FALSE)
+#> Starting: suitability prediction using newdata of class: SpatRaster...
+#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14
+#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
+#> Done: Prediction completed successfully. Returned raster layers: suitability
+
+bias_rast <- terra::rast(
+  system.file("extdata/ma_biases.tif", package = "nicheR"))
+
+bias <- nicheR::prepare_bias(bias_surface = bias_rast[[1]],
+                     effect_direction = "direct")
+#> Starting: prepare_bias()
+#> Step: splitting SpatRaster into layers...
+#> Step: bias_surface is a SpatRaster. Using first layer as template surface...
+#> Step: mask_na = FALSE. Expanding template to union extent (keeping finest resolution).
+#> Step: standarizing (min/max) and applying direction of effect to 1 bias layer/s...
+#> Step: building standarized (min/max) directional composite bias surface (mask_na = FALSE)...
+#> Done: prepare_bias()
+
+biased_pred <- nicheR::apply_bias(prepared_bias    = bias,
+                          prediction       = pred_rast,
+                          prediction_layer = "suitability")
+#> Starting: apply_bias()
+#> Step: applying bias with 'direct' effect to to "suitability" layer...
+#> Done: apply_bias(). Note: values are no longer probabilities
+terra::plot(biased_pred$suitability_biased)
+
+# }
+```

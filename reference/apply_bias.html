@@ -131,6 +131,55 @@ decreases sampling probability.</p></dd>
   <code><a href="sample_biased_data.html">sample_biased_data</a></code> to sample occurrences from the output.</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_15 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">70</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">ma_bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="predict.html">predict</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span></span>
+<span class="r-in"><span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                     include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: SpatRaster...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 3 predictor variables: bio_1, bio_12, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned raster layers: suitability</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">bias_rast</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_biases.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">bias</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="prepare_bias.html">prepare_bias</a></span><span class="op">(</span>bias_surface <span class="op">=</span> <span class="va">bias_rast</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                     effect_direction <span class="op">=</span> <span class="st">"direct"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: prepare_bias()</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: splitting SpatRaster into layers...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: bias_surface is a SpatRaster. Using first layer as template surface...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: mask_na = FALSE. Expanding template to union extent (keeping finest resolution).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: standarizing (min/max) and applying direction of effect to 1 bias layer/s...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: building standarized (min/max) directional composite bias surface (mask_na = FALSE)...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: prepare_bias()</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">biased_pred</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu">apply_bias</span><span class="op">(</span>prepared_bias    <span class="op">=</span> <span class="va">bias</span>,</span></span>
+<span class="r-in"><span>                          prediction       <span class="op">=</span> <span class="va">pred_rast</span>,</span></span>
+<span class="r-in"><span>                          prediction_layer <span class="op">=</span> <span class="st">"suitability"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: apply_bias()</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: applying bias with 'direct' effect to to "suitability" layer...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: apply_bias(). Note: values are no longer probabilities</span>
+<span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">biased_pred</span><span class="op">$</span><span class="va">suitability_biased</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="apply_bias-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

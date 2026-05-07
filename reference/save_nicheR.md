@@ -35,3 +35,25 @@ save_nicheR(object, file, overwrite = FALSE, ...)
 ## Value
 
 No return value. Saves the object to the specified path.
+
+## Examples
+
+``` r
+# Build a simple ellipsoid to save
+range_df <- data.frame(bio_1  = c(15, 25),
+                       bio_12 = c(500, 1500))
+ell <- build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# Save to a temporary file
+tmp <- tempfile(fileext = ".rds")
+save_nicheR(ell, file = tmp)
+
+# Overwrite the same file
+save_nicheR(ell, file = tmp, overwrite = TRUE)
+
+
+```

@@ -39,3 +39,22 @@ from covariance eigenvalues and a chi-square cutoff.
 
 [`build_ellipsoid`](https://castanedam.github.io/nicheR/reference/build_ellipsoid.md),
 [`ellipsoid_calculator`](https://castanedam.github.io/nicheR/reference/ellipsoid_calculator.md)
+
+## Examples
+
+``` r
+range_df <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500))
+ell <- nicheR::build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+ell$volume
+#> [1] 12056.31
+
+# or recalculate
+nicheR::ellipsoid_volume(n_dimensions = ell$dimesnions, semi_axes_lengths = ell$semi_axes_lengths)
+#> Error in nicheR::ellipsoid_volume(n_dimensions = ell$dimesnions, semi_axes_lengths = ell$semi_axes_lengths): 'n_dimensions' must be a single numeric value.
+```

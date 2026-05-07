@@ -154,6 +154,72 @@ whether the layer name contains <code>"trunc"</code> or whether the proportion o
 zeros or <code>NA</code>s exceeds 25%.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">ma_bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">back_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">ma_bios</span>, xy <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="predict.html">predict</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                   newdata <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                   include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                   include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>                   suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability, suitability_trunc</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Centroid strategy: samples cluster near the niche center</span></span></span>
+<span class="r-in"><span><span class="va">occ_centroid</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu">sample_data</span><span class="op">(</span>n_occ <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>                            prediction <span class="op">=</span> <span class="va">pred_df</span>,</span></span>
+<span class="r-in"><span>                            prediction_layer <span class="op">=</span> <span class="st">"suitability_trunc"</span>,</span></span>
+<span class="r-in"><span>                            sampling <span class="op">=</span> <span class="st">"centroid"</span>,</span></span>
+<span class="r-in"><span>                            method <span class="op">=</span> <span class="st">"suitability"</span>,</span></span>
+<span class="r-in"><span>                            strict <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: sample_data()</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: sampled 100 points.</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">occ_centroid</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               x         y    bio_1 bio_12 suitability suitability_trunc</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 34303 -62.91667  6.250000 25.82385   2194  0.70581667        0.70581667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23138 -83.75000 13.916667 25.35428   2647  0.59650286        0.59650286</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21688 -85.41667 14.916667 24.15773   1828  0.41996126        0.41996126</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 34500 -70.08333  6.083333 27.15791   2325  0.09589722        0.09589722</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 33770 -71.75000  6.583333 25.07655   2536  0.78780669        0.78780669</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26248 -85.41667 11.750000 26.53833   1641  0.10525463        0.10525463</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Edge strategy: samples spread toward the niche boundary</span></span></span>
+<span class="r-in"><span><span class="va">occ_edge</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu">sample_data</span><span class="op">(</span>n_occ <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>                        prediction <span class="op">=</span> <span class="va">pred_df</span>,</span></span>
+<span class="r-in"><span>                        prediction_layer <span class="op">=</span> <span class="st">"suitability_trunc"</span>,</span></span>
+<span class="r-in"><span>                        sampling <span class="op">=</span> <span class="st">"edge"</span>,</span></span>
+<span class="r-in"><span>                        method <span class="op">=</span> <span class="st">"mahalanobis"</span>,</span></span>
+<span class="r-in"><span>                        strict <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: sample_data()</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: sampled 100 points.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Random strategy: samples distributed uniformly across suitable area</span></span></span>
+<span class="r-in"><span><span class="va">occ_random</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu">sample_data</span><span class="op">(</span>n_occ <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>                          prediction <span class="op">=</span> <span class="va">pred_df</span>,</span></span>
+<span class="r-in"><span>                          prediction_layer <span class="op">=</span> <span class="st">"suitability_trunc"</span>,</span></span>
+<span class="r-in"><span>                          sampling <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: sample_data()</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: auto-detected a likely truncated prediction surface. Setting 'strict = TRUE' and removing NA and zero values. You can override this behavior with the 'strict' argument...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: sampled 100 points.</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

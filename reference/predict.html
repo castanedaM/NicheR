@@ -169,6 +169,96 @@ a chi-square cutoff based on the ellipsoid confidence level (<code>cl</code>).</
 <code>keep_data = TRUE</code>. Extra non-predictor columns are ignored.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">ma_bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">back_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">ma_bios</span>, xy <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Default: Mahalanobis distance and suitability, data frame input</span></span></span>
+<span class="r-in"><span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu">predict</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                   newdata <span class="op">=</span> <span class="va">back_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, Mahalanobis, suitability</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_df</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           x        y    bio_1 bio_12 Mahalanobis  suitability</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -99.91667 29.91667 18.16097    680    60.97017 5.760967e-14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 -99.75000 29.91667 18.06556    703    61.87130 3.671288e-14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 -99.58333 29.91667 17.95946    725    62.96484 2.124999e-14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -99.41667 29.91667 18.01018    734    62.09557 3.281844e-14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 -99.25000 29.91667 18.14458    748    59.99133 9.398282e-14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 -99.08333 29.91667 18.36623    771    56.60656 5.105529e-13</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># All four outputs at once</span></span></span>
+<span class="r-in"><span><span class="va">pred_all</span> <span class="op">&lt;-</span> <span class="fu">predict</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                    newdata <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                    include_mahalanobis <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                    include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                    mahalanobis_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                    suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pred_all</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "x"                 "y"                 "bio_1"            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4] "bio_12"            "Mahalanobis"       "suitability"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [7] "Mahalanobis_trunc" "suitability_trunc"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">ell</span>, prediction <span class="op">=</span> <span class="va">pred_all</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="predict-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co">#' nicheR::plot_ellipsoid(object = ell, prediction = pred_all, col_layer = "suitability")</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Raster input: returns a SpatRaster</span></span></span>
+<span class="r-in"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu">predict</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ell</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                     suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: SpatRaster...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability, suitability_trunc</span>
+<span class="r-in"><span><span class="va">pred_rast</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> class       : SpatRaster</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> size        : 150, 240, 3  (nrow, ncol, nlyr)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> resolution  : 0.1666667, 0.1666667  (x, y)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> coord. ref. : lon/lat WGS 84 (EPSG:4326)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> source(s)   : memory</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> names       : Mahalanobis, suitability, suitability_trunc</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> min values  :    0.002385,           0,                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> max values  :  453.252343,    0.998808,          0.998808</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred_rast</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="predict-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Adjust truncation level without refitting</span></span></span>
+<span class="r-in"><span><span class="va">pred_80</span> <span class="op">&lt;-</span> <span class="fu">predict</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                   newdata <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                   suitability_truncated   <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                   adjust_truncation_level <span class="op">=</span> <span class="fl">0.80</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, Mahalanobis, suitability, suitability_trunc</span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">ell</span>, prediction <span class="op">=</span> <span class="va">pred_80</span>, col_layer <span class="op">=</span> <span class="st">"suitability_trunc"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="predict-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -117,6 +117,63 @@ find the safe range before calling this function.</p>
   updating.</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Check covariance allowed covariance range</span></span></span>
+<span class="r-in"><span><span class="va">ell</span><span class="op">$</span><span class="va">cov_limits</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    min      max</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1-bio_12 -416.6667 416.6667</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Introduce a negative correlation between bio_1 and bio_12</span></span></span>
+<span class="r-in"><span><span class="va">cov_limits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1-bio_12"</span> <span class="op">=</span> <span class="op">-</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell_corr</span> <span class="op">&lt;-</span> <span class="fu">update_ellipsoid_covariance</span><span class="op">(</span>object <span class="op">=</span> <span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                                          covariance <span class="op">=</span>  <span class="va">cov_limits</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: updating covariance values...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing ellipsoid metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: updated ellipsoidal niche metrics</span>
+<span class="r-in"><span><span class="va">ell_corr</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> nicheR Ellipsoid Object</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Dimensions:        2D</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chi-square cutoff: 9.21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Centroid (mu):     25, 2250</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Covariance matrix:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        bio_1   bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1      1   -100.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_12  -100 173611.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Covariance Limits:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   min     max</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bio_1-bio_12 -416.667 416.667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid semi-axis lengths:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1264.523, 2.946</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid axis endpoints:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 1:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           bio_1   bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a 25.728  985.477</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b 24.272 3514.523</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Axis 2:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           bio_1   bio_12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_a 27.946 2250.002</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vertex_b 22.054 2249.998</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Ellipsoid volume:  11703.94</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -124,6 +124,51 @@ is <code>1</code>.</p></dd>
     <div class="dont-index"><p><code><a href="plot_ellipsoid.html">plot_ellipsoid</a></code>, <code><a href="add_data.html">add_data</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>, <span class="fl">25</span><span class="op">)</span>, bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">500</span>, <span class="fl">1500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">ma_bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">back_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">ma_bios</span>, xy <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Open a muted plot, then overlay the ellipsoid prominently</span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       background <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"grey70"</span>, col_bg <span class="op">=</span> <span class="st">"grey80"</span>,</span></span>
+<span class="r-in"><span>                       lwd <span class="op">=</span> <span class="fl">1</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex_bg <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1"</span>, ylab <span class="op">=</span> <span class="st">"Bio12"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">add_ellipsoid</span><span class="op">(</span><span class="va">ell</span>, col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="add_ellipsoid-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Compare two ellipsoids on the same plot</span></span></span>
+<span class="r-in"><span><span class="va">range_df2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>, bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">800</span>, <span class="fl">1800</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell2</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df2</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       background <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, col_bg <span class="op">=</span> <span class="st">"grey80"</span>,</span></span>
+<span class="r-in"><span>                       lwd <span class="op">=</span> <span class="fl">2</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex_bg <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1"</span>, ylab <span class="op">=</span> <span class="st">"Bio12"</span>,</span></span>
+<span class="r-in"><span>                       main <span class="op">=</span> <span class="st">"Two ellipsoids"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">add_ellipsoid</span><span class="op">(</span><span class="va">ell2</span>, col_ell <span class="op">=</span> <span class="st">"#0004d5"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="add_ellipsoid-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -226,6 +226,76 @@ panels, but can also be set manually by the user. Default is <code>NULL</code>
   <code><a href="plot_ellipsoid_pairs.html">plot_ellipsoid_pairs</a></code> for pairwise plots of all dimensions.</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>, <span class="fl">25</span><span class="op">)</span>, bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">500</span>, <span class="fl">1500</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing covariance matrix...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: computing additional ellipsoidal niche metrics...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: created ellipsoidal niche.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Mode 1: ellipsoid boundary only</span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">plot_ellipsoid</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span></span>
+<span class="r-in"><span>                       ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot_ellipsoid-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Mode 2: with background points</span></span></span>
+<span class="r-in"><span><span class="va">ma_bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">back_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">ma_bios</span>, xy <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">plot_ellipsoid</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       background <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, col_bg <span class="op">=</span> <span class="st">"grey70"</span>,</span></span>
+<span class="r-in"><span>                       lwd <span class="op">=</span> <span class="fl">2</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex_bg <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1"</span>, ylab <span class="op">=</span> <span class="st">"Bio12"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot_ellipsoid-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Mode 3: prediction colored by suitability</span></span></span>
+<span class="r-in"><span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="predict.html">predict</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                   newdata <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                   include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                   include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">plot_ellipsoid</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       prediction <span class="op">=</span> <span class="va">pred_df</span>,</span></span>
+<span class="r-in"><span>                       col_layer <span class="op">=</span> <span class="st">"suitability"</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex_bg <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1"</span>, ylab <span class="op">=</span> <span class="st">"Bio12"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot_ellipsoid-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Mode 3b: truncated suitability, outside points shown in grey</span></span></span>
+<span class="r-in"><span><span class="va">pred_trunc</span> <span class="op">&lt;-</span> <span class="fu"><a href="predict.html">predict</a></span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                      newdata <span class="op">=</span> <span class="va">back_df</span>,</span></span>
+<span class="r-in"><span>                      include_suitability <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>                      include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>                      suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: suitability prediction using newdata of class: data.frame...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Identified spatial columns: x, y</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Step: Using 2 predictor variables: bio_1, bio_12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability_trunc</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">plot_ellipsoid</span><span class="op">(</span><span class="va">ell</span>,</span></span>
+<span class="r-in"><span>                       prediction <span class="op">=</span> <span class="va">pred_trunc</span>,</span></span>
+<span class="r-in"><span>                       col_layer <span class="op">=</span> <span class="st">"suitability_trunc"</span>,</span></span>
+<span class="r-in"><span>                       col_bg  <span class="op">=</span> <span class="st">"#d4d4d4"</span>,</span></span>
+<span class="r-in"><span>                       col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex_bg <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
+<span class="r-in"><span>                       xlab <span class="op">=</span> <span class="st">"Bio1"</span>, ylab <span class="op">=</span> <span class="st">"Bio12"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot_ellipsoid-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

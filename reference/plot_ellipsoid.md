@@ -168,3 +168,73 @@ to overlay occurrence points,
 to overlay additional ellipsoid boundaries,
 [`plot_ellipsoid_pairs`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
 for pairwise plots of all dimensions.
+
+## Examples
+
+``` r
+range_df <- data.frame(bio_1 = c(15, 25), bio_12 = c(500, 1500))
+ell <- nicheR::build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# \donttest{
+# Mode 1: ellipsoid boundary only
+nicheR::plot_ellipsoid(ell,
+                       col_ell = "#e10000", lwd = 2,
+                       xlab = "Bio1 (Mean Annual Temperature)",
+                       ylab = "Bio12 (Annual Precipitation)")
+
+
+# Mode 2: with background points
+ma_bios <- terra::rast(
+  system.file("extdata/ma_bios.tif", package = "nicheR"))
+back_df <- as.data.frame(ma_bios, xy = TRUE)
+
+nicheR::plot_ellipsoid(ell,
+                       background = back_df,
+                       col_ell = "#e10000", col_bg = "grey70",
+                       lwd = 2, pch = 20, cex_bg = 0.4,
+                       xlab = "Bio1", ylab = "Bio12")
+
+
+# Mode 3: prediction colored by suitability
+pred_df <- predict(ell,
+                   newdata = back_df,
+                   include_suitability = TRUE,
+                   include_mahalanobis = FALSE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Identified spatial columns: x, y
+#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15
+#> Step: Using 2 predictor variables: bio_1, bio_12
+#> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability
+
+nicheR::plot_ellipsoid(ell,
+                       prediction = pred_df,
+                       col_layer = "suitability",
+                       col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
+                       xlab = "Bio1", ylab = "Bio12")
+
+
+# Mode 3b: truncated suitability, outside points shown in grey
+pred_trunc <- predict(ell,
+                      newdata = back_df,
+                      include_suitability = FALSE,
+                      include_mahalanobis = FALSE,
+                      suitability_truncated = TRUE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Identified spatial columns: x, y
+#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15
+#> Step: Using 2 predictor variables: bio_1, bio_12
+#> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability_trunc
+
+nicheR::plot_ellipsoid(ell,
+                       prediction = pred_trunc,
+                       col_layer = "suitability_trunc",
+                       col_bg  = "#d4d4d4",
+                       col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
+                       xlab = "Bio1", ylab = "Bio12")
+
+# }
+```

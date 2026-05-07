@@ -60,3 +60,60 @@ to find the safe range before calling this function.
 to create the initial ellipsoid,
 [`covariance_limits`](https://castanedam.github.io/nicheR/reference/covariance_limits.md)
 to find valid covariance ranges before updating.
+
+## Examples
+
+``` r
+range_df <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500))
+ell <- build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# Check covariance allowed covariance range
+ell$cov_limits
+#>                    min      max
+#> bio_1-bio_12 -416.6667 416.6667
+
+# Introduce a negative correlation between bio_1 and bio_12
+cov_limits <- c("bio_1-bio_12" = -100)
+ell_corr <- update_ellipsoid_covariance(object = ell,
+                                          covariance =  cov_limits)
+#> Starting: updating covariance values...
+#> Step: computing ellipsoid metrics...
+#> Done: updated ellipsoidal niche metrics
+ell_corr
+#> nicheR Ellipsoid Object
+#> -----------------------
+#> Dimensions:        2D
+#> Chi-square cutoff: 9.21
+#> Centroid (mu):     25, 2250
+#> 
+#> Covariance matrix:
+#>        bio_1   bio_12
+#> bio_1      1   -100.0
+#> bio_12  -100 173611.1
+#> 
+#> Covariance Limits:
+#>                   min     max
+#> bio_1-bio_12 -416.667 416.667
+#> 
+#> Ellipsoid semi-axis lengths:
+#>   1264.523, 2.946
+#> 
+#> Ellipsoid axis endpoints:
+#>  Axis 1:
+#>           bio_1   bio_12
+#> vertex_a 25.728  985.477
+#> vertex_b 24.272 3514.523
+#> 
+#>  Axis 2:
+#>           bio_1   bio_12
+#> vertex_a 27.946 2250.002
+#> vertex_b 22.054 2249.998
+#> 
+#> Ellipsoid volume:  11703.94
+#> 
+```

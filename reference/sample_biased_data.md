@@ -83,3 +83,5 @@ proportion of zeros or `NA`s exceeds 25%.
 for unbiased sampling with explicit strategy and method control,
 [`apply_bias`](https://castanedam.github.io/nicheR/reference/apply_bias.md)
 for generating the bias-weighted prediction surface used as input here.
+
+## Examples

@@ -57,39 +57,94 @@ The ellipsoid contour is defined using a chi-square cutoff \\c^2 =
 ## Examples
 
 ``` r
-rng <- data.frame(bio1 = c(10, 20),
-                  bio2 = c(20, 30))
-ell <- build_ellipsoid(range = rng, cl = 0.95, verbose = FALSE)
-print(ell)
+# Two-dimensional ellipsoid from environmental ranges
+range_df <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500))
+ell2d <- build_ellipsoid(range = range_df)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+ell2d
 #> nicheR Ellipsoid Object
 #> -----------------------
 #> Dimensions:        2D
-#> Chi-square cutoff: 5.991
-#> Centroid (mu):     15, 25
+#> Chi-square cutoff: 9.21
+#> Centroid (mu):     25, 2250
 #> 
 #> Covariance matrix:
-#>       bio1  bio2
-#> bio1 2.778 0.000
-#> bio2 0.000 2.778
+#>        bio_1   bio_12
+#> bio_1      1      0.0
+#> bio_12     0 173611.1
 #> 
 #> Covariance Limits:
-#>              min   max
-#> bio1-bio2 -2.778 2.778
+#>                   min     max
+#> bio_1-bio_12 -416.667 416.667
 #> 
 #> Ellipsoid semi-axis lengths:
-#>   4.08, 4.08
+#>   1264.523, 3.035
 #> 
 #> Ellipsoid axis endpoints:
 #>  Axis 1:
-#>          bio1  bio2
-#> vertex_a   15 20.92
-#> vertex_b   15 29.08
+#>          bio_1   bio_12
+#> vertex_a    25  985.477
+#> vertex_b    25 3514.523
 #> 
 #>  Axis 2:
-#>           bio1 bio2
-#> vertex_a 19.08   25
-#> vertex_b 10.92   25
+#>           bio_1 bio_12
+#> vertex_a 28.035   2250
+#> vertex_b 21.965   2250
 #> 
-#> Ellipsoid volume:  52.285
+#> Ellipsoid volume:  12056.31
+#> 
+
+# Three-dimensional ellipsoid
+range_3d <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500),
+                       bio_15 = c(50, 70))
+ell3d <- build_ellipsoid(range = range_3d)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+ell3d
+#> nicheR Ellipsoid Object
+#> -----------------------
+#> Dimensions:        3D
+#> Chi-square cutoff: 11.345
+#> Centroid (mu):     25, 2250, 60
+#> 
+#> Covariance matrix:
+#>        bio_1   bio_12 bio_15
+#> bio_1      1      0.0  0.000
+#> bio_12     0 173611.1  0.000
+#> bio_15     0      0.0 11.111
+#> 
+#> Covariance Limits:
+#>                    min    max
+#> bio_1-bio_12  -208.333  412.5
+#> bio_1-bio_15    -1.667    3.3
+#> bio_12-bio_15 -694.444 1375.0
+#> 
+#> Ellipsoid semi-axis lengths:
+#>   1403.423, 11.227, 3.368
+#> 
+#> Ellipsoid axis endpoints:
+#>  Axis 1:
+#>          bio_1   bio_12 bio_15
+#> vertex_a    25  846.577     60
+#> vertex_b    25 3653.423     60
+#> 
+#>  Axis 2:
+#>          bio_1 bio_12 bio_15
+#> vertex_a    25   2250 48.773
+#> vertex_b    25   2250 71.227
+#> 
+#>  Axis 3:
+#>           bio_1 bio_12 bio_15
+#> vertex_a 21.632   2250     60
+#> vertex_b 28.368   2250     60
+#> 
+#> Ellipsoid volume:  222308.1
 #> 
 ```
