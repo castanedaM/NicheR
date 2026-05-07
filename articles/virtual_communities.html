@@ -262,15 +262,15 @@ them here to make sure they are loaded correctly.</p>
 <span></span>
 <span><span class="co"># Check the raster layers</span></span>
 <span><span class="va">ma_bios</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 8  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
-<span><span class="co">#&gt; source      : ma_bios.tif </span></span>
-<span><span class="co">#&gt; names       :    bio_1,   bio_5, bio_6,    bio_7, bio_12, bio_13, ... </span></span>
-<span><span class="co">#&gt; min values  :  3.91325,  8.4285, -0.39,  5.90000,    291,     65, ... </span></span>
-<span><span class="co">#&gt; max values  : 29.39055, 37.8985, 24.70, 32.89325,   7150,    767, ...</span></span></code></pre></div>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
+<span><span class="co">#&gt; source      : ma_bios.tif</span></span>
+<span><span class="co">#&gt; names       :     bio_1,     bio_5,     bio_6,    bio_7, bio_12, bio_13, ...</span></span>
+<span><span class="co">#&gt; min values  :   3.91325,    8.4285,     -0.39,      5.9,    291,     65, ...</span></span>
+<span><span class="co">#&gt; max values  : 29.390553, 37.898499, 24.700001, 32.89325,   7150,    767, ...</span></span></code></pre></div>
 <p><br></p>
 <p>Now, let’s plot the reference niche and the background data to
 visualize the environmental space in which we will simulate our
@@ -1055,27 +1055,27 @@ from which our background derives (originally form <a href="https://www.worldcli
 <span></span>
 <span><span class="co"># Check Mahalanobis predictions</span></span>
 <span><span class="va">maha_cons_predr</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 20  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       :    ell_1,    ell_2,    ell_3,    ell_4,    ell_5,    ell_6, ... </span></span>
-<span><span class="co">#&gt; min values  :    0.000,    0.000,    0.000,    0.000,   0.0000,    0.000, ... </span></span>
-<span><span class="co">#&gt; max values  : 2254.287, 1277.837, 1564.944, 4586.265, 727.9395, 1636.542, ...</span></span>
+<span><span class="co">#&gt; names       :       ell_1,       ell_2,       ell_3,       ell_4,      ell_5,       ell_6, ...</span></span>
+<span><span class="co">#&gt; min values  :           0,           0,           0,           0,          0,           0, ...</span></span>
+<span><span class="co">#&gt; max values  : 2254.286948, 1277.836955, 1564.943597, 4586.265222, 727.939501, 1636.541545, ...</span></span>
 <span></span>
 <span><span class="co"># Check suiatbility predictions</span></span>
 <span><span class="va">suit_cons_predr</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 20  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       : ell_1,         ell_2, ell_3, ell_4,         ell_5, ell_6, ... </span></span>
-<span><span class="co">#&gt; min values  :     0, 3.320709e-278,     0,     0, 8.510317e-159,     0, ... </span></span>
-<span><span class="co">#&gt; max values  :     1,  1.000000e+00,     1,     1,  1.000000e+00,     1, ...</span></span></code></pre></div>
+<span><span class="co">#&gt; names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ...</span></span>
+<span><span class="co">#&gt; min values  :     0,     0,     0,     0,     0,     0, ...</span></span>
+<span><span class="co">#&gt; max values  :     1,     1,     1,     1,     1,     1, ...</span></span></code></pre></div>
 <p><br></p>
 <p>Let’s check how the results look like in a plot.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
@@ -1159,14 +1159,14 @@ based on the ellipse limits.</p>
 <span></span>
 <span><span class="co"># Check predictions in raster</span></span>
 <span><span class="va">suit_cons_predrt</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 20  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ... </span></span>
-<span><span class="co">#&gt; min values  :     0,     0,     0,     0,     0,     0, ... </span></span>
+<span><span class="co">#&gt; names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ...</span></span>
+<span><span class="co">#&gt; min values  :     0,     0,     0,     0,     0,     0, ...</span></span>
 <span><span class="co">#&gt; max values  :     1,     1,     1,     1,     1,     1, ...</span></span></code></pre></div>
 <p><br></p>
 <p>Compared to our previous predictions of suitability, now the

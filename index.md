@@ -69,6 +69,7 @@ Note: Internet connection is required to install the package.
 The development version of nicheR can be installed using the code below.
 
 ``` r
+
 # Installing and loading packages
 if (!require("devtools")) install.packages("devtools")
 
@@ -96,6 +97,7 @@ then try installing nicheR again.
 To load the package use:
 
 ``` r
+
 library(nicheR)
 ```
 
@@ -260,6 +262,7 @@ sure to use the argument `build_vignettes = TRUE`.
 Check each of the vignettes with the code below:
 
 ``` r
+
 # Guide to building ellipsoid-based niches
 vignette("creating_ellipsoid_based_niches")
 

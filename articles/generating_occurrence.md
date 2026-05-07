@@ -55,15 +55,15 @@ complexity:
 
 ## Getting ready
 
-First, we load `nicheR` and `terra`, alongside our pre-built fundamental
-niches and prediction layers. We will not be building models from
-scratch here; instead, we rely on data created in previous vignettes.
+First, we load `nicheR`, this will also load `terra` as part of nicheR
+dependencies, alongside our pre-built fundamental niches and prediction
+layers. We will not be building models from scratch here; instead, we
+rely on data created in previous vignettes.
 
 ``` r
+
 # Load packages
 library(nicheR)
-library(terra)
-#> terra 1.9.11
 
 # 1. Load environmental background raster
 bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
@@ -73,8 +73,8 @@ data("ref_ellipse", package = "nicheR")  # 2D Niche (Bio1, Bio12)
 data("example_sp_4", package = "nicheR") # 3D Niche (Bio1, Bio12, Bio15)
 
 # 3. Load pre-calculated virtual backgrounds (E-Space only)
-pred_virt_2d <- read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
-pred_virt_3d <- read.csv(system.file("extdata", "predictions_virt_3d.csv", package = "nicheR"))
+pred_virt_2d <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
+pred_virt_3d <- utils::read.csv(system.file("extdata", "predictions_virt_3d.csv", package = "nicheR"))
 
 # 4. Load pre-calculated geographic prediction surfaces
 pred_2d <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
@@ -107,33 +107,23 @@ suitability.
 ### Basic generation
 
 The
-[`sample_virtual_data()`](https://castanedam.github.io/nicheR/reference/sample_virtual_data.md)
+[`virtual_data()`](https://castanedam.github.io/nicheR/reference/virtual_data.md)
 function acts as the non-spatial twin to
 [`sample_data()`](https://castanedam.github.io/nicheR/reference/sample_data.md).
 It picks “occurrences” from our virtual background.
 
 ``` r
-occ_virt_basic <- sample_virtual_data(
-  n_occ = 100, 
-  object = ref_ellipse,
-  virtual_prediction = pred_virt_2d, 
-  prediction_layer = "suitability", 
-  seed = 123
-)
-#> Starting: sample_virtual_data()
-#> Warning in resolve_prediction(virtual_prediction, prediction_layer):
-#> 'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show
-#> geographical connections.
-#> Done: sampled 100 points.
+
+occ_virt_basic <- virtual_data(object = ref_ellipse, n = 1000)
 
 head(occ_virt_basic)
-#>        bio_1   bio_12 Mahalanobis suitability suitability_trunc
-#> 369 23.89412 1606.865  0.35049855   0.8392478         0.8392478
-#> 640 24.48426 1889.806  1.52756876   0.4658999         0.4658999
-#> 430 23.47108 1579.717  0.53955996   0.7635475         0.7635475
-#> 168 24.51566 1393.877  2.19468357   0.3337571         0.3337571
-#> 766 23.07951 2173.194  2.92031454   0.2321998         0.2321998
-#> 552 23.53559 1693.781  0.05302895   0.9738339         0.9738339
+#>         bio_1   bio_12
+#> [1,] 22.50672 1593.385
+#> [2,] 22.20792 1795.909
+#> [3,] 24.78859 1541.094
+#> [4,] 22.63092 2148.820
+#> [5,] 23.29214 1832.377
+#> [6,] 25.65037 1544.886
 ```
 
   
@@ -146,6 +136,7 @@ are the 100 sampled individuals. Notice they cluster toward the center
 (red square) because higher suitability exists there.
 
 ``` r
+
 plot_ellipsoid(ref_ellipse, dim = c(1, 2), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1 (Temp)", ylab = "Bio12 (Precip)", main = "Virtual E-Space")
 add_data(occ_virt_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
@@ -163,19 +154,12 @@ workflow is identical: generate a 3D background, score its suitability,
 and sample from it.
 
 ``` r
+
 # Sample 100 virtual occurrences from the 3D background
-occ_virt_3d <- sample_virtual_data(
-  n_occ = 100, 
-  object = example_sp_4,
-  virtual_prediction = pred_virt_3d, 
-  prediction_layer = "suitability", 
-  seed = 123
+occ_virt_3d <- virtual_data(
+  n = 100, 
+  object = example_sp_4
 )
-#> Starting: sample_virtual_data()
-#> Warning in resolve_prediction(virtual_prediction, prediction_layer):
-#> 'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show
-#> geographical connections.
-#> Done: sampled 100 points.
 
 # Visualize across multiple dimensions in E-Space
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
@@ -212,6 +196,7 @@ Let’s generate 100 geographically grounded occurrences using the default
 suitability layer of our 2D prediction raster.
 
 ``` r
+
 occ_geo_basic <- sample_data(
   n_occ = 100,
   prediction = pred_2d,
@@ -252,6 +237,7 @@ probability.
 - **`random`**: Uniform distribution across suitable habitats.
 
 ``` r
+
 occ_cent <- sample_data(100, pred_2d, "suitability", sampling = "centroid", seed = 123)
 #> Starting: sample_data()
 #> Done: sampled 100 points.
@@ -298,6 +284,7 @@ to draw the samples.
   distance, creating a stricter concentration in optimal environments.
 
 ``` r
+
 occ_meth_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
 #> Starting: sample_data()
 #> Done: sampled 100 points.
@@ -331,6 +318,7 @@ simulate sink populations. Setting `strict = TRUE` (using a truncated
 layer) establishes a hard boundary.
 
 ``` r
+
 occ_lax <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
 #> Starting: sample_data()
 #> Done: sampled 100 points.
@@ -364,6 +352,7 @@ across multiple axes (e.g., Temperature vs. Precipitation, and
 Temperature vs. Seasonality).
 
 ``` r
+
 occ_geo_3d <- sample_data(100, pred_3d, "suitability", seed = 123)
 #> Starting: sample_data()
 #> Done: sampled 100 points.
@@ -405,6 +394,7 @@ to pull the underlying climate values so we can plot them in E-Space and
 observe the distortion.
 
 ``` r
+
 occ_bias_xy <- sample_biased_data(
   n_occ = 100, 
   prediction = bias_2d, 
@@ -419,8 +409,8 @@ occ_bias_xy <- sample_biased_data(
 occ_bias_env <- terra::extract(bios, occ_bias_xy[, c("x", "y")])
 
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map")
-points(occ_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map")
+terra::points(occ_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Distorted Niche")
 add_data(occ_bias_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
@@ -458,6 +448,7 @@ occurrences are allowed in zero-probability/NA cells. Setting
 zero-valued pixels prior to pulling samples.
 
 ``` r
+
 # strict = TRUE ensures sampling ONLY happens in explicitly positive bias areas
 occ_bias_strict_xy <- sample_biased_data(100, bias_2d, "suitability_biased_direct", strict = TRUE, seed = 123)
 #> Starting: sample_biased_data()
@@ -465,8 +456,8 @@ occ_bias_strict_xy <- sample_biased_data(100, bias_2d, "suitability_biased_direc
 occ_bias_strict_env <- terra::extract(bios, occ_bias_strict_xy[, c("x", "y")])
 
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map (Strict)")
-points(occ_bias_strict_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map (Strict)")
+terra::points(occ_bias_strict_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict Bias")
 add_data(occ_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
@@ -482,14 +473,15 @@ Finally, let’s look at biased sampling on a 3-dimensional niche
 (`example_sp_4`).
 
 ``` r
+
 occ_bias_3d_xy <- sample_biased_data(100, bias_3d, "suitability_biased_direct", seed = 123)
 #> Starting: sample_biased_data()
 #> Done: sampled 100 points from biased prediction layer
 occ_bias_3d_env <- terra::extract(bios, occ_bias_3d_xy[, c("x", "y")])
 
 par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
-plot(bias_3d[["suitability_biased_direct"]], main = "G-Space: 3D Biased Map")
-points(occ_bias_3d_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::plot(bias_3d[["suitability_biased_direct"]], main = "G-Space: 3D Biased Map")
+terra::points(occ_bias_3d_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
 add_data(occ_bias_3d_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
@@ -511,6 +503,7 @@ exporting these simulated datasets for testing model robustness or
 downstream analyses is straightforward.
 
 ``` r
+
 # Save Pure Virtual Data
 write.csv(occ_virt_basic, file = tempfile(), row.names = FALSE)
 

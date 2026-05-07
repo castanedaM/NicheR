@@ -271,15 +271,15 @@ proceeding.</p>
 <span></span>
 <span><span class="co"># Check the raster layers</span></span>
 <span><span class="va">ma_bios</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 8  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
-<span><span class="co">#&gt; source      : ma_bios.tif </span></span>
-<span><span class="co">#&gt; names       :    bio_1,   bio_5, bio_6,    bio_7, bio_12, bio_13, ... </span></span>
-<span><span class="co">#&gt; min values  :  3.91325,  8.4285, -0.39,  5.90000,    291,     65, ... </span></span>
-<span><span class="co">#&gt; max values  : 29.39055, 37.8985, 24.70, 32.89325,   7150,    767, ...</span></span></code></pre></div>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
+<span><span class="co">#&gt; source      : ma_bios.tif</span></span>
+<span><span class="co">#&gt; names       :     bio_1,     bio_5,     bio_6,    bio_7, bio_12, bio_13, ...</span></span>
+<span><span class="co">#&gt; min values  :   3.91325,    8.4285,     -0.39,      5.9,    291,     65, ...</span></span>
+<span><span class="co">#&gt; max values  : 29.390553, 37.898499, 24.700001, 32.89325,   7150,    767, ...</span></span></code></pre></div>
 <p><br></p>
 <p>This represents a two-dimensional <code>nicheR_ellipsoid</code>
 object built from <code>bio_1</code> and <code>bio_12</code>. For
@@ -353,18 +353,16 @@ all prediction layers.</p>
 <span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc</span></span>
 <span></span>
 <span><span class="va">pred_rast</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 6  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
-<span><span class="co">#&gt; sources     : ma_bios.tif  (2 layers) </span></span>
-<span><span class="co">#&gt;               memory  </span></span>
-<span><span class="co">#&gt;               memory  </span></span>
-<span><span class="co">#&gt;               ... and 2 more sources</span></span>
-<span><span class="co">#&gt; names       :    bio_1, bio_12,  Mahalanobis,   suitability, Mahal~trunc, suita~trunc </span></span>
-<span><span class="co">#&gt; min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127, 0.002992248,    0.000000 </span></span>
-<span><span class="co">#&gt; max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01, 9.206901663,    0.998505</span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
+<span><span class="co">#&gt; sources     : ma_bios.tif (2 layers)</span></span>
+<span><span class="co">#&gt;               memory (4 layers)</span></span>
+<span><span class="co">#&gt; names       :     bio_1, bio_12, Mahalanobis, suitability, Mahal~trunc, suita~trunc</span></span>
+<span><span class="co">#&gt; min values  :   3.91325,    291,    0.002992,           0,    0.002992,           0</span></span>
+<span><span class="co">#&gt; max values  : 29.390553,   7150,  580.954687,    0.998505,    9.206902,    0.998505</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pred_rast</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "bio_1"             "bio_12"            "Mahalanobis"      </span></span>
 <span><span class="co">#&gt; [4] "suitability"       "Mahalanobis_trunc" "suitability_trunc"</span></span></code></pre></div>
@@ -394,9 +392,9 @@ which measures how far any environmental point
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐱</mi><annotation encoding="application/x-tex">\mathbf{x}</annotation></semantics></math>
 is from the niche centroid
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝛍</mi><annotation encoding="application/x-tex">\boldsymbol{\mu}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>D</mi><mn>2</mn></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐱</mi><mo>−</mo><mi>𝛍</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msup><mi>𝚺</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐱</mi><mo>−</mo><mi>𝛍</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">D^2 = (\mathbf{x} - \boldsymbol{\mu})^{\top} \boldsymbol{\Sigma}^{-1} (\mathbf{x} - \boldsymbol{\mu})</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>D</mi><mn>2</mn></msup><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mi>𝐱</mi><mo>−</mo><mi>𝛍</mi><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><msup><mi>𝚺</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">(</mo><mi>𝐱</mi><mo>−</mo><mi>𝛍</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">D^2 = (\mathbf{x} - \boldsymbol{\mu})^{\top} \boldsymbol{\Sigma}^{-1} (\mathbf{x} - \boldsymbol{\mu})</annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝚺</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">\boldsymbol{\Sigma}^{-1}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝚺</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">\boldsymbol{\Sigma}^{-1}</annotation></semantics></math>
 is the inverse of the covariance matrix. In simpler terms,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>D</mi><mn>2</mn></msup><annotation encoding="application/x-tex">D^2</annotation></semantics></math>
 measures how unusual a set of environmental conditions is relative to
@@ -421,10 +419,10 @@ is not bounded between 0 and 1: it is a distance, not a probability.</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>D</mi><mn>2</mn></msup><annotation encoding="application/x-tex">D^2</annotation></semantics></math>
 to <strong>suitability</strong> using the multivariate normal (MVN)
 kernel:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>D</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S = \exp\!\left(-\frac{1}{2} D^2\right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>D</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S = \exp\!\left(-\frac{1}{2} D^2\right)</annotation></semantics></math></p>
 <p>This transformation is not arbitrary. The exponent in the MVN
 probability density function is exactly
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>D</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">-\frac{1}{2} D^2</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>D</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">-\frac{1}{2} D^2</annotation></semantics></math>,
 so suitability is proportional to the MVN density at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐱</mi><annotation encoding="application/x-tex">\mathbf{x}</annotation></semantics></math>.
 In other words, we are treating the niche as a multivariate Gaussian
@@ -515,7 +513,7 @@ infinity.</td>
 <td><code>include_suitability</code></td>
 <td><code>TRUE</code></td>
 <td>Suitability
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mn>0.5</mn><mspace width="0.167em"></mspace><msup><mi>D</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S = \exp(-0.5\, D^2)</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>0.5</mn><mspace width="0.167em"></mspace><msup><mi>D</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">S = \exp(-0.5\, D^2)</annotation></semantics></math>.
 Not truncated. Ranges from near 0 to 1.</td>
 </tr>
 <tr class="odd">
@@ -597,15 +595,15 @@ have a value; the truncated ones apply the boundary.</p>
 <span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc</span></span>
 <span></span>
 <span><span class="va">pred_rast_all</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 150, 240, 4  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       :  Mahalanobis,   suitability, Mahalanobis_trunc, suitability_trunc </span></span>
-<span><span class="co">#&gt; min values  : 2.992248e-03, 7.035461e-127,       0.002992248,          0.000000 </span></span>
-<span><span class="co">#&gt; max values  : 5.809547e+02,  9.985050e-01,       9.206901663,          0.998505</span></span>
+<span><span class="co">#&gt; names       : Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc</span></span>
+<span><span class="co">#&gt; min values  :    0.002992,           0,          0.002992,                 0</span></span>
+<span><span class="co">#&gt; max values  :  580.954687,    0.998505,          9.206902,          0.998505</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pred_rast_all</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Mahalanobis"       "suitability"       "Mahalanobis_trunc"</span></span>
 <span><span class="co">#&gt; [4] "suitability_trunc"</span></span></code></pre></div>
@@ -1052,15 +1050,15 @@ background.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">suit_3d</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">suit_3d</span><span class="op">)</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 6, 240, 6  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 29, 30  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326)</span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       :    bio_1, bio_12,   bio_15, Mahalanobis,  suitability, suita~trunc </span></span>
-<span><span class="co">#&gt; min values  : 17.95946,    579, 16.11374,    42.89806, 1.199671e-26,           0 </span></span>
-<span><span class="co">#&gt; max values  : 21.65417,   1689, 50.46778,   119.37033, 4.839548e-10,           0</span></span></code></pre></div>
+<span><span class="co">#&gt; names       :     bio_1, bio_12,    bio_15, Mahalanobis, suitability, suita~trunc</span></span>
+<span><span class="co">#&gt; min values  : 17.959457,    579, 16.113743,   42.898059,           0,           0</span></span>
+<span><span class="co">#&gt; max values  : 21.654167,   1689, 50.467781,   119.37033,           0,           0</span></span></code></pre></div>
 <p><br></p>
 <p>With a three-dimensional ellipsoid there are three pairwise
 projections: bio1 vs. bio12, bio1 vs. bio15, and bio12 vs. bio15. The

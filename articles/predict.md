@@ -82,6 +82,7 @@ Note: We will display functions from other packages as
 `package::function()`.
 
 ``` r
+
 # Load packages
 library(nicheR)
 #library(terra)
@@ -104,6 +105,7 @@ Precipitation), background environmental data for North America, and a
 raster stack of the same variables for geographic projections.
 
 ``` r
+
 # Reference niche (nicheR_ellipsoid object)
 data("ref_ellipse", package = "nicheR")
 
@@ -123,6 +125,7 @@ ma_bios <- terra::rast(system.file("extdata", "ma_bios.tif",
 Let’s inspect each object to understand its structure before proceeding.
 
 ``` r
+
 # Check reference niche
 ref_ellipse
 #> nicheR Ellipsoid Object
@@ -175,15 +178,15 @@ head(back_data)
 
 # Check the raster layers
 ma_bios
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 8  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-#> source      : ma_bios.tif 
-#> names       :    bio_1,   bio_5, bio_6,    bio_7, bio_12, bio_13, ... 
-#> min values  :  3.91325,  8.4285, -0.39,  5.90000,    291,     65, ... 
-#> max values  : 29.39055, 37.8985, 24.70, 32.89325,   7150,    767, ...
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
+#> source      : ma_bios.tif
+#> names       :     bio_1,     bio_5,     bio_6,    bio_7, bio_12, bio_13, ...
+#> min values  :   3.91325,    8.4285,     -0.39,      5.9,    291,     65, ...
+#> max values  : 29.390553, 37.898499, 24.700001, 32.89325,   7150,    767, ...
 ```
 
   
@@ -222,6 +225,7 @@ includes the predictor columns followed by two prediction columns:
 `Mahalanobis` and `suitability`.
 
 ``` r
+
 pred_df <- predict(ref_ellipse,
                    newdata = back_data[, ref_ellipse$var_names])
 #> Starting: suitability prediction using newdata of class: data.frame...
@@ -254,6 +258,7 @@ of `newdata`. Cells with `NA` in any predictor layer receive `NA` in all
 prediction layers.
 
 ``` r
+
 pred_rast <- predict(ref_ellipse,
                      newdata = ma_bios[[ref_ellipse$var_names]],
                      include_suitability = TRUE,
@@ -266,18 +271,16 @@ pred_rast <- predict(ref_ellipse,
 #> Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc
 
 pred_rast
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 6  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-#> sources     : ma_bios.tif  (2 layers) 
-#>               memory  
-#>               memory  
-#>               ... and 2 more sources
-#> names       :    bio_1, bio_12,  Mahalanobis,   suitability, Mahal~trunc, suita~trunc 
-#> min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127, 0.002992248,    0.000000 
-#> max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01, 9.206901663,    0.998505
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
+#> sources     : ma_bios.tif (2 layers)
+#>               memory (4 layers)
+#> names       :     bio_1, bio_12, Mahalanobis, suitability, Mahal~trunc, suita~trunc
+#> min values  :   3.91325,    291,    0.002992,           0,    0.002992,           0
+#> max values  : 29.390553,   7150,  580.954687,    0.998505,    9.206902,    0.998505
 names(pred_rast)
 #> [1] "bio_1"             "bio_12"            "Mahalanobis"      
 #> [4] "suitability"       "Mahalanobis_trunc" "suitability_trunc"
@@ -301,53 +304,58 @@ from the covariance structure of the environmental conditions the user
 provides, and its center, the **centroid**, is the most favorable
 environmental combination.
 
-Every prediction starts with the **Mahalanobis distance** ($D^{2}$),
-which measures how far any environmental point $\mathbf{x}$ is from the
-niche centroid $\mathbf{μ}$:
+Every prediction starts with the **Mahalanobis distance** ($`D^2`$),
+which measures how far any environmental point $`\mathbf{x}`$ is from
+the niche centroid $`\boldsymbol{\mu}`$:
 
-$$D^{2} = (\mathbf{x} - {\mathbf{μ}})^{\top}\mathbf{\Sigma}^{- 1}(\mathbf{x} - {\mathbf{μ}})$$
+``` math
+D^2 = (\mathbf{x} - \boldsymbol{\mu})^{\top} \boldsymbol{\Sigma}^{-1} (\mathbf{x} - \boldsymbol{\mu})
+```
 
-where $\mathbf{\Sigma}^{- 1}$ is the inverse of the covariance matrix.
-In simpler terms, $D^{2}$ measures how unusual a set of environmental
-conditions is relative to the niche center, accounting for differences
-in variable scale and for correlations among variables. Unlike Euclidean
-distance, it stretches and rotates with the shape of the niche. The
-ellipsoid surface in E-space is exactly the set of all points at a
-constant Mahalanobis distance from the centroid.
+where $`\boldsymbol{\Sigma}^{-1}`$ is the inverse of the covariance
+matrix. In simpler terms, $`D^2`$ measures how unusual a set of
+environmental conditions is relative to the niche center, accounting for
+differences in variable scale and for correlations among variables.
+Unlike Euclidean distance, it stretches and rotates with the shape of
+the niche. The ellipsoid surface in E-space is exactly the set of all
+points at a constant Mahalanobis distance from the centroid.
 
-A smaller $D^{2}$ means environmental conditions are similar to those at
-the niche center. A larger $D^{2}$ means they are increasingly
-different. Critically, $D^{2}$ is not bounded between 0 and 1: it is a
+A smaller $`D^2`$ means environmental conditions are similar to those at
+the niche center. A larger $`D^2`$ means they are increasingly
+different. Critically, $`D^2`$ is not bounded between 0 and 1: it is a
 distance, not a probability.
 
 ##### From distance to suitability: the chi-square and MVN connection
 
-`nicheR` converts $D^{2}$ to **suitability** using the multivariate
+`nicheR` converts $`D^2`$ to **suitability** using the multivariate
 normal (MVN) kernel:
 
-$$S = \exp\!\left( - \frac{1}{2}D^{2} \right)$$
+``` math
+S = \exp\!\left(-\frac{1}{2} D^2\right)
+```
 
 This transformation is not arbitrary. The exponent in the MVN
-probability density function is exactly $- \frac{1}{2}D^{2}$, so
-suitability is proportional to the MVN density at $\mathbf{x}$. In other
-words, we are treating the niche as a multivariate Gaussian centered at
-$\mathbf{μ}$ with covariance $\mathbf{\Sigma}$, and suitability is the
-relative likelihood of a species occurring under the conditions at
-$\mathbf{x}$. This rescales the distance into a value between 0 and 1
-that is more intuitive ecologically: 1 at the centroid, declining
-smoothly toward 0 as conditions move away from the optimum.
+probability density function is exactly $`-\frac{1}{2} D^2`$, so
+suitability is proportional to the MVN density at $`\mathbf{x}`$. In
+other words, we are treating the niche as a multivariate Gaussian
+centered at $`\boldsymbol{\mu}`$ with covariance
+$`\boldsymbol{\Sigma}`$, and suitability is the relative likelihood of a
+species occurring under the conditions at $`\mathbf{x}`$. This rescales
+the distance into a value between 0 and 1 that is more intuitive
+ecologically: 1 at the centroid, declining smoothly toward 0 as
+conditions move away from the optimum.
 
 This connection to the MVN also determines the ellipsoid boundary. Under
-the MVN assumption, $D^{2}$ follows a **chi-square distribution** with
-$p$ degrees of freedom, where $p$ is the number of environmental
+the MVN assumption, $`D^2`$ follows a **chi-square distribution** with
+$`p`$ degrees of freedom, where $`p`$ is the number of environmental
 variables. The confidence level `cl` stored in the ellipsoid corresponds
-to a $\chi_{p,\,\text{cl}}^{2}$ quantile: the ellipsoid surface is the
-set of points where $D^{2} = \chi_{p,\,\text{cl}}^{2}$, enclosing a
+to a $`\chi^2_{p,\,\text{cl}}`$ quantile: the ellipsoid surface is the
+set of points where $`D^2 = \chi^2_{p,\,\text{cl}}`$, enclosing a
 fraction `cl` of the MVN probability mass. Setting `cl = 0.95` means the
 ellipsoid contains 95% of the theoretical MVN density.
 
 The figure below brings these ideas together. The top row shows the
-E-space scatter colored by $D^{2}$ and the histogram of $D^{2}$ values
+E-space scatter colored by $`D^2`$ and the histogram of $`D^2`$ values
 across the background. The bottom row shows the same for suitability.
 The vertical dashed lines in the histograms mark chi-square quantiles at
 three probability levels, showing exactly where the ellipsoid boundary
@@ -358,7 +366,7 @@ falls relative to the distribution of background distances.
   
 
 The color gradients in the scatter plots are reversed between the two
-metrics, reflecting their mathematical relationship: $D^{2}$ increases
+metrics, reflecting their mathematical relationship: $`D^2`$ increases
 as you move away from the centroid, so darker colors near the center
 indicate lower distance. Suitability decreases with distance, so
 brighter colors near the center indicate higher suitability. Distance
@@ -367,7 +375,7 @@ transforms that distance into an ecologically interpretable value
 between 0 and 1.
 
 The histograms connect this to the MVN. Under the MVN assumption,
-$D^{2}$ follows a chi-square distribution, and the vertical dashed lines
+$`D^2`$ follows a chi-square distribution, and the vertical dashed lines
 mark chi-square quantiles at 50%, 90%, and 99%, which correspond to
 ellipsoid boundaries at those confidence levels. The same thresholds
 appear in the suitability histogram, showing the equivalent suitability
@@ -384,12 +392,12 @@ Beyond the basic call,
 lets you control which outputs are returned independently. The four
 output types are:
 
-| Argument                | Default | Description                                                                                                     |
-|-------------------------|---------|-----------------------------------------------------------------------------------------------------------------|
-| `include_mahalanobis`   | `TRUE`  | Squared Mahalanobis distance $D^{2}$ for every point. Not truncated. Ranges from 0 at the centroid to infinity. |
-| `include_suitability`   | `TRUE`  | Suitability $S = \exp\left( - 0.5\, D^{2} \right)$. Not truncated. Ranges from near 0 to 1.                     |
-| `mahalanobis_truncated` | `FALSE` | $D^{2}$ with values outside the ellipsoid set to `NA`.                                                          |
-| `suitability_truncated` | `FALSE` | $S$ with values outside the ellipsoid set to 0.                                                                 |
+| Argument | Default | Description |
+|----|----|----|
+| `include_mahalanobis` | `TRUE` | Squared Mahalanobis distance $`D^2`$ for every point. Not truncated. Ranges from 0 at the centroid to infinity. |
+| `include_suitability` | `TRUE` | Suitability $`S = \exp(-0.5\, D^2)`$. Not truncated. Ranges from near 0 to 1. |
+| `mahalanobis_truncated` | `FALSE` | $`D^2`$ with values outside the ellipsoid set to `NA`. |
+| `suitability_truncated` | `FALSE` | $`S`$ with values outside the ellipsoid set to 0. |
 
 Two additional arguments control what is returned alongside predictions:
 
@@ -410,6 +418,7 @@ Any combination of the four flags can be set to `TRUE` in a single call.
 All requested outputs are returned together.
 
 ``` r
+
 pred_df_all <- predict(ref_ellipse,
                        newdata = back_data[, ref_ellipse$var_names],
                        include_mahalanobis   = TRUE,
@@ -432,6 +441,7 @@ ellipsoid across all four columns. The non-truncated outputs always have
 a value; the truncated ones apply the boundary.
 
 ``` r
+
 # A point outside the ellipsoid
 outside_idx <- which(!is.na(pred_df_all$Mahalanobis) &
                        is.na(pred_df_all$Mahalanobis_trunc))[1]
@@ -446,6 +456,7 @@ pred_df_all[outside_idx, ]
 The same applies to raster output:
 
 ``` r
+
 pred_rast_all <- predict(ref_ellipse,
                          newdata = ma_bios[[ref_ellipse$var_names]],
                          include_mahalanobis   = TRUE,
@@ -457,15 +468,15 @@ pred_rast_all <- predict(ref_ellipse,
 #> Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc
 
 pred_rast_all
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 4  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
 #> source(s)   : memory
-#> names       :  Mahalanobis,   suitability, Mahalanobis_trunc, suitability_trunc 
-#> min values  : 2.992248e-03, 7.035461e-127,       0.002992248,          0.000000 
-#> max values  : 5.809547e+02,  9.985050e-01,       9.206901663,          0.998505
+#> names       : Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc
+#> min values  :    0.002992,           0,          0.002992,                 0
+#> max values  :  580.954687,    0.998505,          9.206902,          0.998505
 names(pred_rast_all)
 #> [1] "Mahalanobis"       "suitability"       "Mahalanobis_trunc"
 #> [4] "suitability_trunc"
@@ -476,7 +487,7 @@ names(pred_rast_all)
 #### The role of the confidence level and truncation
 
 The ellipsoid boundary is defined by the chi-square cutoff
-$\chi_{p,\,\text{cl}}^{2}$. Without truncation, $D^{2}$ and $S$ are
+$`\chi^2_{p,\,\text{cl}}`$. Without truncation, $`D^2`$ and $`S`$ are
 computed for every point in `newdata` regardless of whether it falls
 inside or outside the ellipsoid, and every point on Earth receives a
 positive suitability value. This can be misleading when the goal is to
@@ -485,10 +496,10 @@ identify where the species could potentially occur.
 Truncation operationalizes the ellipsoid boundary ecologically:
 
 - `mahalanobis_truncated = TRUE`: points with
-  $D^{2} > \chi_{p,\,\text{cl}}^{2}$ receive `NA`, meaning those
+  $`D^2 > \chi^2_{p,\,\text{cl}}`$ receive `NA`, meaning those
   environments are outside the niche and their distance is not reported.
 - `suitability_truncated = TRUE`: points with
-  $D^{2} > \chi_{p,\,\text{cl}}^{2}$ receive $S = 0$, meaning unsuitable
+  $`D^2 > \chi^2_{p,\,\text{cl}}`$ receive $`S = 0`$, meaning unsuitable
   environments are explicitly scored as zero rather than receiving a
   small positive value.
 
@@ -512,6 +523,7 @@ The `adjust_truncation_level` argument lets you explore different
 thresholds without refitting the ellipsoid:
 
 ``` r
+
 # More conservative: only the innermost 90% of the MVN distribution
 pred_conservative <- predict(ref_ellipse,
                              newdata = back_data[, ref_ellipse$var_names],
@@ -556,6 +568,7 @@ The ellipsoid boundary is overlaid to show the niche limit.
 #### Mahalanobis distance in E-space
 
 ``` r
+
 maha_df <- predict(ref_ellipse,
                    newdata = back_data[, ref_ellipse$var_names],
                    include_mahalanobis = TRUE,
@@ -591,7 +604,7 @@ legend("topright",
 
 The gradient from dark to light radiates outward from the centroid. The
 distance continues to grow beyond the ellipsoid boundary without any
-discontinuity: the untruncated $D^{2}$ does not distinguish inside from
+discontinuity: the untruncated $`D^2`$ does not distinguish inside from
 outside.
 
   
@@ -599,6 +612,7 @@ outside.
 #### Suitability in E-space
 
 ``` r
+
 suit_df <- predict(ref_ellipse,
                    newdata = back_data[, ref_ellipse$var_names],
                    include_mahalanobis = FALSE,
@@ -642,6 +656,7 @@ match those used to construct the ellipsoid.
 #### Truncated predictions in E-space
 
 ``` r
+
 trunc_df <- predict(ref_ellipse,
                     newdata = back_data[, ref_ellipse$var_names],
                     include_mahalanobis   = FALSE,
@@ -709,11 +724,12 @@ inside versus outside the ellipsoid.
 #### Binary suitable vs. unsuitable environments
 
 The truncated suitability output provides a direct route to binary
-presence-absence predictions in E-space. Points with $S > 0$ are
-suitable (inside the ellipsoid) and points with $S = 0$ are unsuitable
+presence-absence predictions in E-space. Points with $`S > 0`$ are
+suitable (inside the ellipsoid) and points with $`S = 0`$ are unsuitable
 (outside).
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -757,6 +773,7 @@ environmental values of its corresponding layers.
 #### Mahalanobis distance map
 
 ``` r
+
 maha_rast <- predict(ref_ellipse,
                      newdata = ma_bios[[ref_ellipse$var_names]],
                      include_mahalanobis = TRUE,
@@ -786,6 +803,7 @@ E-space alone.
 #### Suitability map
 
 ``` r
+
 suit_rast <- predict(ref_ellipse,
                      newdata = ma_bios[[ref_ellipse$var_names]],
                      include_mahalanobis = FALSE,
@@ -815,6 +833,7 @@ the ellipsoid.
 #### Truncated suitability map
 
 ``` r
+
 trunc_rast <- predict(ref_ellipse,
                       newdata = ma_bios[[ref_ellipse$var_names]],
                       include_mahalanobis   = FALSE,
@@ -847,6 +866,7 @@ outside the boundary receive `NA` (Mahalanobis) or 0 (suitability).
 #### Binary potential distribution map
 
 ``` r
+
 binary_rast <- (trunc_rast$suitability_trunc > 0) * 1
 
 par(mar = marsr)
@@ -878,6 +898,7 @@ Temperature), bio12 (Annual Precipitation), and bio15 (Precipitation
 Seasonality), and predict suitability over the background.
 
 ``` r
+
 range_3d <- data.frame(bio_1  = c(27, 35),
                        bio_12 = c(1000, 1500),
                        bio_15 = c(60, 75))
@@ -932,6 +953,7 @@ ellipse_3d
   
 
 ``` r
+
 suit_3d <- predict(example_sp_4,
                    newdata = ma_bios[[example_sp_4$var_names]],
                    include_mahalanobis   = TRUE,
@@ -943,15 +965,15 @@ suit_3d <- predict(example_sp_4,
 colnames(suit_3d)
 #> NULL
 head(suit_3d)
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 6, 240, 6  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 29, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
 #> source(s)   : memory
-#> names       :    bio_1, bio_12,   bio_15, Mahalanobis,  suitability, suita~trunc 
-#> min values  : 17.95946,    579, 16.11374,    42.89806, 1.199671e-26,           0 
-#> max values  : 21.65417,   1689, 50.46778,   119.37033, 4.839548e-10,           0
+#> names       :     bio_1, bio_12,    bio_15, Mahalanobis, suitability, suita~trunc
+#> min values  : 17.959457,    579, 16.113743,   42.898059,           0,           0
+#> max values  : 21.654167,   1689, 50.467781,   119.37033,           0,           0
 ```
 
   
@@ -964,6 +986,7 @@ limits shared globally across all panels so the relative spread of the
 ellipsoid in each dimension is directly comparable.
 
 ``` r
+
 par(cex = 0.7)
 
 plot_ellipsoid_pairs(ellipse_3d,
@@ -985,6 +1008,7 @@ having three pairs and a layout that rounds up to four cells.
   
 
 ``` r
+
 par(original_par)
 ```
 
@@ -1014,6 +1038,7 @@ First, we generate the virtual environmental points for our 2D reference
 ellipse, and then we score them.
 
 ``` r
+
 # We draw 1,000 points from the mathematical distribution of the niche
 virt_bg <- virtual_data(ref_ellipse, n = 1000, truncate = FALSE, 
                         effect = "direct", seed = 1)
@@ -1046,6 +1071,7 @@ generate a theoretical 3D point cloud for `example_sp_4` and evaluate
 suitability across those simulated conditions.
 
 ``` r
+
 # We draw 1,000 points from the mathematical distribution of the 3D niche
 virt_3d_bg <- virtual_data(example_sp_4, n = 1000, truncate = FALSE, 
                            effect = "direct", seed = 1)
@@ -1078,6 +1104,7 @@ standard functions. For `nicheR_ellipsoid` objects, use the
 `save_nicheR` and `read_nicheR` functions.
 
 ``` r
+
 temp_ellipse <- file.path(tempdir(), "ref_ellipse.rda")
 save_nicheR(ref_ellipse, file = temp_ellipse)
 
@@ -1087,6 +1114,7 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
   
 
 ``` r
+
 # 1. Define temporary file paths
 temp_df      <- file.path(tempdir(), "predictions_df.csv")
 temp_rast    <- file.path(tempdir(), "predictions_rast.tif")

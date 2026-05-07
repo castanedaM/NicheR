@@ -69,6 +69,7 @@ Note: We will display functions from other packages as
 `package::function()`.
 
 ``` r
+
 # Load packages
 library(nicheR)
 #library(terra)
@@ -90,6 +91,7 @@ be used both as background data to provide environmental context and as
 the basis for visualizing ellipsoids.
 
 ``` r
+
 # Load raster layers
 bios <- terra::rast(system.file("extdata", "ma_bios.tif",
                                 package = "nicheR"))
@@ -103,6 +105,7 @@ precipitation seasonality (bio_15). We extract these layers and convert
 them to a data frame for use in plotting and background comparisons.
 
 ``` r
+
 # Subset to the three variables used in this vignette
 bios <- bios[[c("bio_1", "bio_12", "bio_15")]]
 
@@ -179,6 +182,7 @@ temperatures between 20 and 32 degrees and annual precipitation between
 750 and 4000 mm.
 
 ``` r
+
 # Define environmental ranges for the species
 range <- data.frame(bio_1  = c(20, 32),
                     bio_12 = c(750, 4000))
@@ -196,6 +200,7 @@ ell <- build_ellipsoid(range = range)
 Printing the ellipsoid object provides a summary of its key properties.
 
 ``` r
+
 print(ell)
 #> nicheR Ellipsoid Object
 #> -----------------------
@@ -289,6 +294,7 @@ On its own, this shows the ellipsoid boundary in the selected pair of
 dimensions.
 
 ``` r
+
 plot_ellipsoid(ell)
 ```
 
@@ -307,6 +313,7 @@ For a walkthrough of that alternative approach, see [this
 vignette](https://castanedam.github.io/nicheR/articles/link).
 
 ``` r
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2))
 ```
 
@@ -331,6 +338,7 @@ set of background points. In the example below we add the centroid of
 the ellipsoid as a reference point.
 
 ``` r
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 2,
                fixed_lims = list(xlim = c(5, 32), ylim = c(200, 7500)))
@@ -362,6 +370,7 @@ element that reports the minimum and maximum covariance values that are
 valid for that ellipsoid given its shape and size.
 
 ``` r
+
 # Inspect the allowable covariance range
 ell$cov_limits
 #>                    min      max
@@ -379,6 +388,7 @@ value introduces a tilt in the ellipsoid, reflecting the correlation
 between the two variables.
 
 ``` r
+
 # Apply a positive covariance between bio_1 and bio_12
 ell2 <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = 750))
 #> Starting: updating covariance values...
@@ -423,6 +433,7 @@ Attempting to set a covariance value outside the allowable range will
 return an error rather than producing an invalid ellipsoid.
 
 ``` r
+
 ell2 <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = 10000))
 #> Starting: updating covariance values...
 #> Error in `update_covariance()`:
@@ -439,6 +450,7 @@ ellipsoid (green) shows a clear tilt relative to the original (purple),
 reflecting the introduced covariance.
 
 ``` r
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "purple", lty = 6,
@@ -472,6 +484,7 @@ Let’s start with a second species characterized by cooler and wetter
 environmental requirements.
 
 ``` r
+
 range <- data.frame(bio_1  = c(12, 24),
                     bio_12 = c(1400, 4500))
 ell3 <- build_ellipsoid(range = range)
@@ -501,6 +514,7 @@ similar niche volume, this species is realistically more limited within
 the actual environment of our study region.
 
 ``` r
+
 plot_ellipsoid(ell2, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "forestgreen", lty = 6,
@@ -525,6 +539,7 @@ Now let’s define a third species with a very different ecological
 character: a warm-adapted specialist restricted to dry environments.
 
 ``` r
+
 range <- data.frame(bio_1  = c(18, 30),
                     bio_12 = c(200, 1100))
 ell4 <- build_ellipsoid(range = range)
@@ -554,6 +569,7 @@ slight tendency to tolerate marginally warmer conditions in comprably
 wetter environments.
 
 ``` r
+
 plot_ellipsoid(ell2, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "forestgreen", lty = 6,
@@ -593,6 +609,7 @@ parameterization workflow. Let’s save the three species we have defined
 so far.
 
 ``` r
+
 # Save ellipsoid objects to a local directory
 temp_file1 <- file.path(tempdir(), "example_sp_1.rda")
 save_nicheR(ell2, file = temp_file1)
@@ -611,6 +628,7 @@ Below we reimport the first species and visualize it to confirm the
 niche has been recovered correctly.
 
 ``` r
+
 # Import an ellipsoid object from a local directory
 data("example_sp_1", package = "nicheR")
 
@@ -638,6 +656,7 @@ frame. Here we add ‘bio_15’, precipitation seasonality, as an additional
 dimension.
 
 ``` r
+
 # Define ranges across three environmental variables
 range <- data.frame(bio_1  = c(22, 32),
                     bio_12 = c(800, 4200),
@@ -697,6 +716,7 @@ covariance parameters grows with the number of dimensions, so it is
 important to review these limits before making adjustments.
 
 ``` r
+
 ell5$cov_limits
 #>                        min     max
 #> bio_1-bio_12   -472.222222  935.00
@@ -715,6 +735,7 @@ comprably dryer environments when those environments have extreme
 seasonal pulses of precipitation.
 
 ``` r
+
 ell5 <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12"  =    200,
                                              "bio_1-bio_15"  =      0,
                                              "bio_12-bio_15" = -5000))
@@ -731,6 +752,7 @@ plotted individually using
 by specifying the `dim` argument.
 
 ``` r
+
 plot_ellipsoid(ell5, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "blue", lty = 6,
@@ -741,6 +763,7 @@ plot_ellipsoid(ell5, background = bios_df, dim = c(1, 2), bg_sample = 5000,
 
 ``` r
 
+
 plot_ellipsoid(ell5, background = bios_df, dim = c(2, 3), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "blue", lty = 6,
@@ -750,6 +773,7 @@ plot_ellipsoid(ell5, background = bios_df, dim = c(2, 3), bg_sample = 5000,
 ![](creating_ellipsoid_based_niches_files/figure-html/plot_3d-2.png)
 
 ``` r
+
 
 plot_ellipsoid(ell5, background = bios_df, dim = c(1, 3), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
@@ -773,6 +797,7 @@ don’t work with this tool) and is intended primarily for quick
 exploratory visualization.
 
 ``` r
+
 plot_ellipsoid_pairs(ell5, background = bios_df, pch = ".", cex_bg = 1.5,
                      col_bg = "gray50", lwd = 3, lty = 6, col_ell = "blue")
 ```
@@ -799,6 +824,7 @@ We can save this three-dimensional species for use in later sessions
 alongside the two-dimensional examples defined above.
 
 ``` r
+
 temp_file4 <- file.path(tempdir(), "example_sp_4.rda")
 save_nicheR(ell5, file = temp_file4)
 ```

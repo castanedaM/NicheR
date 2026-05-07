@@ -69,6 +69,7 @@ Note: Internet connection is required to install the package.
 The development version of nicheR can be installed using the code below.
 
 ``` r
+
 # Installing and loading packages
 if (!require("devtools")) install.packages("devtools")
 
@@ -96,6 +97,7 @@ then try installing nicheR again.
 To load the package use:
 
 ``` r
+
 library(nicheR)
 ```
 
@@ -260,6 +262,7 @@ sure to use the argument `build_vignettes = TRUE`.
 Check each of the vignettes with the code below:
 
 ``` r
+
 # Guide to building ellipsoid-based niches
 vignette("creating_ellipsoid_based_niches")
 
@@ -383,8 +386,6 @@ discuss it with the maintainers.
   : Sample occurrence data from a bias-weighted prediction surface
 - [`sample_data()`](https://castanedam.github.io/nicheR/reference/sample_data.md)
   : Sample occurrence data from a prediction surface
-- [`sample_virtual_data()`](https://castanedam.github.io/nicheR/reference/sample_virtual_data.md)
-  : Sample occurrence data from a virtual prediction surface
 - [`save_nicheR()`](https://castanedam.github.io/nicheR/reference/save_nicheR.md)
   : Save a nicheR object to disk
 - [`update_covariance()`](https://castanedam.github.io/nicheR/reference/update_covariance.md)

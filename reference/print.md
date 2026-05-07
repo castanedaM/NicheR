@@ -39,4 +39,3 @@ not modify the underlying object.
 ## See also
 
 [`build_ellipsoid`](https://castanedam.github.io/nicheR/reference/build_ellipsoid.md)
-and `generate_community`

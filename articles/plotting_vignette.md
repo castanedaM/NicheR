@@ -67,6 +67,7 @@ guide](https://castanedam.github.io/nicheR/articles/index.md) for
 installation instructions.
 
 ``` r
+
 library(nicheR)
 
 # Saving original plotting parameters
@@ -82,6 +83,7 @@ two-dimensional `nicheR_ellipsoid` object for a reference species and
 the corresponding North American background data.
 
 ``` r
+
 data("ref_ellipse", package = "nicheR")
 data("back_data",   package = "nicheR")
 ```
@@ -93,6 +95,7 @@ plotting modes. We compute them all here so they are available
 throughout the vignette.
 
 ``` r
+
 # Non-truncated Mahalanobis distance
 pred_maha <- predict(ref_ellipse,
                      newdata = back_data[, ref_ellipse$var_names],
@@ -150,6 +153,7 @@ is useful when you want full manual control over what goes into the
 plot.
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -172,6 +176,7 @@ background extent and the ellipsoid boundary, so the ellipsoid is never
 clipped.
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -200,6 +205,7 @@ palette, because every point has a finite positive value. The ellipsoid
 boundary is drawn on top in `col_ell`.
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -224,6 +230,7 @@ legend("topright",
   
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -258,6 +265,7 @@ color. Axis limits are computed from the full prediction extent so the
 view does not collapse to the ellipsoid interior.
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -287,6 +295,7 @@ The same pattern applies to truncated Mahalanobis distance, where
 outside points receive `NA` and are drawn in `col_bg`.
 
 ``` r
+
 pred_trunc_maha <- predict(ref_ellipse,
                            newdata = back_data[, ref_ellipse$var_names],
                            include_mahalanobis   = FALSE,
@@ -327,6 +336,7 @@ the data points and `alpha_ell` controls transparency of the ellipsoid
 boundary line, both on a 0 to 1 scale.
 
 ``` r
+
 par(mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -364,6 +374,7 @@ independently for inside and outside points when `col_layer` is active,
 so both groups remain represented.
 
 ``` r
+
 par(mfrow = c(1, 2), cex = 0.75, mar = mars)
 
 plot_ellipsoid(ref_ellipse,
@@ -394,6 +405,7 @@ most useful when placing two ellipsoids side by side and wanting both
 panels on the same scale so their sizes are visually comparable.
 
 ``` r
+
 # Create a second ellipsoid with a shifted centroid for comparison
 ref_ellipse2          <- ref_ellipse
 ref_ellipse2$centroid <- ref_ellipse$centroid + c(5, 100)
@@ -453,6 +465,7 @@ background, add occurrence points in a distinctive color, then draw the
 ellipsoid boundary on top so it is not obscured by the points.
 
 ``` r
+
 # Simulate occurrence points from inside the ellipsoid
 set.seed(42)
 occ_idx <- sample(which(pred_trunc$suitability_trunc > 0), 40)
@@ -499,6 +512,7 @@ does. This is useful for showing suitability, Mahalanobis distance, or
 any other variable at the occurrence locations on top of a background.
 
 ``` r
+
 # Predict suitability at the occurrence points
 occ_pred <- predict(ref_ellipse,
                     newdata = occ_pts,
@@ -544,9 +558,9 @@ legend("topright",
 [`plot_ellipsoid_pairs()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
 automatically generates all pairwise two-dimensional projections of an
 ellipsoid and arranges them in a grid. The number of panels is
-$\left( \frac{p}{2} \right)$ where $p$ is the number of dimensions. For
-a two-dimensional ellipsoid there is one pair; for three dimensions
-there are three; and so on.
+$`\binom{p}{2}`$ where $`p`$ is the number of dimensions. For a
+two-dimensional ellipsoid there is one pair; for three dimensions there
+are three; and so on.
 
 The key feature is that axis limits are pre-computed globally across all
 variables and shared across all panels. Without this, each panel would
@@ -558,6 +572,7 @@ across dimensions even when they differ substantially.
 ### Pairs with background
 
 ``` r
+
 # Build a 3D ellipsoid for a more interesting pairs example
 range_3d <- data.frame(bio_1  = c(27, 35),
                        bio_12 = c(1000, 1500),
@@ -598,6 +613,7 @@ suitability or Mahalanobis distance across all pairwise projections at
 once.
 
 ``` r
+
 suit_3d <- predict(ellipse_3d,
                    newdata = back_data[, ellipse_3d$var_names],
                    include_mahalanobis   = FALSE,
@@ -629,5 +645,6 @@ panel.
   
 
 ``` r
+
 par(original_par)
 ```

@@ -95,9 +95,20 @@ plot_ellipsoid_3d(
 
   Named list with `xlim`, `ylim`, and `zlim`.
 
-- xlab, :
+- xlab:
 
-  ylab, zlab Axis labels. The default, `NULL`, uses the variable names.
+  x-axis label. The default, `NULL`, uses elliposid object variable
+  names, if any found.
+
+- ylab:
+
+  y-axis label. The default, `NULL`, uses elliposid object variable
+  names, if any found.
+
+- zlab:
+
+  z-axis label. The default, `NULL`, uses elliposid object variable
+  names, if any found.
 
 - ...:
 

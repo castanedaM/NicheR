@@ -64,8 +64,6 @@
   : Sample occurrence data from a bias-weighted prediction surface
 - [`sample_data()`](https://castanedam.github.io/nicheR/reference/sample_data.md)
   : Sample occurrence data from a prediction surface
-- [`sample_virtual_data()`](https://castanedam.github.io/nicheR/reference/sample_virtual_data.md)
-  : Sample occurrence data from a virtual prediction surface
 - [`save_nicheR()`](https://castanedam.github.io/nicheR/reference/save_nicheR.md)
   : Save a nicheR object to disk
 - [`update_covariance()`](https://castanedam.github.io/nicheR/reference/update_covariance.md)

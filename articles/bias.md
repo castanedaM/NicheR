@@ -45,6 +45,7 @@ operations. For this vignette, we assume you have already defined a
 nicheR_ellipsoid object.
 
 ``` r
+
 library(nicheR)
 library(terra)
 
@@ -70,6 +71,7 @@ unique directional effects to each before multiplying them into a single
 composite surface.
 
 ``` r
+
 # Load a sample bias layer containing 'sp_richness' and 'nighttime'
 biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
 raw_bias <- terra::rast(biases_file)
@@ -140,6 +142,7 @@ will assign a `"direct"` effect to richness and an `"inverse"` effect to
 nighttime lights to create a realistic composite bias surface.
 
 ``` r
+
 # Prepare a composite bias surface mapping unique directions to each layer
 prep_composite <- prepare_bias(bias_surface = raw_bias, 
                                effect_direction = c("direct", "inverse"), 
@@ -183,10 +186,9 @@ probability.**
 - **`effect_direction`**: Character. Dictates how the prepared bias is
   applied to the suitability:
 
-  - `"direct"` (default): Multiplies suitability $\times$ bias.
+  - `"direct"` (default): Multiplies suitability $`\times`$ bias.
 
-  - `"inverse"`: Multiplies suitability
-    $\times$$\left( 1 - \text{bias} \right)$.
+  - `"inverse"`: Multiplies suitability $`\times`$$`(1 - \text{bias})`$.
 
 - **`verbose`**: Logical. If `TRUE`, prints processing steps to the
   console.
@@ -202,6 +204,7 @@ will retain their suitability, while areas with low bias scores will be
 penalized.
 
 ``` r
+
 # Apply the composite bias to our suitability layer
 applied_bias <- apply_bias(prepared_bias = prep_composite, 
                            prediction = pred, 
@@ -240,6 +243,7 @@ exact same composite bias surface to our 3-dimensional species
 prediction.
 
 ``` r
+
 # Apply the composite bias to our 3D suitability layer
 applied_bias_3d <- apply_bias(prepared_bias = prep_composite, 
                               prediction = pred_3d, 
@@ -261,6 +265,7 @@ terra::plot(applied_bias_3d[[1]], main = "3D Suitability + Composite Bias")
 ## Save and export
 
 ``` r
+
 # Save the final biased prediction layers to a temporary directory
 temp_rast <- file.path(tempdir(), "applied_bias_rast.tif")
 temp_rast_3d <- file.path(tempdir(), "applied_bias_3d_rast.tif")

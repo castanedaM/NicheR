@@ -64,6 +64,7 @@ needed for this vignette, and to set a working directory (if necessary).
 `package::function()`.
 
 ``` r
+
 # Load packages
 library(nicheR)
 library(terra)
@@ -92,6 +93,7 @@ vignette [1. Build
 ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.md).
 
 ``` r
+
 # Reference niche
 data("ref_ellipse", package = "nicheR")
 
@@ -111,6 +113,7 @@ layers will be used later for predictions, so we will just check them
 here to make sure they are loaded correctly.
 
 ``` r
+
 # Check reference niche
 print(ref_ellipse)
 #> nicheR Ellipsoid Object
@@ -163,15 +166,15 @@ head(back_data)
 
 # Check the raster layers
 ma_bios
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 8  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-#> source      : ma_bios.tif 
-#> names       :    bio_1,   bio_5, bio_6,    bio_7, bio_12, bio_13, ... 
-#> min values  :  3.91325,  8.4285, -0.39,  5.90000,    291,     65, ... 
-#> max values  : 29.39055, 37.8985, 24.70, 32.89325,   7150,    767, ...
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
+#> source      : ma_bios.tif
+#> names       :     bio_1,     bio_5,     bio_6,    bio_7, bio_12, bio_13, ...
+#> min values  :   3.91325,    8.4285,     -0.39,      5.9,    291,     65, ...
+#> max values  : 29.390553, 37.898499, 24.700001, 32.89325,   7150,    767, ...
 ```
 
   
@@ -183,6 +186,7 @@ will use the
 function to plot the reference niche and the background data together.
 
 ``` r
+
 # Pick the variables for the background data
 vars <- c("bio_1", "bio_12")
 
@@ -211,6 +215,7 @@ these niches are constrained by the reference niche but they vary. Below
 we show an general example of how to use this function.
 
 ``` r
+
 # Simulating the community
 rand_comm <- random_ellipses(object = ref_ellipse,
                              background = back_data[, vars],
@@ -256,6 +261,7 @@ the random ellipses in environmental space. We will use the
 function for this purpose.
 
 ``` r
+
 # Plotting the community
 par(mar = mars)  # adjust margins for better visualization
 
@@ -292,6 +298,7 @@ in the community to better visualize the effect of background density on
 the distribution of ellipses.
 
 ``` r
+
 # Simulating the community with the full background
 rand_comm_full <- random_ellipses(object = ref_ellipse,
                                   background = back_data[, vars], n = 25)
@@ -309,6 +316,7 @@ plot to visualize the effect of the arguments `thin_background` and
 `resolution`.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -368,6 +376,7 @@ cases to reduce the effect of uneven point density and better visualize
 the effect of the proportion arguments.
 
 ``` r
+
 # Community with both arguments small
 rand_comm1 <- random_ellipses(object = ref_ellipse,
                               background = back_data[, vars], n = 25,
@@ -403,6 +412,7 @@ Let’s check the distribution of ellipses in the two communities with a
 plot to visualize the effect of the proportion arguments.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(2, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -465,6 +475,7 @@ are constrained by the reference niche but they vary. Below we show an
 general example of how to use this function.
 
 ``` r
+
 # Simulating the community
 nest_comm <- nested_ellipses(object = ref_ellipse, n = 20)
 
@@ -502,6 +513,7 @@ the nested ellipses in environmental space. We will use the
 function for this purpose.
 
 ``` r
+
 # Plotting the community
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -541,6 +553,7 @@ niche. A smaller value for `smallest_proportion` will result in a
 greater range of ellipse sizes.
 
 ``` r
+
 # Simulating the community with a small smallest_proportion
 nest_comm_small <- nested_ellipses(object = ref_ellipse, n = 20,
                                    smallest_proportion = 0.1)
@@ -566,6 +579,7 @@ argument `smallest_proportion` on the distribution of nested ellipses in
 environmental space.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -606,6 +620,7 @@ the centroid of the reference ellipse. We will keep the value for
 effect of the argument `bias`.
 
 ``` r
+
 # Simulating the community with a bias towards the border
 nest_comm_small_bias <- nested_ellipses(object = ref_ellipse, n = 20,
                                         smallest_proportion = 0.1, bias = 0.2)
@@ -631,6 +646,7 @@ argument `bias` on the distribution of nested ellipses in environmental
 space.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -669,6 +685,7 @@ background with a bias towards the centroid of the reference ellipse. A
 general example of how to use this function is shown below.
 
 ``` r
+
 # Simulating the community
 cons_comm <- conserved_ellipses(object = ref_ellipse,
                                 background = back_data[, vars],
@@ -708,6 +725,7 @@ print(cons_comm)  # a summary of the elements in the community object
 The plot below shows the generated community.
 
 ``` r
+
 # Plotting the community withe the background
 par(mar = mars)  # adjust margins for better visualization
 
@@ -752,6 +770,7 @@ and (2) using the arguments `thin_background` and `resolution` to reduce
 the effect of uneven point density.
 
 ``` r
+
 # Simulating the community with the full background
 cons_comm_full <- conserved_ellipses(object = ref_ellipse,
                                      background = back_data[, vars], n = 20)
@@ -769,6 +788,7 @@ plot to visualize the effect of the arguments `thin_background` and
 `resolution`.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -815,6 +835,7 @@ and `largest_proportion` is large. We will thin the background in both
 examples to better visualize the effect of the porportion arguments.
 
 ``` r
+
 # Community with both arguments small
 cons_comm1 <- conserved_ellipses(object = ref_ellipse,
                                  background = back_data[, vars], n = 20,
@@ -836,6 +857,7 @@ Let’s check the distribution of ellipses in the two communities with a
 plot to visualize the effect of the porportion arguments.
 
 ``` r
+
 # Plotting the communities
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
@@ -915,6 +937,7 @@ one of the communities generated in which we assumed niche conservatism
 and background data as `newdata`.
 
 ``` r
+
 # Predicting Mahalanobis distances
 maha_cons_pred <- predict(cons_comm, newdata = back_data[, vars],
                           prediction = "Mahalanobis")
@@ -968,6 +991,7 @@ suitability predictions to better visualize the differences between
 them.
 
 ``` r
+
 # Plotting the results
 ## Plotting area parameters
 par(mfrow = c(2, 2), cex = 0.6, mar = mars)  # adjust margins for visualization
@@ -1041,6 +1065,7 @@ background derives (originally form
 `nicheR` package).
 
 ``` r
+
 # Predicting Mahalanobis distances
 maha_cons_predr <- predict(cons_comm, newdata = ma_bios,
                            prediction = "Mahalanobis")
@@ -1062,27 +1087,27 @@ suit_cons_predr <- predict(cons_comm, newdata = ma_bios,
 
 # Check Mahalanobis predictions
 maha_cons_predr
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 20  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
 #> source(s)   : memory
-#> names       :    ell_1,    ell_2,    ell_3,    ell_4,    ell_5,    ell_6, ... 
-#> min values  :    0.000,    0.000,    0.000,    0.000,   0.0000,    0.000, ... 
-#> max values  : 2254.287, 1277.837, 1564.944, 4586.265, 727.9395, 1636.542, ...
+#> names       :       ell_1,       ell_2,       ell_3,       ell_4,      ell_5,       ell_6, ...
+#> min values  :           0,           0,           0,           0,          0,           0, ...
+#> max values  : 2254.286948, 1277.836955, 1564.943597, 4586.265222, 727.939501, 1636.541545, ...
 
 # Check suiatbility predictions
 suit_cons_predr
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 20  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
 #> source(s)   : memory
-#> names       : ell_1,         ell_2, ell_3, ell_4,         ell_5, ell_6, ... 
-#> min values  :     0, 3.320709e-278,     0,     0, 8.510317e-159,     0, ... 
-#> max values  :     1,  1.000000e+00,     1,     1,  1.000000e+00,     1, ...
+#> names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ...
+#> min values  :     0,     0,     0,     0,     0,     0, ...
+#> max values  :     1,     1,     1,     1,     1,     1, ...
 ```
 
   
@@ -1090,6 +1115,7 @@ suit_cons_predr
 Let’s check how the results look like in a plot.
 
 ``` r
+
 # Plotting area parameters
 par(mfrow = c(2, 2), cex = 0.6)  # adjust margins for visualization
 marsr <- c(0.5, 0.5, 2, 4)
@@ -1148,6 +1174,7 @@ Let’s explore an example with suitability predictions, truncated based
 on the ellipse limits.
 
 ``` r
+
 # Predicting suitability truncated using a data frame
 suit_cons_predt <- predict(cons_comm, newdata = back_data[, vars],
                            prediction = "suitability_trunc")
@@ -1178,14 +1205,14 @@ suit_cons_predt[1:5, 1:5]
 
 # Check predictions in raster
 suit_cons_predrt
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 150, 240, 20  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
-#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
 #> source(s)   : memory
-#> names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ... 
-#> min values  :     0,     0,     0,     0,     0,     0, ... 
+#> names       : ell_1, ell_2, ell_3, ell_4, ell_5, ell_6, ...
+#> min values  :     0,     0,     0,     0,     0,     0, ...
 #> max values  :     1,     1,     1,     1,     1,     1, ...
 ```
 
@@ -1198,6 +1225,7 @@ Let’s explore the results using plots. First, the truncated results as
 they are produced.
 
 ``` r
+
 # Plotting area parameters
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)
 
@@ -1235,6 +1263,7 @@ by transforming everything inside the ellipse into one and what is
 outside remains as zero.
 
 ``` r
+
 # Obtaining values of zero and one
 ## results in data.frame
 bin_suit_cons_predt <- suit_cons_predt
@@ -1290,6 +1319,7 @@ each rown is a site).
 Let’s visualize our PAM below:
 
 ``` r
+
 # Exclude sites with no species to make the plot easier
 pam <- bin_suit_cons_predt[, -(1:2)]
 pam <- as.matrix(pam[!rowSums(pam) == 0, ])
@@ -1315,6 +1345,7 @@ Now let’s plot a simple **Species Richness Map**. We need to compute
 richness using our binary truncated results.
 
 ``` r
+
 # Compute richness
 richness <- terra::app(bin_suit_cons_predrt, sum)
 
@@ -1333,6 +1364,7 @@ hope these demonstrations have helped inspire new ideas.
   
 
 ``` r
+
 # Reset plotting parameters
 par(original_par)
 ```
@@ -1348,6 +1380,7 @@ obtained from virtual community simulations as `nicheR_community`
 objects, as shown below.
 
 ``` r
+
 # file name (in a temporary directory for demonstration purposes)
 temp_file <- file.path(tempdir(), "conserved_community.rds")
 
@@ -1370,6 +1403,7 @@ for the raster results. Importing those files can be done with
 [`terra::rast()`](https://rspatial.github.io/terra/reference/rast.html).
 
 ``` r
+
 # file names (in a temporary directory for demonstration purposes)
 temp_df_file <- file.path(tempdir(), "df_cons_com_predictions.csv")
 temp_raster <- file.path(tempdir(), "raster_cons_com_predictions.tif")
