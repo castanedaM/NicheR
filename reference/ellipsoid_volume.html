@@ -95,7 +95,7 @@ covariance eigenvalues and a chi-square cutoff.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                       bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu">nicheR</span><span class="fu">::</span><span class="fu"><a href="build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Starting: building ellipsoidal niche from ranges...</span>
@@ -107,8 +107,8 @@ covariance eigenvalues and a chi-square cutoff.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 12056.31</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># or recalculate</span></span></span>
-<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">ellipsoid_volume</span><span class="op">(</span>n_dimensions <span class="op">=</span> <span class="va">ell</span><span class="op">$</span><span class="va">dimesnions</span>, semi_axes_lengths <span class="op">=</span> <span class="va">ell</span><span class="op">$</span><span class="va">semi_axes_lengths</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in nicheR::ellipsoid_volume(n_dimensions = ell$dimesnions, semi_axes_lengths = ell$semi_axes_lengths):</span> 'n_dimensions' must be a single numeric value.</span>
+<span class="r-in"><span><span class="fu">nicheR</span><span class="fu">::</span><span class="fu">ellipsoid_volume</span><span class="op">(</span>n_dimensions <span class="op">=</span> <span class="va">ell</span><span class="op">$</span><span class="va">dimensions</span>, semi_axes_lengths <span class="op">=</span> <span class="va">ell</span><span class="op">$</span><span class="va">semi_axes_lengths</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 12056.31</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

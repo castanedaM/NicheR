@@ -43,7 +43,7 @@ from covariance eigenvalues and a chi-square cutoff.
 ## Examples
 
 ``` r
-range_df <- data.frame(bio_1  = c(22, 28),
+range_df <- data.frame(bio_1 = c(22, 28),
                        bio_12 = c(1000, 3500))
 ell <- nicheR::build_ellipsoid(range = range_df)
 #> Starting: building ellipsoidal niche from ranges...
@@ -55,6 +55,6 @@ ell$volume
 #> [1] 12056.31
 
 # or recalculate
-nicheR::ellipsoid_volume(n_dimensions = ell$dimesnions, semi_axes_lengths = ell$semi_axes_lengths)
-#> Error in nicheR::ellipsoid_volume(n_dimensions = ell$dimesnions, semi_axes_lengths = ell$semi_axes_lengths): 'n_dimensions' must be a single numeric value.
+nicheR::ellipsoid_volume(n_dimensions = ell$dimensions, semi_axes_lengths = ell$semi_axes_lengths)
+#> [1] 12056.31
 ```

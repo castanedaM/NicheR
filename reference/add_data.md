@@ -117,11 +117,15 @@ ell <- build_ellipsoid(range = range_df)
     system.file("extdata/ma_bios.tif", package = "nicheR"))
   back_df <- as.data.frame(ma_bios, xy = TRUE)
 
-  pred_df <- nicheR::predict(ell,
-                             newdata = back_df,
-                             include_suitability = TRUE,
-                             include_mahalanobis = FALSE)
-#> Error: 'predict' is not an exported object from 'namespace:nicheR'
+  pred_df <- predict(ell,
+                     newdata = back_df,
+                     include_suitability = TRUE,
+                     include_mahalanobis = FALSE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Identified spatial columns: x, y
+#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14, bio_15
+#> Step: Using 2 predictor variables: bio_1, bio_12
+#> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, suitability
 
   # Open base plot then add centroid as a cross
   nicheR::plot_ellipsoid(ell,
@@ -142,11 +146,10 @@ ell <- build_ellipsoid(range = range_df)
                          lwd = 2, pch = 20, cex_bg = 0.4,
                          xlab = "Bio1", ylab = "Bio12")
 
-
   nicheR::add_data(pred_df,
                    x = "bio_1", y = "bio_12",
                    col_layer = "suitability",
                    pch = 20, cex = 0.5)
-#> Error: object 'pred_df' not found
+
 # }
 ```
