@@ -72,3 +72,28 @@ argument:
 
 - `"uniform"`: All points within the ellipsoid have equal weight,
   resulting in a uniform spatial distribution.
+
+## Examples
+
+``` r
+# Loading data
+## Reference niche
+data("ref_ellipse", package = "nicheR")
+
+# Generate virtual data from the reference niche
+vdata_direct <- virtual_data(ref_ellipse, n = 100, effect = "direct")
+vdata_inverse <- virtual_data(ref_ellipse, n = 100, effect = "inverse")
+#> Error in virtual_data(ref_ellipse, n = 100, effect = "inverse"): Effect 'inverse' and 'uniform' only possible when 'truncate = TRUE'.
+
+# Check a sample of the generated data
+head(vdata_direct)
+#>         bio_1   bio_12
+#> [1,] 24.43048 1593.388
+#> [2,] 23.38038 1795.911
+#> [3,] 24.83258 1541.094
+#> [4,] 22.68868 2148.820
+#> [5,] 24.08559 1832.378
+#> [6,] 21.89134 1544.880
+head(vdata_inverse)
+#> Error: object 'vdata_inverse' not found
+```

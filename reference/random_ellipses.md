@@ -7,16 +7,9 @@ eigenvalues restricted by user-defined limits.
 ## Usage
 
 ``` r
-random_ellipses(
-  object,
-  background,
-  n = 10,
-  smallest_proportion = 0.1,
-  largest_proportion = 1,
-  thin_background = FALSE,
-  resolution = 50,
-  seed = 1
-)
+random_ellipses(object, background, n = 10, smallest_proportion = 0.1,
+                largest_proportion = 1.0, thin_background = FALSE,
+                resolution = 50, seed = 1)
 ```
 
 ## Arguments
@@ -67,3 +60,19 @@ random_ellipses(
 
 An object of class `nicheR_community` containing the generated ellipses,
 the reference object, and generation metadata.
+
+## Examples
+
+``` r
+# Loading data
+## Reference niche
+data("ref_ellipse", package = "nicheR")
+
+## Background data
+data("back_data", package = "nicheR")
+
+# Generate random ellipses
+rand_comm <- random_ellipses(object = ref_ellipse,
+                             background = back_data[, c(3, 7)],
+                             n = 10)
+```

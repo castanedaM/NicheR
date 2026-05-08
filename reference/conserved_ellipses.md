@@ -8,16 +8,9 @@ point-density.
 ## Usage
 
 ``` r
-conserved_ellipses(
-  object,
-  background,
-  n = 10,
-  smallest_proportion = 0.1,
-  largest_proportion = 1,
-  thin_background = FALSE,
-  resolution = 100,
-  seed = 1
-)
+conserved_ellipses(object, background, n = 10, smallest_proportion = 0.1,
+                  largest_proportion = 1.0, thin_background = FALSE,
+                  resolution = 100, seed = 1)
 ```
 
 ## Arguments
@@ -74,3 +67,19 @@ Ellipses are generated to simulate a community of niches with varying
 degrees of similarity to the reference. The distribution of the
 generated ellipses is influenced by the proximity to the reference and
 the density of the background points.
+
+## Examples
+
+``` r
+# Loading data
+## Reference niche
+data("ref_ellipse", package = "nicheR")
+
+## Background data
+data("back_data", package = "nicheR")
+
+# Generate conserved ellipses
+conserved_comm <- conserved_ellipses(object = ref_ellipse,
+                                    background = back_data[, c(3, 7)],
+                                    n = 10)
+```

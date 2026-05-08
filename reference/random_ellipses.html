@@ -59,16 +59,9 @@ eigenvalues restricted by user-defined limits.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">random_ellipses</span><span class="op">(</span></span>
-<span>  <span class="va">object</span>,</span>
-<span>  <span class="va">background</span>,</span>
-<span>  n <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  smallest_proportion <span class="op">=</span> <span class="fl">0.1</span>,</span>
-<span>  largest_proportion <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  thin_background <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">random_ellipses</span><span class="op">(</span><span class="va">object</span>, <span class="va">background</span>, n <span class="op">=</span> <span class="fl">10</span>, smallest_proportion <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>                largest_proportion <span class="op">=</span> <span class="fl">1.0</span>, thin_background <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>                resolution <span class="op">=</span> <span class="fl">50</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -125,6 +118,21 @@ Set to NULL for no seeding.</p></dd>
 ellipses, the reference object, and generation metadata.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Loading data</span></span></span>
+<span class="r-in"><span><span class="co">## Reference niche</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Background data</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"back_data"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Generate random ellipses</span></span></span>
+<span class="r-in"><span><span class="va">rand_comm</span> <span class="op">&lt;-</span> <span class="fu">random_ellipses</span><span class="op">(</span>object <span class="op">=</span> <span class="va">ref_ellipse</span>,</span></span>
+<span class="r-in"><span>                             background <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">7</span><span class="op">)</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                             n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

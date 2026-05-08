@@ -53,3 +53,14 @@ The function generates a sequence of scale factors \\k\\ using the
 formula: \\k_i = \text{smallest\\proportion} + (1 -
 \text{smallest\\proportion}) \times t_i^{\text{bias}}\\, where \\t_i\\
 is a linear sequence from 1 down to 0.
+
+## Examples
+
+``` r
+# Loading data
+## Reference niche
+data("ref_ellipse", package = "nicheR")
+
+# Generate nested ellipses
+nested_comm <- nested_ellipses(object = ref_ellipse, n = 10)
+```

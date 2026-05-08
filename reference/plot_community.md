@@ -6,22 +6,10 @@ environmental space and the community of ellipses.
 ## Usage
 
 ``` r
-plot_community(
-  object,
-  background = NULL,
-  dim = c(1, 2),
-  bg_sample = NULL,
-  lty = 1,
-  lwd = 1,
-  col_comm = NULL,
-  col_bg = "#8A8A8A",
-  pch = 1,
-  alpha_bg = 1,
-  alpha_comm = 1,
-  cex_bg = 1,
-  cex_comm = 1,
-  ...
-)
+plot_community(object, background = NULL, dim = c(1, 2), bg_sample = NULL,
+               lty = 1, lwd = 1, col_comm = NULL, col_bg = "#8A8A8A",
+               pch = 1, alpha_bg = 1, alpha_comm = 1, cex_bg = 1,
+               cex_comm = 1, ...)
 ```
 
 ## Arguments
@@ -75,3 +63,22 @@ plot_community(
 
   Additional arguments passed to the base `plot` function (e.g., `xlim`,
   `ylim`, `xlab`, `ylab`).
+
+## Examples
+
+``` r
+# Loading data
+## Reference niche
+data("ref_ellipse", package = "nicheR")
+
+## Background data
+data("back_data", package = "nicheR")
+
+# Generate community of conserved ellipses
+conserved_comm <- conserved_ellipses(object = ref_ellipse,
+                                    background = back_data[, c(3, 7)],
+                                    n = 10)
+
+# Plot the community
+plot_community(conserved_comm, background = back_data[, c(3, 7)])
+```
