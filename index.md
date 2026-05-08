@@ -1,7 +1,7 @@
 # Ellipsoid-Based Virtual Niches and Visualization
 
 Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon E.
-Cobos ![](reference/figures/logo.png)
+Cobos ![](reference/figures/nicheR_lg.png)
 
 - [Background](#background)
 - [Package description](#package-description)
@@ -270,10 +270,13 @@ vignette("creating_ellipsoid_based_niches")
 vignette("predict")
 
 # Guide to sampling occurrence data from virtual niches
-vignette("generating_occurrence")
+vignette("sampling_occurrence_data")
+
+# Guide to virtual occurrence sampling from simulated data
+vignette("sampling_virtual_data")
 
 # Guide to preparing and applying sampling bias
-vignette("bias")
+vignette("sampling_bias_data")
 
 # Guide to simulating virtual communities
 vignette("virtual_communities")
