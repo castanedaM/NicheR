@@ -9,7 +9,8 @@ assuming a diagonal covariance matrix.
 ## Usage
 
 ``` r
-build_ellipsoid(range, cl = 0.99, verbose = TRUE)
+build_ellipsoid(range, cl = 0.99,
+                       verbose = TRUE)
 ```
 
 ## Arguments

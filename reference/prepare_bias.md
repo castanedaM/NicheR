@@ -9,15 +9,10 @@ surface.
 ## Usage
 
 ``` r
-prepare_bias(
-  bias_surface,
-  effect_direction = c("direct", "inverse"),
-  template_layer = NULL,
-  include_composite = TRUE,
-  include_processed_layers = FALSE,
-  mask_na = FALSE,
-  verbose = TRUE
-)
+prepare_bias(bias_surface, effect_direction = c("direct", "inverse"),
+                    template_layer = NULL, include_composite = TRUE,
+                    include_processed_layers = FALSE, mask_na = FALSE,
+                    verbose = TRUE)
 ```
 
 ## Arguments
@@ -104,12 +99,14 @@ to sample occurrences from the resulting bias-weighted surface.
 ## Examples
 
 ``` r
-# \donttest{
-bias_rast <- terra::rast(
-  system.file("extdata/ma_biases.tif", package = "nicheR"))
+pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
+                                     package = "nicheR"))
+
+bias_rast <- terra::rast(system.file("extdata/ma_biases.tif",
+                                     package = "nicheR"))
 
 # Single layer, direct effect (higher values increase sampling probability)
-bias_single <- nicheR::prepare_bias(bias_surface = bias_rast[[1]],
+bias_single <- prepare_bias(bias_surface = bias_rast[[1]],
                             effect_direction = "direct")
 #> Starting: prepare_bias()
 #> Step: splitting SpatRaster into layers...
@@ -131,10 +128,9 @@ bias_single$composite_surface
 #> max value   :                                  1
 
 # Two layers: first direct, second inverse
-bias_two <- nicheR::prepare_bias(
-  bias_surface = bias_rast[[c(1, 2)]],
-  effect_direction = c("direct", "inverse"),
-  include_processed_layers = TRUE)
+bias_two <- prepare_bias( bias_surface = bias_rast[[c(1, 2)]],
+                          effect_direction = c("direct", "inverse"),
+                          include_processed_layers = TRUE)
 #> Starting: prepare_bias()
 #> Step: splitting SpatRaster into layers...
 #> Step: bias_surface is a SpatRaster. Using first layer as template surface...
@@ -149,5 +145,4 @@ terra::plot(bias_two$processed_layers)
 
 terra::plot(bias_two$composite_surface)
 
-# }
 ```

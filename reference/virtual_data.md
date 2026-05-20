@@ -82,8 +82,8 @@ data("ref_ellipse", package = "nicheR")
 
 # Generate virtual data from the reference niche
 vdata_direct <- virtual_data(ref_ellipse, n = 100, effect = "direct")
-vdata_inverse <- virtual_data(ref_ellipse, n = 100, effect = "inverse")
-#> Error in virtual_data(ref_ellipse, n = 100, effect = "inverse"): Effect 'inverse' and 'uniform' only possible when 'truncate = TRUE'.
+vdata_inverse <- virtual_data(ref_ellipse, n = 100,
+                              effect = "inverse", truncate = TRUE)
 
 # Check a sample of the generated data
 head(vdata_direct)
@@ -95,5 +95,11 @@ head(vdata_direct)
 #> [5,] 24.08559 1832.378
 #> [6,] 21.89134 1544.880
 head(vdata_inverse)
-#> Error: object 'vdata_inverse' not found
+#>         bio_1   bio_12
+#> [1,] 25.29501 1600.449
+#> [2,] 22.98510 1564.597
+#> [3,] 22.22315 1578.350
+#> [4,] 26.29732 1385.688
+#> [5,] 26.45626 1258.054
+#> [6,] 26.72507 1737.921
 ```

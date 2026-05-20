@@ -4,6 +4,14 @@ Computes the geometric volume (area in 2D, volume in 3D, hypervolume in
 higher dimensions) of a \\p\\-dimensional ellipsoid defined by its
 semi-axis lengths.
 
+For semi-axes \\a_1, \dots, a_p\\, the volume is: \$\$ V_p =
+\frac{\pi^{p/2}}{\Gamma(p/2 + 1)} \prod\_{i=1}^{p} a_i \$\$ where
+\\\pi^{p/2} / \Gamma(p/2 + 1)\\ is the volume of the unit
+\\p\\-dimensional ball.
+
+In probabilistic niche models, semi-axis lengths are typically derived
+from covariance eigenvalues and a chi-square cutoff.
+
 ## Usage
 
 ``` r
@@ -24,16 +32,6 @@ ellipsoid_volume(n_dimensions, semi_axes_lengths)
 ## Value
 
 Numeric. Geometric volume (or hypervolume) of the ellipsoid.
-
-## Details
-
-For semi-axes \\a_1, \dots, a_p\\, the volume is: \$\$ V_p =
-\frac{\pi^{p/2}}{\Gamma(p/2 + 1)} \prod\_{i=1}^{p} a_i \$\$ where
-\\\pi^{p/2} / \Gamma(p/2 + 1)\\ is the volume of the unit
-\\p\\-dimensional ball.
-
-In probabilistic niche models, semi-axis lengths are typically derived
-from covariance eigenvalues and a chi-square cutoff.
 
 ## See also
 

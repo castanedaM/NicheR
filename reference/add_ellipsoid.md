@@ -9,16 +9,10 @@ chosen pair of dimensions.
 ## Usage
 
 ``` r
-add_ellipsoid(
-  object,
-  dim = c(1, 2),
-  lty = 1,
-  lwd = 1,
-  col_ell = "#000000",
-  alpha_ell = 1,
-  cex_ell = 1,
-  ...
-)
+add_ellipsoid(object,
+                     dim = c(1, 2), lty = 1, lwd = 1,
+                     col_ell = "#000000", alpha_ell = 1,
+                     cex_ell = 1, ...)
 ```
 
 ## Arguments
@@ -72,44 +66,28 @@ Called for its side effect of adding lines to the current plot. Returns
 ## Examples
 
 ``` r
-range_df <- data.frame(bio_1 = c(15, 25), bio_12 = c(500, 1500))
-ell <- build_ellipsoid(range = range_df)
-#> Starting: building ellipsoidal niche from ranges...
-#> Step: computing covariance matrix...
-#> Step: computing additional ellipsoidal niche metrics...
-#> Done: created ellipsoidal niche.
+data("example_sp_2", package = "nicheR")
+data("example_sp_1", package = "nicheR")
+data("back_data", package = "nicheR")
 
-# \donttest{
-ma_bios <- terra::rast(
-  system.file("extdata/ma_bios.tif", package = "nicheR"))
-back_df <- as.data.frame(ma_bios, xy = TRUE)
+# Open a plot, then overlay the ellipsoid prominently
+plot_ellipsoid(example_sp_2,
+               background = back_data,
+               col_ell = "grey70", col_bg = "grey80",
+               lwd = 1, pch = 20, cex_bg = 0.3,
+               xlab = "Bio1", ylab = "Bio12")
 
-# Open a muted plot, then overlay the ellipsoid prominently
-nicheR::plot_ellipsoid(ell,
-                       background = back_df,
-                       col_ell = "grey70", col_bg = "grey80",
-                       lwd = 1, pch = 20, cex_bg = 0.3,
-                       xlab = "Bio1", ylab = "Bio12")
-
-nicheR::add_ellipsoid(ell, col_ell = "#e10000", lwd = 2)
+add_ellipsoid(example_sp_1, col_ell = "#e10000", lwd = 2)
 
 
 # Compare two ellipsoids on the same plot
-range_df2 <- data.frame(bio_1 = c(10, 20), bio_12 = c(800, 1800))
-ell2 <- nicheR::build_ellipsoid(range = range_df2)
-#> Starting: building ellipsoidal niche from ranges...
-#> Step: computing covariance matrix...
-#> Step: computing additional ellipsoidal niche metrics...
-#> Done: created ellipsoidal niche.
+plot_ellipsoid(example_sp_1,
+               background = back_data,
+               col_ell = "#e10000", col_bg = "grey80",
+               lwd = 2, pch = 20, cex_bg = 0.3,
+               xlab = "Bio1", ylab = "Bio12",
+               main = "Two ellipsoids")
 
-nicheR::plot_ellipsoid(ell,
-                       background = back_df,
-                       col_ell = "#e10000", col_bg = "grey80",
-                       lwd = 2, pch = 20, cex_bg = 0.3,
-                       xlab = "Bio1", ylab = "Bio12",
-                       main = "Two ellipsoids")
+add_ellipsoid(example_sp_2, col_ell = "#0004d5", lwd = 2)
 
-nicheR::add_ellipsoid(ell2, col_ell = "#0004d5", lwd = 2)
-
-# }
 ```

@@ -9,13 +9,8 @@ no longer interpretable as a probability.
 ## Usage
 
 ``` r
-apply_bias(
-  prepared_bias,
-  prediction,
-  prediction_layer = NULL,
-  effect_direction = "direct",
-  verbose = TRUE
-)
+apply_bias(prepared_bias, prediction, prediction_layer = NULL,
+                  effect_direction = "direct", verbose = TRUE)
 ```
 
 ## Arguments
@@ -87,32 +82,14 @@ to sample occurrences from the output.
 ## Examples
 
 ``` r
-# \donttest{
-range_df <- data.frame(bio_1 = c(22, 28),
-                       bio_12 = c(1000, 3500),
-                       bio_15 = c(50, 70))
-ell <- build_ellipsoid(range = range_df)
-#> Starting: building ellipsoidal niche from ranges...
-#> Step: computing covariance matrix...
-#> Step: computing additional ellipsoidal niche metrics...
-#> Done: created ellipsoidal niche.
+pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
+                                     package = "nicheR"))
 
-ma_bios <- terra::rast(
-  system.file("extdata/ma_bios.tif", package = "nicheR"))
+bias_rast <- terra::rast(system.file("extdata/ma_biases.tif",
+                                     package = "nicheR"))
 
-pred_rast <- predict(ell,
-                     newdata = ma_bios,
-                     include_suitability = TRUE,
-                     include_mahalanobis = FALSE)
-#> Starting: suitability prediction using newdata of class: SpatRaster...
-#> Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14
-#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
-#> Done: Prediction completed successfully. Returned raster layers: suitability
-
-bias_rast <- terra::rast(
-  system.file("extdata/ma_biases.tif", package = "nicheR"))
-
-bias <- nicheR::prepare_bias(bias_surface = bias_rast[[1]],
+# 1. Prepare and standardized bias layers
+bias <- prepare_bias(bias_surface = bias_rast[[1]],
                      effect_direction = "direct")
 #> Starting: prepare_bias()
 #> Step: splitting SpatRaster into layers...
@@ -122,13 +99,14 @@ bias <- nicheR::prepare_bias(bias_surface = bias_rast[[1]],
 #> Step: building standarized (min/max) directional composite bias surface (mask_na = FALSE)...
 #> Done: prepare_bias()
 
-biased_pred <- nicheR::apply_bias(prepared_bias    = bias,
-                          prediction       = pred_rast,
+# 2. Apply bias into suitability layer
+biased_pred <- apply_bias(prepared_bias = bias,
+                          prediction = pred_rast,
                           prediction_layer = "suitability")
 #> Starting: apply_bias()
 #> Step: applying bias with 'direct' effect to to "suitability" layer...
 #> Done: apply_bias(). Note: values are no longer probabilities
+
 terra::plot(biased_pred$suitability_biased)
 
-# }
 ```

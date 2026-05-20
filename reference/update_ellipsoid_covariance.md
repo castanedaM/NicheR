@@ -9,7 +9,9 @@ structure of the ellipsoid without rebuilding it from scratch.
 ## Usage
 
 ``` r
-update_ellipsoid_covariance(object, covariance, tol = 1e-06, verbose = TRUE)
+update_ellipsoid_covariance(object, covariance,
+                                   tol = 1e-6,
+                                   verbose = TRUE)
 ```
 
 ## Arguments

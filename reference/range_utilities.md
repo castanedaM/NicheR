@@ -61,6 +61,7 @@ ranges_from_data(df, expand_min = list(var1 = 10),
 #>     var1 var2
 #> min   -1   50
 #> max   10  110
+
 # From statistics
 m <- c(var1 = 10, var2 = 100)
 s <- c(var1 = 2, var2 = 15)
