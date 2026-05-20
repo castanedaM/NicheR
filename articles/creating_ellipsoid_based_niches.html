@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nicheR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,7 +113,7 @@ Hutchinsonian concept of the ecological niche by representing the set of
 environmental conditions under which a species can persist as an
 n-dimensional hypervolume in multivariate environmental space.
 Ellipsoids are well-suited to this task because they are a
-straightforward and interpatable way of capturing the shape, size, and
+straightforward and interpretable way of capturing the shape, size, and
 orientation of a species’ niche, including correlations between
 environmental variables.</p>
 <p>The main functions covered in this vignette are:</p>
@@ -515,10 +515,10 @@ environmental requirements.</p>
 <p>Plotting both species together shows how they appear in the available
 environmental space. Species 1 (green) occupies a broad warm-climate
 niche with wide precipitation tolerance, avoiding only the warmest and
-driest conditions due to the covaraince between those variables. Species
+driest conditions due to the covariance between those variables. Species
 2 (brown) is shifted toward cooler, wetter environments with a similar
 covariance structure, but its niche falls in a region of the background
-that is less represented in our background data, meaning that dispite a
+that is less represented in our background data, meaning that despite a
 similar niche volume, this species is realistically more limited within
 the actual environment of our study region.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -556,14 +556,14 @@ character: a warm-adapted specialist restricted to dry environments.</p>
 <span><span class="co">#&gt; Step: computing ellipsoid metrics...</span></span>
 <span><span class="co">#&gt; Done: updated ellipsoidal niche metrics</span></span></code></pre></div>
 <p><br></p>
-<p>Adding this third species to the plot shows its uniquness compared to
-the other two species. While the first two species follow a broadly
+<p>Adding this third species to the plot shows its uniqueness compared
+to the other two species. While the first two species follow a broadly
 wet-warm axis, this species (orange) is specialized toward the warm, dry
 corner of the environmental space. While its thermal tolerances are
-still relativly wide, its explicitly specialized to dry environments.
+still relatively wide, its explicitly specialized to dry environments.
 Its niche volume is smaller and its covariance is much lower than in the
-other two species (showing as a less extreem tilt), reflecting only a
-slight tendency to tolerate marginally warmer conditions in comprably
+other two species (showing as a less extreme tilt), reflecting only a
+slight tendency to tolerate marginally warmer conditions in comparably
 wetter environments.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ell2</span>, background <span class="op">=</span> <span class="va">bios_df</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, bg_sample <span class="op">=</span> <span class="fl">5000</span>,</span>
@@ -610,7 +610,7 @@ workflow. Let’s save the three species we have defined so far.</p>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell4</span>, file <span class="op">=</span> <span class="va">temp_file3</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 <p>We can reload any of these objects and work with them exactly as
-before. Below we reimport the first species and visualize it to confirm
+before. Below we import the first species and visualize it to confirm
 the niche has been recovered correctly.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Import an ellipsoid object from a local directory</span></span>
@@ -703,7 +703,7 @@ it is important to review these limits before making adjustments.</p>
 <code><a href="../reference/update_ellipsoid_covariance.html">update_ellipsoid_covariance()</a></code>. Here we introduce a positive
 covariance between bio_1 and bio_12, no covariance between bio_1 and
 bio_15, and a negative covariance between bio_12 and bio_15, reflecting
-that this species is more tolerant of comprably dryer environments when
+that this species is more tolerant of comparably dryer environments when
 those environments have extreme seasonal pulses of precipitation.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ell5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/update_ellipsoid_covariance.html">update_ellipsoid_covariance</a></span><span class="op">(</span><span class="va">ell5</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1-bio_12"</span>  <span class="op">=</span>    <span class="fl">200</span>,</span>
@@ -754,7 +754,7 @@ characterizes the species in terms of precipitation seasonality: the
 strong negative covariance between bio_12 and bio_15 means the species
 tolerates less seasonal precipitation regimes only where total
 precipitation is high, but depends on strongly seasonal rainfall where
-precipitation is comprably lower. This makes it a good example of a
+precipitation is comparably lower. This makes it a good example of a
 species adapted to seasonally pulsed precipitation environments.</p>
 <p><br></p>
 <div class="section level3">
@@ -769,7 +769,8 @@ alongside the two-dimensional examples defined above.</p>
 <p>This concludes the basics for defining ellipsoid-based tolerances for
 species in E-space. To learn how to make predictions from these
 ellipsoid niches and visualize them in geographic space (G-space), see
-the next vignette: <a href="link">Making Predictions</a>.</p>
+the next vignette: <a href="https://castanedam.github.io/nicheR/articles/predict.html">Making
+Predictions</a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

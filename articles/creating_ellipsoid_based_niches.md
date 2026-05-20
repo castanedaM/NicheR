@@ -26,7 +26,7 @@ concept of the ecological niche by representing the set of environmental
 conditions under which a species can persist as an n-dimensional
 hypervolume in multivariate environmental space. Ellipsoids are
 well-suited to this task because they are a straightforward and
-interpatable way of capturing the shape, size, and orientation of a
+interpretable way of capturing the shape, size, and orientation of a
 species’ niche, including correlations between environmental variables.
 
 The main functions covered in this vignette are:
@@ -506,10 +506,10 @@ ell3 <- update_ellipsoid_covariance(ell3, c("bio_1-bio_12" = 500))
 Plotting both species together shows how they appear in the available
 environmental space. Species 1 (green) occupies a broad warm-climate
 niche with wide precipitation tolerance, avoiding only the warmest and
-driest conditions due to the covaraince between those variables. Species
+driest conditions due to the covariance between those variables. Species
 2 (brown) is shifted toward cooler, wetter environments with a similar
 covariance structure, but its niche falls in a region of the background
-that is less represented in our background data, meaning that dispite a
+that is less represented in our background data, meaning that despite a
 similar niche volume, this species is realistically more limited within
 the actual environment of our study region.
 
@@ -558,14 +558,14 @@ ell4 <- update_ellipsoid_covariance(ell4, c("bio_1-bio_12" = 120))
 
   
 
-Adding this third species to the plot shows its uniquness compared to
+Adding this third species to the plot shows its uniqueness compared to
 the other two species. While the first two species follow a broadly
 wet-warm axis, this species (orange) is specialized toward the warm, dry
 corner of the environmental space. While its thermal tolerances are
-still relativly wide, its explicitly specialized to dry environments.
+still relatively wide, its explicitly specialized to dry environments.
 Its niche volume is smaller and its covariance is much lower than in the
-other two species (showing as a less extreem tilt), reflecting only a
-slight tendency to tolerate marginally warmer conditions in comprably
+other two species (showing as a less extreme tilt), reflecting only a
+slight tendency to tolerate marginally warmer conditions in comparably
 wetter environments.
 
 ``` r
@@ -624,8 +624,8 @@ save_nicheR(ell4, file = temp_file3)
   
 
 We can reload any of these objects and work with them exactly as before.
-Below we reimport the first species and visualize it to confirm the
-niche has been recovered correctly.
+Below we import the first species and visualize it to confirm the niche
+has been recovered correctly.
 
 ``` r
 
@@ -731,7 +731,7 @@ Multiple covariances can be updated simultaneously using
 Here we introduce a positive covariance between bio_1 and bio_12, no
 covariance between bio_1 and bio_15, and a negative covariance between
 bio_12 and bio_15, reflecting that this species is more tolerant of
-comprably dryer environments when those environments have extreme
+comparably dryer environments when those environments have extreme
 seasonal pulses of precipitation.
 
 ``` r
@@ -813,7 +813,7 @@ species in terms of precipitation seasonality: the strong negative
 covariance between bio_12 and bio_15 means the species tolerates less
 seasonal precipitation regimes only where total precipitation is high,
 but depends on strongly seasonal rainfall where precipitation is
-comprably lower. This makes it a good example of a species adapted to
+comparably lower. This makes it a good example of a species adapted to
 seasonally pulsed precipitation environments.
 
   
@@ -835,4 +835,4 @@ This concludes the basics for defining ellipsoid-based tolerances for
 species in E-space. To learn how to make predictions from these
 ellipsoid niches and visualize them in geographic space (G-space), see
 the next vignette: [Making
-Predictions](https://castanedam.github.io/nicheR/articles/link).
+Predictions](https://castanedam.github.io/nicheR/articles/predict.html).

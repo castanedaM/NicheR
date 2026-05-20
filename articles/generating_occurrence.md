@@ -47,7 +47,7 @@ complexity:
     on theoretical preferences.
 
 3.  **Biased Occurrence Data:** Introducing real-world collection bias
-    (e.g., ninghttime light, proximity to roads, species richness, land
+    (e.g., nighttime light, proximity to roads, species richness, land
     use land cover) to see how human sampling effort distorts our view
     of a species’ niche.
 

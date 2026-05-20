@@ -29,7 +29,7 @@ The `nicheR` package allows you to simulate these spatial sampling
 biases. This workflow involves two steps:
 
 1.  **[`prepare_bias()`](https://castanedam.github.io/nicheR/reference/prepare_bias.md)**:
-    Standardizing raw environmental or anthropogenic covariates into
+    Standardizing raw environmental or anthropocentric covariates into
     probability-scaling surfaces.
 
 2.  **[`apply_bias()`](https://castanedam.github.io/nicheR/reference/apply_bias.md)**:

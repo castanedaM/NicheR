@@ -83,17 +83,17 @@ plot_ellipsoid_3d(object, dim = c(1, 2, 3), wire = FALSE, aspect = TRUE,
 
 - xlab:
 
-  x-axis label. The default, `NULL`, uses elliposid object variable
+  x-axis label. The default, `NULL`, uses ellipsoid object variable
   names, if any found.
 
 - ylab:
 
-  y-axis label. The default, `NULL`, uses elliposid object variable
+  y-axis label. The default, `NULL`, uses ellipsoid object variable
   names, if any found.
 
 - zlab:
 
-  z-axis label. The default, `NULL`, uses elliposid object variable
+  z-axis label. The default, `NULL`, uses ellipsoid object variable
   names, if any found.
 
 - ...:

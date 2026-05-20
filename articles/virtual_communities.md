@@ -32,7 +32,7 @@ set of species niches (ellipses) that are distributed in a given
 environmental space (E-space). The simulation of virtual communities is
 useful to generate hypothetical scenarios of community assembly and
 explore patterns derived from the way species are distributed in
-envrionmental and geographic space (G-space).
+environmental and geographic space (G-space).
 
 The main functions that automate community simulations in `nicheR` are:
 
@@ -84,9 +84,9 @@ original_par <- par(no.readonly = TRUE)
 ## Loading example data
 
 The lines of code below help us load the data to run our example
-comunity simulations. The data are included in the `nicheR` package and
+community simulations. The data are included in the `nicheR` package and
 consist of an `nicheR_ellipsoid` object with a reference niche defined
-by two environmental variables (bio1 and bio12) and these envrionmental
+by two environmental variables (bio1 and bio12) and these environmental
 variables for North America to represent the background for our
 simulations. For details on how to create the reference niche, see the
 vignette [1. Build
@@ -360,7 +360,7 @@ reference niche and the arguments `smallest_proportion` and
 `largest_proportion` in the
 [`random_ellipses()`](https://castanedam.github.io/nicheR/reference/random_ellipses.md)
 function. Based on the reference niche, playing with the values for the
-areguments `smallest_proportion` and `largest_proportion` can help
+arguments `smallest_proportion` and `largest_proportion` can help
 explore scenarios with . This can affect elements of the community
 structure such as the level of niche overlap observed among the species
 (ellipses).
@@ -461,7 +461,7 @@ structure of the community and the “interactions” among species niches
 (ellipses).
 
 Play with the values for these arguments to explore different scenarios
-and pick the ones that are more convinient for your research.
+and pick the ones that are more convenient for your research.
 
   
 
@@ -545,7 +545,7 @@ ellipse being contained within the previous one.
 
 ### Effect of proportion argument
 
-An important arument in the
+An important argument in the
 [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)
 function is `smallest_proportion`, which determines the size of the
 smallest nested ellipse to be generated, in relation to the reference
@@ -609,7 +609,7 @@ volume of the ellipses in the community with a large
 
 ### Effect of bias argument
 
-Another important arument in the
+Another important arguments in the
 [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)
 function is `bias`, which determines the degree of bias towards
 generating smaller or larger ellipses in the community. A value of
@@ -742,7 +742,7 @@ plot_community(cons_comm, background = back_data[, vars],
 
 As you can see in the plot, the ellipses generated vary in size,
 direction, and position, but they don’t go very far from the original
-ellipdsoid. This follows the ideas of niche conservatism, which say that
+ellipsoid. This follows the ideas of niche conservatism, which say that
 closely related species tend to have similar ecological niches.
 
   
@@ -758,7 +758,7 @@ Differences in background density can affect the bias used to generate
 the ellipses (bias = tend to select new centroids close to the reference
 centroid). If the effect of background density is not controlled, it
 will be like saying that niche position evolution depends on the how
-close you are to the ancester niche position and how common are
+close you are to the ancestor niche position and how common are
 environments. Keeping in mind that ancestry is not considered here, the
 trick is that those common environments are not necessarily
 geographically available as geography is not considered here.
@@ -830,9 +830,9 @@ smallest and largest proportions when generating new ellipses
 considering the reference. We will explore two examples with the
 function
 [`conserved_ellipses()`](https://castanedam.github.io/nicheR/reference/conserved_ellipses.md):
-(1) both argeuments are small; and (2) `smallest_proportion` is small
-and `largest_proportion` is large. We will thin the background in both
-examples to better visualize the effect of the porportion arguments.
+(1) both arguments are small; and (2) `smallest_proportion` is small and
+`largest_proportion` is large. We will thin the background in both
+examples to better visualize the effect of the proportion arguments.
 
 ``` r
 
@@ -854,7 +854,7 @@ cons_comm2 <- conserved_ellipses(object = ref_ellipse,
   
 
 Let’s check the distribution of ellipses in the two communities with a
-plot to visualize the effect of the porportion arguments.
+plot to visualize the effect of the proportion arguments.
 
 ``` r
 
@@ -887,13 +887,13 @@ but larger than in the previous case because of the values we used. A
 larger number of ellipses generated can help visualize the effect of the
 arguments on the sizes of the ellipses a little better. Play with the
 values for these arguments to explore different scenarios and pick the
-ones that are more convinient for your research.
+ones that are more convenient for your research.
 
   
 
 ## Predictions for communities
 
-Once we have our communities simmulated using the functions explored
+Once we have our communities simulated using the functions explored
 above, we can predict over new data to observe the patterns of
 Mahalanobis distance and suitability derived from the ellipses. The
 function
@@ -908,7 +908,7 @@ are:
 
 - `Mahalanobis`: Mahalanobis distance from the centroid of ellipses to
   every point in `newdata`.
-- `suitability`: mutivariate normal probability for every point in
+- `suitability`: multivariate normal probability for every point in
   `newdata`, derived from the Mahalanobis distance, interpreted as
   suitability.
 - `Mahalanobis_trunc`: the same Mahalanobis distance but truncated to
@@ -931,7 +931,7 @@ implementations for both types of objects below.
 
 The most intuitive way to work with ellipses is in environmental space.
 This is because ecological niches are defined in this space. Since
-envrionmental values can easily be organized in a data fame, predictions
+environmental values can easily be organized in a data fame, predictions
 for those objects are easy to obtain. See a quick example below, using
 one of the communities generated in which we assumed niche conservatism
 and background data as `newdata`.
@@ -1045,7 +1045,7 @@ plot_ellipsoid(object = cons_comm[[3]][[2]],
 
 The plots shown are simple, but show clear patterns. For reference, dark
 colors mean low values for both, Mahalanobis distance and suitability.
-We can see that distance is larger the farther from the ellispse
+We can see that distance is larger the farther from the ellipse
 centroid, and suitability is higher closer to the centroid. That is the
 back bone of the theory behind using ellipses (or ellipsoids) as models
 of ecological niche.
@@ -1055,13 +1055,13 @@ of ecological niche.
 ### Predict to SpatRaster
 
 Now, let’s predict suing `SpatRaster` objects as `newdata`. The
-important implication of this is that it allows us to see goegraphic
+important implication of this is that it allows us to see geographic
 representations of our predictions. The geographic patterns of our
 predictions are relevant for questions about species geographic
 distributions. The code below shows how to produce this predictions. We
 will use the same community and the raster layers from which our
 background derives (originally form
-[WorldClim](https://www.worldclim.org/), inlcuded as data in the
+[WorldClim](https://www.worldclim.org/), included as data in the
 `nicheR` package).
 
 ``` r
@@ -1155,7 +1155,7 @@ distributional areas.
 ### Truncating predictions
 
 An important decision to make when studying what conditions are good for
-a species to mantain populations for long periods of time is when
+a species to maintain populations for long periods of time is when
 environments stop being suitable. Here is where ellipsoids shine as
 models of suitability, because their formulation gives us that
 threshold. The limit of the ellipses we created, are the theoretical
@@ -1255,10 +1255,10 @@ terra::plot(suit_cons_predrt$ell_1,
 
   
 These plots of truncated suitability look very similar to the simple
-suitability ones. But this is just an artefact from color assigning in
+suitability ones. But this is just an artifact from color assigning in
 plotting.
 
-Now, let’s plot suitable vs usuitable environments and areas. We start
+Now, let’s plot suitable vs unsuitable environments and areas. We start
 by transforming everything inside the ellipse into one and what is
 outside remains as zero.
 
@@ -1306,15 +1306,15 @@ environmental and geographic space.
 ### Simple community outcomes
 
 He have shown examples for a couple of the ellipses generated, but this
-can be done for all the ones in the comunity. Once all the elements in
-the comunity are considered, interesting community level metrics and
+can be done for all the ones in the community. Once all the elements in
+the community are considered, interesting community level metrics and
 indices can be explored. Using the binary results obtained from the
 truncated predictions we will derive further results.
 
 First, we already have a **Presence-absence matrix (PAM)** with our
 binary results as a data.frame. These type of matrices are commonly used
-in ecology because they tell us which species (columns) are where (rows:
-each rown is a site).
+in ecology because they tell us which species (columns) are where (row:
+each row is a site).
 
 Let’s visualize our PAM below:
 
@@ -1393,8 +1393,8 @@ read_com <- read_nicheR(temp_file)
 
   
 
-Results from predictions obatined as `data.frame` or `SpatRaster` can be
-saved using functions that are convinient for those types of objects.
+Results from predictions obtained as `data.frame` or `SpatRaster` can be
+saved using functions that are convenient for those types of objects.
 For instance, [`write.csv()`](https://rdrr.io/r/utils/write.table.html)
 for the data.frame and
 [`terra::writeRaster()`](https://rspatial.github.io/terra/reference/writeRaster.html)
