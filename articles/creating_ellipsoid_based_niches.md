@@ -143,7 +143,7 @@ G-space to identify which locations on a real landscape fall within the
 species’ tolerances. This projection from E-space to G-space is what
 produces a map of predicted suitable habitat, and is covered in the
 [Making Predictions
-vignette](https://castanedam.github.io/nicheR/articles/link).
+vignette](https://castanedam.github.io/nicheR/articles/predict.html).
 
 The foundation of niche modeling in `nicheR` is the ellipsoid, which
 represents the set of environmental conditions a species can tolerate.
@@ -309,8 +309,6 @@ much of the available environmental space the species may be predicted
 to occupy. Note: Background data is not a strict requirement for
 defining an ellipsoid niche in `nicheR`; niches can also be defined
 purely in theoretical space without reference to any background data.
-For a walkthrough of that alternative approach, see [this
-vignette](https://castanedam.github.io/nicheR/articles/link).
 
 ``` r
 

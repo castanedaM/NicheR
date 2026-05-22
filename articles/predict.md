@@ -194,7 +194,7 @@ ma_bios
 This represents a two-dimensional `nicheR_ellipsoid` object built from
 `bio_1` and `bio_12`. For details on how ellipsoids are constructed, see
 the [`build_ellipsoid()`
-vignette](https://castanedam.github.io/nicheR/articles/build_ellipsoid.md).
+vignette](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 The most important things to carry forward are that we are working in
 two dimensions and that the variable names stored in
 `ref_ellipse$var_names` must be present in any `newdata` passed to

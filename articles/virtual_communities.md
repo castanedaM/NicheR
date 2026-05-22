@@ -54,7 +54,7 @@ The main functions that automate community simulations in `nicheR` are:
 ## Getting ready
 
 If `nicheR` has not been installed yet, please do so. See the [Main
-guide](https://castanedam.github.io/nicheR/index.md) for installation
+guide](https://castanedam.github.io/nicheR/index.html) for installation
 instructions.
 
 Use the following lines of code to load `nicheR` and other packages
@@ -90,7 +90,7 @@ by two environmental variables (bio1 and bio12) and these environmental
 variables for North America to represent the background for our
 simulations. For details on how to create the reference niche, see the
 vignette [1. Build
-ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.md).
+ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 
 ``` r
 
@@ -901,8 +901,8 @@ function
 can be used with `nicheR_community` objects to obtain predictions. The
 difference between predict for community objects and that for
 `nicheR_ellipsoid` objects (see [2. Make a
-Prediction](https://castanedam.github.io/nicheR/articles/predict.md)) is
-that only one type of `prediction` can be obtained at a time. The
+Prediction](https://castanedam.github.io/nicheR/articles/predict.html)
+is that only one type of `prediction` can be obtained at a time. The
 options for the `prediction` argument for `nicheR_community` objects
 are:
 
