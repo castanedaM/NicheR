@@ -176,7 +176,7 @@
 </h3>
 <p>Bias layers represent external factors that influence sampling detectability or effort, independent of the species’ actual niche. Each layer is assigned a direction: <code>"direct"</code> means higher values increase sampling probability, while <code>"inverse"</code> means higher values decrease it. <code><a href="reference/prepare_bias.html">prepare_bias()</a></code> standardizes all layers to [0, 1], applies the directional transformations, and combines them into a single composite bias surface. <code><a href="reference/apply_bias.html">apply_bias()</a></code> then weights the suitability prediction by this surface to simulate non-random, biased occurrence sampling.</p>
 <blockquote>
-<p>For details on bias surface construction, directional effects, and how bias interacts with predictions and sampling, see the <a href="https://castanedam.github.io/nicheR/articles/sampling_bias_data.html">Sampling bias data</a> vignette.</p>
+<p>For details on bias surface construction, directional effects, and how bias interacts with predictions and sampling, see the <a href="https://castanedam.github.io/nicheR/articles/bias.html">Sampling bias data</a> vignette.</p>
 </blockquote>
 <p><br></p>
 </div>
@@ -185,7 +185,7 @@
 </h3>
 <p>nicheR provides two sampling functions: <code><a href="reference/sample_data.html">sample_data()</a></code> for unbiased sampling directly from suitability or Mahalanobis surfaces, and <code><a href="reference/sample_biased_data.html">sample_biased_data()</a></code> for sampling from a bias-weighted prediction surface. Three sampling strategies are available: <code>"centroid"</code> samples preferentially near the niche center, <code>"edge"</code> samples near the boundary, and <code>"random"</code> samples uniformly across the suitable area. Two weighting methods control sampling probability: <code>"suitability"</code> weights by suitability score and <code>"mahalanobis"</code> weights by distance from the centroid.</p>
 <blockquote>
-<p>For a full guide to sampling strategies, methods, strict vs. non-strict modes, and biased sampling workflows, see the <a href="https://castanedam.github.io/nicheR/articles/sampling_occurrence_data.html">Sampling occurrence data</a> vignette.</p>
+<p>For a full guide to sampling strategies, methods, strict vs. non-strict modes, and biased sampling workflows, see the <a href="https://castanedam.github.io/nicheR/articles/generating_occurrence.html">Sampling occurrence data</a> vignette.</p>
 </blockquote>
 <p><br></p>
 </div>
