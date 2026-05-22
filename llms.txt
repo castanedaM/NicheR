@@ -269,14 +269,11 @@ vignette("creating_ellipsoid_based_niches")
 # Guide to predicting suitability and Mahalanobis distance
 vignette("predict")
 
-# Guide to sampling occurrence data from virtual niches
-vignette("sampling_occurrence_data")
-
-# Guide to virtual occurrence sampling from simulated data
-vignette("sampling_virtual_data")
+# Guide to generate occurrence data from virtual niches
+vignette("generate_occurrence")
 
 # Guide to preparing and applying sampling bias
-vignette("sampling_bias_data")
+vignette("bias")
 
 # Guide to simulating virtual communities
 vignette("virtual_communities")
