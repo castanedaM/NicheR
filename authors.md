@@ -15,16 +15,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/castanedaM/NicheR/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/castanedaM/nicheR/blob/master/DESCRIPTION)
 
 Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026). *nicheR:
 Ellipsoid-Based Virtual Niches and Visualization*. R package version
-0.1.0, <https://github.com/castanedaM/NicheR>.
+0.1.0, <https://github.com/castanedaM/nicheR>.
 
     @Manual{,
       title = {nicheR: Ellipsoid-Based Virtual Niches and Visualization},
       author = {Mariana Castaneda-Guzman and Connor Hughes and Paanwaris Paansri and Marlon E. Cobos},
       year = {2026},
       note = {R package version 0.1.0},
-      url = {https://github.com/castanedaM/NicheR},
+      url = {https://github.com/castanedaM/nicheR},
     }
