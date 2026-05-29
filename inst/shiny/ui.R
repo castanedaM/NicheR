@@ -89,7 +89,13 @@ dashboardPage(
               uiOutput("range_manual_ui")
             ),
             tabPanel(
-              "Range from Data"
+              "Range from Data",
+              fileInput(inputId = "df_range_file",
+                        label = "Choose CSV File",
+                        multiple = FALSE,
+                        accept = c("text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"))
             ),
             tabPanel(
               "Range from Stats"
@@ -102,9 +108,6 @@ dashboardPage(
             tabPanel(
               "E-space",
               plotOutput("build_espace_plot")
-            ),
-            tabPanel(
-              "G-space"
             ),
             tabPanel(
               "Plot Settings"
@@ -135,6 +138,7 @@ dashboardPage(
           )
         )
       ),
+
       tabItem(
         tabName = "generate_tab",
         fluidRow(
@@ -157,6 +161,7 @@ dashboardPage(
           )
         )
       ),
+
       tabItem(
         tabName = "about",
         "content of about"
