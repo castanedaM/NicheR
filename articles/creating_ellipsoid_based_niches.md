@@ -79,6 +79,9 @@ getwd()
 
 # Define new directory
 #setwd("YOUR/DIRECTORY")  # modify if setting a new directory
+
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
 ```
 
   
@@ -801,6 +804,12 @@ plot_ellipsoid_pairs(ell5, background = bios_df, pch = ".", cex_bg = 1.5,
 ```
 
 ![](creating_ellipsoid_based_niches_files/figure-html/plot_pairs-1.png)
+
+``` r
+
+# Reset plotting parameters
+par(original_par)
+```
 
   
 

@@ -166,7 +166,10 @@ necessary).</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Define new directory</span></span>
-<span><span class="co">#setwd("YOUR/DIRECTORY")  # modify if setting a new directory</span></span></code></pre></div>
+<span><span class="co">#setwd("YOUR/DIRECTORY")  # modify if setting a new directory</span></span>
+<span></span>
+<span><span class="co"># Saving original plotting parameters</span></span>
+<span><span class="va">original_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>no.readonly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 </div>
 <div class="section level2">
@@ -747,6 +750,9 @@ primarily for quick exploratory visualization.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ellipsoid_pairs.html">plot_ellipsoid_pairs</a></span><span class="op">(</span><span class="va">ell5</span>, background <span class="op">=</span> <span class="va">bios_df</span>, pch <span class="op">=</span> <span class="st">"."</span>, cex_bg <span class="op">=</span> <span class="fl">1.5</span>,</span>
 <span>                     col_bg <span class="op">=</span> <span class="st">"gray50"</span>, lwd <span class="op">=</span> <span class="fl">3</span>, lty <span class="op">=</span> <span class="fl">6</span>, col_ell <span class="op">=</span> <span class="st">"blue"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="creating_ellipsoid_based_niches_files/figure-html/plot_pairs-1.png" class="r-plt" alt="" width="95%"></p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Reset plotting parameters</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">original_par</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 <p>This three-dimensional species shares the wide thermal and
 precipitation tolerances of the first example, including an avoidance of
@@ -763,7 +769,7 @@ species adapted to seasonally pulsed precipitation environments.</p>
 </h3>
 <p>We can save this three-dimensional species for use in later sessions
 alongside the two-dimensional examples defined above.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">temp_file4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_4.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell5</span>, file <span class="op">=</span> <span class="va">temp_file4</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>

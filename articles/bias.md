@@ -49,6 +49,9 @@ nicheR_ellipsoid object.
 library(nicheR)
 library(terra)
 
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
+
 # 1. Load reference niche (nicheR_ellipsoid object)
 data("ref_ellipse", package = "nicheR")
 
@@ -261,6 +264,12 @@ terra::plot(applied_bias_3d[[1]], main = "3D Suitability + Composite Bias")
 ```
 
 ![](bias_files/figure-html/unnamed-chunk-4-1.png)
+
+``` r
+
+# Reset plotting parameters
+par(original_par)
+```
 
 ## Save and export
 

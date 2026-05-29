@@ -160,6 +160,9 @@ previous vignettes.</p>
 <code class="sourceCode R"><span><span class="co"># Load packages</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/castanedaM/nicheR" class="external-link">nicheR</a></span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Saving original plotting parameters</span></span>
+<span><span class="va">original_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>no.readonly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
 <span><span class="co"># 1. Load environmental background raster</span></span>
 <span><span class="va">bios</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -535,6 +538,9 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_bias_3d_env</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">example_sp_4</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
 <p><img src="generating_occurrence_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="95%"></p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Reset plotting parameters</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">original_par</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 </div>
 </div>
@@ -544,7 +550,7 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 <p>Because we generated standard spatial coordinates and data frames,
 exporting these simulated datasets for testing model robustness or
 downstream analyses is straightforward.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save Pure Virtual Data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">occ_virt_basic</span>, file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
