@@ -42,6 +42,8 @@
 #'    variable names, if any found.
 #' @param ... Additional graphical parameters.
 #'
+#' @return A 3d plot of the ellipsoid in E-space, shown in viewer.
+#'
 #' @importFrom grDevices hcl.colors adjustcolor
 #'
 #' @export
@@ -62,8 +64,10 @@
 #'                                             "bio_12-bio_15" = -3000))
 #'
 #' # Plot the ellipsoid in 3D
-#' \dontrun{
-#' plot_ellipsoid_3d(ell5)
+#' \donttest{
+#' if(requireNamespace("rgl", quietly = TRUE)){
+#'   plot_ellipsoid_3d(ell5)
+#'  }
 #' }
 plot_ellipsoid_3d <- function(object,
                               dim = c(1, 2, 3),
@@ -174,6 +178,8 @@ plot_ellipsoid_3d <- function(object,
 #' @param alpha Transparency for the points. Default is \code{1}.
 #' @param ... Additional arguments passed to \code{rgl::points3d}.
 #'
+#' @return adds data to an existing 3D e-space plot
+#'
 #' @export
 #'
 #' @examples
@@ -190,12 +196,16 @@ plot_ellipsoid_3d <- function(object,
 #' ell5u <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12" = 200,
 #'                                              "bio_1-bio_15" = 0,
 #'                                              "bio_12-bio_15" = -3000))
-#'\dontrun{
+#' \donttest{
+#' if(requireNamespace("rgl", quietly = TRUE)){
+#'
 #' # Plot the ellipsoid in 3D
 #' plot_ellipsoid_3d(ell5u)
 #'
 #' # Add background points
 #' add_data_3d(back_data[, c(3, 7, 10)], col = "#8A8A8A")
+#'
+#'  }
 #' }
 add_data_3d <- function(data,
                         dim = c(1, 2, 3),
@@ -234,6 +244,8 @@ add_data_3d <- function(data,
 #' @param ... Additional arguments passed to \code{rgl::wire3d} or
 #'    \code{rgl::shade3d}.
 #'
+#' @return adds a new ellipsoid object to the 3d rendering of the 3D plot
+#'
 #' @export
 #'
 #' @examples
@@ -250,12 +262,16 @@ add_data_3d <- function(data,
 #' ell5u <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12" = 200,
 #'                                              "bio_1-bio_15" = 0,
 #'                                              "bio_12-bio_15" = -3000))
-#'\dontrun{
+#'\donttest{
+#' if(requireNamespace("rgl", quietly = TRUE)){
+#'
 #' # Plot the ellipsoid in 3D
 #' plot_ellipsoid_3d(ell5u)
 #'
 #' # Add the original ellipsoid as a wireframe
 #' add_ellipsoid_3d(ell5, wire = TRUE, col = "#0e008b")
+#'
+#'   }
 #' }
 add_ellipsoid_3d <- function(object,
                              dim = c(1, 2, 3),
