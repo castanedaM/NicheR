@@ -1,13 +1,3 @@
-
-#toggle_bias.ti-chevron-down {
-  display: inline-block;
-  transition: transform 0.2s;
-}
-
-#toggle_bias.open .ti-chevron-down {
-  transform: rotate(180deg);
-}
-
 .skin-blue .sidebar-menu > li.active > a {
   border-left: 3px solid #c44;
   background-color: rgba(255, 0, 0, 0.15);
