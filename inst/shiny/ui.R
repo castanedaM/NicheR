@@ -1,39 +1,36 @@
-
-library(shiny)
-library(shinydashboard)
+# Title:
+# Description:
+# Lats Updated: 6/2/2026
 
 dashboardPage(
-
   dashboardHeader(
     title = "nicheR Shiny App",
     titleWidth = 200
   ),
-
   dashboardSidebar(
     width = 200,
     sidebarMenu(
       id = "sidebarMenu",
-
-      menuItem("Data Inputs",
+      menuItem("1. Data Inputs",
                tabName = "data_tab",
                icon = icon("table")),
-      menuItem("Build Ellipsoid",
+      menuItem("2. Build Ellipsoid",
                tabName = "build_tab",
                icon = icon("gear")),
-      menuItem("Prediction",
+      menuItem("3. Prediction",
                tabName = "predict_tab",
                icon = icon("angles-right")),
-      menuItem("Generate Occurrences",
+      menuItem("4. Generate Occurrences",
                tabName = "generate_tab",
                icon = icon("eye-dropper")),
       menuItem("About",
                tabName = "about",
                icon = icon("circle-info"))
-
     )
   ),
-
   dashboardBody(
+    useShinyjs(),
+    includeCSS("www/styles.css"),
     tabItems(
       tabItem(
         tabName = "data_tab",
@@ -43,33 +40,37 @@ dashboardPage(
             width = 12,
             tabPanel(
               "Data Inputs",
+              p(instructions$data_upload, class = "text-instruction"),
               fluidRow(
                 column(width = 5,
                        fileInput(inputId = "raster_file",
                                  label = "Choose raster layers",
                                  multiple = FALSE,
-                                 accept = c("tif")),
-
+                                 accept = c("tif", "tiff", "rds")),
                        fileInput(inputId = "df_file",
                                  label = "Choose CSV File",
                                  multiple = FALSE,
                                  accept = c("text/csv",
-                                            "text/comma-separated-values,text/plain",
-                                            ".csv"))
+                                            "text/comma-separated-values",
+                                            "text/plain",
+                                            ".csv", "rds")),
+                       fileInput(inputId = "bias_raster_file",
+                                 label = "Choose bias raster layers",
+                                 multiple = FALSE,
+                                 accept = c("tif", "tiff", "rds"))
+
                 ),
                 column(width = 7,
                        verbatimTextOutput("raster_print"),
                        tableOutput("df_header")
                 )
               ),
-
               fluidRow(
                 actionButton(inputId = "data_upload",
                              label = "Upload",
                              class = "btn-primary")
               )
             ),
-
             tabPanel(
               title = "Settings", value = "setting",
               uiOutput("variable_selectors_ui")
@@ -77,31 +78,32 @@ dashboardPage(
           )
         )
       ),
-
       tabItem(
         tabName = "build_tab",
         fluidRow(
           tabBox(
             width = 5,
-
             tabPanel(
               "Range Manual",
+              p(instructions$range_manual, class = "text-instruction"),
               uiOutput("range_manual_ui")
             ),
             tabPanel(
               "Range from Data",
+              p(instructions$range_data, class = "text-instruction"),
               fileInput(inputId = "df_range_file",
                         label = "Choose CSV File",
                         multiple = FALSE,
                         accept = c("text/csv",
-                                   "text/comma-separated-values,text/plain",
+                                   "text/comma-separated-values",
+                                   "text/plain",
                                    ".csv"))
             ),
             tabPanel(
-              "Range from Stats"
+              "Range from Stats",
+              p(instructions$range_stats, class = "text-instruction")
             )
           ),
-
           tabBox(
             title = "plot",
             width = 7,
@@ -115,53 +117,36 @@ dashboardPage(
           )
         )
       ),
-
       tabItem(
         tabName = "predict_tab",
         fluidRow(
           box(title = "Predict", width = 5,
               solidHeader = TRUE, status = "primary",
               "Predict function details"),
-
           tabBox(
             title = "plot",
             width = 7,
-            tabPanel(
-              "E-space"
-            ),
-            tabPanel(
-              "G-space"
-            ),
-            tabPanel(
-              "Plot Settings"
-            )
+            tabPanel("E-space"),
+            tabPanel("G-space"),
+            tabPanel("Plot Settings")
           )
         )
       ),
-
       tabItem(
         tabName = "generate_tab",
         fluidRow(
-          box(title = "Generate Occurence", width = 5,
+          box(title = "Generate Occurrence", width = 5,
               solidHeader = TRUE, status = "primary",
               "Generate occurrence function details"),
-
           tabBox(
             title = "plot",
             width = 7,
-            tabPanel(
-              "E-space"
-            ),
-            tabPanel(
-              "G-space"
-            ),
-            tabPanel(
-              "Plot Settings"
-            )
+            tabPanel("E-space"),
+            tabPanel("G-space"),
+            tabPanel("Plot Settings")
           )
         )
       ),
-
       tabItem(
         tabName = "about",
         "content of about"

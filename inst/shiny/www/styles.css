@@ -1,0 +1,62 @@
+
+#toggle_bias.ti-chevron-down {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+#toggle_bias.open .ti-chevron-down {
+  transform: rotate(180deg);
+}
+
+.skin-blue .sidebar-menu > li.active > a {
+  border-left: 3px solid #c44;
+  background-color: rgba(255, 0, 0, 0.15);
+  color: #fff;
+}
+
+/* instruction text */
+.text-instruction {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* section headers */
+.text-section-header {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* warning text */
+.text-warning-note {
+  font-size: 13px;
+  color: #c09a00;
+  margin-bottom: 12px;
+}
+
+/* muted small text */
+.text-muted-small {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* checkbox alignment with selects */
+.checkbox-align {
+  padding-top: 28px;
+}
+
+/* disabled/grayed out selector */
+.selector-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* spacing for action buttons */
+.btn-spaced {
+  margin-top: 16px;
+}
+
+/* variable label alignment in range table */
+.var-label {
+  padding-top: 7px;
+}
