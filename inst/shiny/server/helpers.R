@@ -36,9 +36,3 @@ load_df_file <- function(path, ext) {
   return(as.data.frame(obj))
 }
 
-# To get the variables availble in the session basth on uploaded data
-get_var_names <- function(session_data) {
-  if(!is.null(session_data$raster)) names(session_data$raster)
-  else if(!is.null(session_data$df)) names(session_data$df)
-  else NULL
-}

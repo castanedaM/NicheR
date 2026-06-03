@@ -99,28 +99,17 @@ dashboardPage(
       tabItem(
         tabName = "build_tab",
         fluidRow(
-          tabBox(
+          box(
             width = 5,
-            tabPanel(
-              "Range Manual",
-              p(instructions$range_manual, class = "text-instruction"),
-              uiOutput("range_manual_ui")
-            ),
-            tabPanel(
-              "Range from Data",
-              p(instructions$range_data, class = "text-instruction"),
-              fileInput(inputId = "df_range_file",
-                        label = "Choose CSV File",
-                        multiple = FALSE,
-                        accept = c("text/csv",
-                                   "text/comma-separated-values",
-                                   "text/plain",
-                                   ".csv"))
-            ),
-            tabPanel(
-              "Range from Stats",
-              p(instructions$range_stats, class = "text-instruction")
-            )
+            p(instructions$range_choice, class = "text-instruction"),
+            radioButtons("range_method_choice",
+                         label = "Select Range Method:",
+                         choices = c("Manual" = "man",
+                                     "From Data" = "df",
+                                     "From Stats" = "stats")),
+
+            uiOutput("range_method_ui")
+
           ),
           tabBox(
             title = "plot",

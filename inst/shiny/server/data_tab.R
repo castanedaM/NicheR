@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 05/28/2026
+# Date last updated: 06/03/2026
 
 # Observer Events ---------------------------------------------------------
 
@@ -22,12 +22,19 @@ observeEvent(input$data_upload, {
   uploaded <- FALSE
 
   if(!is.null(input$raster_file)){
-    session_data$raster <- terra::rast(input$raster_file$datapath)
+    ext <- tolower(tools::file_ext(input$raster_file$name))
+    session_data$bg_raster <- tryCatch(
+      load_raster_file(input$raster_file$datapath, ext),
+      error = function(e) stop(safeError(e))
+    )
     uploaded <- TRUE
   }
 
   if(!is.null(input$df_file)){
-    session_data$df <- read.csv(input$df_file$datapath)
+    session_data$bg_df <- tryCatch(
+      load_df_file(input$df_file$datapath, ext),
+      error = function(e) stop(safeError(e))
+    )
     uploaded <- TRUE
   }
 
@@ -38,24 +45,27 @@ observeEvent(input$data_upload, {
     return()
   }
 
-  msg <- paste(c(if(!is.null(session_data$raster)) "Raster loaded successfully.",
-                 if(!is.null(session_data$df)) "CSV loaded successfully."),
+  msg <- paste(c(if(!is.null(session_data$bg_raster)) "Raster loaded successfully.",
+                 if(!is.null(session_data$bg_df)) "CSV loaded successfully."),
                collapse = " ")
   showNotification(msg, type = "message", duration = 4)
 
-  if(!is.null(session_data$raster) && !is.null(session_data$df)){
-    raster_names  <- names(session_data$raster)
-    df_names      <- names(session_data$df)
+  if(!is.null(session_data$bg_raster) && !is.null(session_data$bg_df)){
+    raster_names <- names(session_data$bg_raster)
+    df_names <- names(session_data$bg_df)
     missing_in_df <- setdiff(raster_names, df_names)
-    raster_cells  <- sum(!is.na(terra::values(session_data$raster[[1]])))
-    row_match     <- nrow(session_data$df) == raster_cells
+    raster_cells <- sum(!is.na(terra::values(session_data$bg_raster[[1]])))
+    row_match <- nrow(session_data$bg_df) == raster_cells
 
     warning_parts <- c(
-      if(length(missing_in_df) > 0) paste("Raster layers missing from CSV:",
-                                          paste(missing_in_df, collapse = ", ")),
-      if(!row_match) paste0("Row count mismatch: CSV has ",
-                            nrow(session_data$df), " rows but raster has ",
-                            raster_cells, " non-NA cells."))
+      if(length(missing_in_df) > 0){
+        paste("Raster layers missing from CSV:",
+              paste(missing_in_df, collapse = ", "))},
+      if(!row_match){
+        paste0("Row count mismatch: CSV has ",
+               nrow(session_data$bg_df), " rows but raster has ",
+               raster_cells, " non-NA cells.")}
+    )
 
     if(length(warning_parts) > 0){
       showModal(modalDialog(
@@ -79,34 +89,42 @@ observeEvent(input$data_upload, {
 })
 
 observeEvent(input$continue_raster_only, {
-  session_data$df <- NULL
+  session_data$bg_df <- NULL
   removeModal()
   updateTabsetPanel(session, "tabset1", selected = "setting")
 })
 
 observeEvent(input$reupload, {
-  session_data$raster <- NULL
-  session_data$df     <- NULL
+  session_data$bg_raster <- NULL
+  session_data$bg_df <- NULL
   removeModal()
 })
 
 observeEvent(input$confirm_variables, {
-  all_vars <- get_var_names(session_data)
+
+  all_vars <- if(!is.null(session_data$bg_raster)){
+    names(session_data$bg_raster)
+  } else if (!is.null(session_data$bg_df)){
+    colnames(session_data$bg_df)
+  } else {
+    return()
+  }
+
   n_slots  <- min(length(all_vars), MAX_DIMS)
 
   active <- vapply(seq_len(n_slots), function(i)
     isTRUE(input[[paste0("var_active_", i)]]), logical(1))
 
-  vars <- vapply(seq_len(n_slots), function(i) {
-    val <- input[[paste0("var_select_", i)]]
-    if(is.null(val)) all_vars[i] else val
-  }, character(1))[active]
+  vars <- vapply(seq_len(n_slots),
+                 function(i){
+                   val <- input[[paste0("var_select_", i)]]
+                   if(is.null(val)) all_vars[i] else val
+                   }, character(1))[active]
 
-  session_data$sel_raster <- if(!is.null(session_data$raster)) session_data$raster[[vars]]
-  session_data$sel_df     <- if(!is.null(session_data$df)){
-    session_data$df[, vars, drop = FALSE]
-  } else {
-    terra::as.data.frame(session_data$raster[[vars]], xy = TRUE, na.rm = TRUE)
+  session_data$vars <- vars
+
+  session_data$bg_df <- if(is.null(session_data$bg_df)){
+    terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
   }
 
   showNotification(paste("Selected variables:", paste(vars, collapse = ", ")),
@@ -115,10 +133,19 @@ observeEvent(input$confirm_variables, {
 })
 
 observeEvent({
+
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
 }, {
-  vars <- get_var_names(session_data)
+
+  vars <- if(!is.null(session_data$bg_raster)){
+    names(session_data$bg_raster)
+  } else if (!is.null(session_data$bg_df)){
+    names(session_data$bg_df)
+  } else {
+    return()
+  }
+
   req(vars)
 
   n_slots <- min(length(vars), MAX_DIMS)
@@ -182,24 +209,36 @@ output$bias_raster_print <- renderPrint({
 })
 
 output$variable_selectors_ui <- renderUI({
-  vars <- get_var_names(session_data)
-  req(vars)
 
-  n_slots     <- min(length(vars), MAX_DIMS)
+  vars <- if(!is.null(session_data$bg_raster)){
+    names(session_data$bg_raster)
+  } else if (!is.null(session_data$bg_df)){
+    colnames(session_data$bg_df)
+  } else {
+    return()
+  }
+
+  n_slots <- min(length(vars), MAX_DIMS)
   all_choices <- vars
 
-  var_slots <- lapply(seq_len(n_slots), function(i) {
+  var_slots <- lapply(seq_len(n_slots), function(i){
     fluidRow(
       column(width = 1, class = "checkbox-align",
-             checkboxInput(paste0("var_active_", i), label = NULL, value = TRUE)),
+             checkboxInput(paste0("var_active_", i),
+                           label = NULL,
+                           value = TRUE)),
       column(width = 11,
              conditionalPanel(paste0("input.var_active_", i, " == true"),
-                              selectInput(paste0("var_select_", i), paste("Variable", i),
-                                          all_choices, selected = vars[i])),
+                              selectInput(paste0("var_select_", i),
+                                          paste("Variable", i),
+                                          all_choices,
+                                          selected = vars[i])),
              conditionalPanel(paste0("input.var_active_", i, " == false"),
                               tags$div(class = "selector-disabled",
-                                       selectInput(paste0("var_select_", i, "_ghost"), paste("Variable", i),
-                                                   all_choices, selected = vars[i])))
+                                       selectInput(paste0("var_select_", i, "_ghost"),
+                                                   paste("Variable", i),
+                                                   all_choices,
+                                                   selected = vars[i])))
       )
     )
   })
