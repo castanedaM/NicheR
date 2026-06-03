@@ -1,6 +1,6 @@
 instructions <- list(
-  data_upload = HTML("Upload a raster (.tif) and optionally a CSV.<br>
-                             Both will be validated for matching layers and cell counts."),
+  data_upload = HTML("Upload a raster layer (.tif, .rds) and/or a CSV (can also be .rd).<br>
+                             If both provided they will be validated for matching layers and cell counts."),
   variable_settings = HTML(paste0("Select up to ", MAX_DIMS,
                                   " variables to use in your analysis.<br>
                                  Uncheck a variable to exclude it.")),

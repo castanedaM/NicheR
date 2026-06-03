@@ -6,7 +6,8 @@ dashboardPage(
   dashboardHeader(
     title = "nicheR Shiny App",
     titleWidth = 200
-  ),
+    ),
+
   dashboardSidebar(
     width = 200,
     sidebarMenu(
@@ -53,18 +54,35 @@ dashboardPage(
                                  accept = c("text/csv",
                                             "text/comma-separated-values",
                                             "text/plain",
-                                            ".csv", "rds")),
-                       fileInput(inputId = "bias_raster_file",
-                                 label = "Choose bias raster layers",
-                                 multiple = FALSE,
-                                 accept = c("tif", "tiff", "rds"))
+                                            ".csv", "rds"))
 
                 ),
+
                 column(width = 7,
                        verbatimTextOutput("raster_print"),
                        tableOutput("df_header")
                 )
               ),
+
+              fluidRow(
+                box(title = "Optional Bias Raster",
+                    width = 12,
+                    collapsible = TRUE,
+                    collapsed = TRUE,
+                    column(width = 5,
+                           fileInput(inputId = "bias_raster_file",
+                                     label = "Choose bias raster layers",
+                                     multiple = FALSE,
+                                     accept = c("tif", "tiff", "rds"))
+
+                    ),
+
+                    column(width = 7,
+                           verbatimTextOutput("bias_raster_print")
+                    )
+                )
+              ),
+
               fluidRow(
                 actionButton(inputId = "data_upload",
                              label = "Upload",

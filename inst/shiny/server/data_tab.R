@@ -212,3 +212,5 @@ output$variable_selectors_ui <- renderUI({
                     actionButton("confirm_variables", "Confirm", class = "btn-primary")))
   )
 })
+
+
