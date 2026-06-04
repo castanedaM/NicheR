@@ -65,21 +65,20 @@ dashboardPage(
               ),
 
               fluidRow(
-                box(title = "Optional Bias Raster",
-                    width = 12,
-                    collapsible = TRUE,
-                    collapsed = TRUE,
-                    column(width = 5,
+                column(width = 5,
+                       box(title = "Optional Bias Raster",
+                           width = 12,
+                           collapsible = TRUE,
+                           collapsed = TRUE,
                            fileInput(inputId = "bias_raster_file",
                                      label = "Choose bias raster layers",
                                      multiple = FALSE,
                                      accept = c("tif", "tiff", "rds"))
+                       )
+                ),
 
-                    ),
-
-                    column(width = 7,
-                           verbatimTextOutput("bias_raster_print")
-                    )
+                column(width = 7,
+                       verbatimTextOutput("bias_raster_print")
                 )
               ),
 
@@ -100,20 +99,21 @@ dashboardPage(
         tabName = "build_tab",
         fluidRow(
           box(
-            width = 5,
+            width = 6,
             p(instructions$range_choice, class = "text-instruction"),
             radioButtons("range_method_choice",
                          label = "Select Range Method:",
                          choices = c("Manual" = "man",
                                      "From Data" = "df",
-                                     "From Stats" = "stats")),
+                                     "From Stats" = "stats"),
+                         selected = character(0)),
 
             uiOutput("range_method_ui")
 
           ),
           tabBox(
             title = "plot",
-            width = 7,
+            width = 6,
             tabPanel(
               "E-space",
               plotOutput("build_espace_plot")
@@ -127,12 +127,12 @@ dashboardPage(
       tabItem(
         tabName = "predict_tab",
         fluidRow(
-          box(title = "Predict", width = 5,
+          box(title = "Predict", width = 6,
               solidHeader = TRUE, status = "primary",
               "Predict function details"),
           tabBox(
             title = "plot",
-            width = 7,
+            width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
             tabPanel("Plot Settings")
@@ -142,12 +142,12 @@ dashboardPage(
       tabItem(
         tabName = "generate_tab",
         fluidRow(
-          box(title = "Generate Occurrence", width = 5,
+          box(title = "Generate Occurrence", width = 6,
               solidHeader = TRUE, status = "primary",
               "Generate occurrence function details"),
           tabBox(
             title = "plot",
-            width = 7,
+            width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
             tabPanel("Plot Settings")

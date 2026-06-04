@@ -31,6 +31,8 @@ observeEvent(input$data_upload, {
   }
 
   if(!is.null(input$df_file)){
+    ext <- tolower(tools::file_ext(input$df_file$name))
+
     session_data$bg_df <- tryCatch(
       load_df_file(input$df_file$datapath, ext),
       error = function(e) stop(safeError(e))
@@ -123,8 +125,8 @@ observeEvent(input$confirm_variables, {
 
   session_data$vars <- vars
 
-  session_data$bg_df <- if(is.null(session_data$bg_df)){
-    terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
+  if(is.null(session_data$bg_df) && !is.null(session_data$bg_raster)){
+    session_data$bg_df <- terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
   }
 
   showNotification(paste("Selected variables:", paste(vars, collapse = ", ")),
@@ -177,35 +179,38 @@ observeEvent({
 output$raster_print <- renderPrint({
   req(input$raster_file)
   ext <- tolower(tools::file_ext(input$raster_file$name))
-  tryCatch(
-    print(load_raster_file(input$raster_file$datapath, ext)),
+  result <- tryCatch(
+    load_raster_file(input$raster_file$datapath, ext),
     error = function(e) stop(safeError(e))
   )
-  removeNotification("raster_preview_msg")
 
+  removeNotification("raster_preview_msg")
+  print(result)
 })
 
 output$df_header <- renderTable({
   req(input$df_file)
   ext <- tolower(tools::file_ext(input$df_file$name))
-  tryCatch(
-    head(load_df_file(input$df_file$datapath, ext)),
+  result <- tryCatch(
+    load_df_file(input$df_file$datapath, ext),
     error = function(e) stop(safeError(e))
   )
+
   removeNotification("df_preview_msg")
+  head(result)
 
 })
 
 output$bias_raster_print <- renderPrint({
   req(input$bias_raster_file)
   ext <- tolower(tools::file_ext(input$bias_raster_file$name))
-  tryCatch(
-    print(load_raster_file(input$bias_raster_file$datapath, ext)),
+  result <- tryCatch(
+    load_raster_file(input$bias_raster_file$datapath, ext),
     error = function(e) stop(safeError(e))
   )
 
   removeNotification("bias_raster_preview_msg")
-
+  print(result)
 })
 
 output$variable_selectors_ui <- renderUI({

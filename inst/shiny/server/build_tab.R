@@ -6,22 +6,19 @@
 
 output$range_method_ui <- renderUI({
 
-  req(input$range_method_choice, session_data$vars)
+  req(input$range_method_choice, session_data$vars, session_data$bg_df)
 
   vars <- session_data$vars
 
   # Same button in all range method
   cl_row <- fluidRow(
-    column(width = 4, tags$b("Confidence Level")),
+    column(width = 5, tags$b("Confidence Level (%)")),
     column(width = 4,
-           sliderInput(inputId = "cl_range",
-                       label = NULL,
-                       min = 0,
-                       max = 1,
-                       value = 0.99,
-                       step = 0.01,
-                       ticks = TRUE))
-  )
+           numericInput(inputId = "cl_range",
+                        label = NULL,
+                        value = 95,
+                        step = 5)
+           ))
 
   # Same button for all ranges once processed
   build_btn <- fluidRow(
@@ -46,13 +43,13 @@ output$range_method_ui <- renderUI({
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
-                                   value = 0,
-                                   step = 0.01)),
+                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   step = 0.5)),
                column(width = 4,
                       numericInput(inputId = paste0("max_", v),
                                    label = NULL,
-                                   value = 1,
-                                   step = 0.01))
+                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)) + 2 * as.numeric(format(round(sd(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   step = 0.5))
              )
            })
 
@@ -71,7 +68,7 @@ output$range_method_ui <- renderUI({
                               accept = c("text/csv",
                                          "text/comma-separated-values",
                                          "text/plain",
-                                         ".csv")))
+                                         ".csv", ".rds")))
            )
 
            range_rows <- if(!is.null(input$df_range_file)){
@@ -99,12 +96,12 @@ output$range_method_ui <- renderUI({
 
                }else{
 
-                session_data$bg_raster <- df_range
+                # TO DO: check later if i want to keep this as a session data or not
+                session_data$df_range <- df_range
 
                  obs_ranges <- lapply(shared_vars, function(v){
-                   vals <- df_range[[v]]
-                   list(min = min(vals, na.rm = TRUE),
-                        max = max(vals, na.rm = TRUE))
+                   list(min = as.numeric(format(round(min(df_range[, v], na.rm = TRUE), 2), nsmall = 2)),
+                        max = as.numeric(format(round(max(df_range[, v], na.rm = TRUE), 2), nsmall = 2)))
                  })
 
                  names(obs_ranges) <- shared_vars
@@ -120,20 +117,18 @@ output$range_method_ui <- renderUI({
                  rows <- lapply(shared_vars, function(v){
                    fluidRow(
                      column(width = 3, class = "var-label", tags$span(v)),
-                     column(width = 2, tags$span(round(obs_ranges[[v]]$min, 3))),
-                     column(width = 2, tags$span(round(obs_ranges[[v]]$max, 3))),
+                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2))),
+                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2))),
                      column(width = 2,
-                            sliderInput(inputId = paste0("expand_min_df_", v),
-                                        label = NULL,
-                                        min = 0, max = 100,
-                                        value = 0, step = 5,
-                                        post = "%")),
+                            numericInput(inputId = paste0("expand_min_df_", v),
+                                         label = NULL,
+                                         value = 10,
+                                         step = 5)),
                      column(width = 2,
-                            sliderInput(inputId = paste0("expand_max_df_", v),
-                                        label = NULL,
-                                        min = 0, max = 100,
-                                        value = 0, step = 5,
-                                        post = "%"))
+                            numericInput(inputId = paste0("expand_max_df_", v),
+                                         label = NULL,
+                                         value = 10,
+                                         step = 5))
                    )
                  })
 
@@ -153,13 +148,6 @@ output$range_method_ui <- renderUI({
              as.data.frame(session_data$sel_raster, na.rm = TRUE)
            }
 
-           obs_stats <- lapply(vars, function(v){
-             vals <- data_source[[v]]
-             list(mean = mean(vals, na.rm = TRUE),
-                  sd   = sd(vals,   na.rm = TRUE))
-           })
-           names(obs_stats) <- vars
-
            header <- fluidRow(
              p(instructions$range_stats, class = "text-instruction"),
              column(width = 3, tags$b("Variable")),
@@ -172,20 +160,29 @@ output$range_method_ui <- renderUI({
            var_rows <- lapply(vars, function(v){
              fluidRow(
                column(width = 3, class = "var-label", tags$span(v)),
-               column(width = 2, tags$span(round(obs_stats[[v]]$mean, 3))),
-               column(width = 2, tags$span(round(obs_stats[[v]]$sd,   3))),
                column(width = 2,
-                      sliderInput(inputId = paste0("expand_min_stats_", v),
-                                  label = NULL,
-                                  min = 0, max = 50,
-                                  value = 0, step = 1,
-                                  post = "%")),
+                      numericInput(inputId = paste0("mean_", v),
+                                   label = NULL,
+                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   step = 0.5)
+               ),
+
                column(width = 2,
-                      sliderInput(inputId = paste0("expand_max_stats_", v),
-                                  label = NULL,
-                                  min = 0, max = 50,
-                                  value = 0, step = 1,
-                                  post = "%"))
+                      numericInput(inputId = paste0("sd_", v),
+                                   label = NULL,
+                                   value = as.numeric(format(round(sd(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   step = 0.5)
+               ),
+               column(width = 2,
+                      numericInput(inputId = paste0("expand_min_stats_", v),
+                                   label = NULL,
+                                   value = 10,
+                                   step = 5)),
+               column(width = 2,
+                      numericInput(inputId = paste0("expand_max_stats_", v),
+                                   label = NULL,
+                                   value = 10,
+                                   step = 5))
              )
            })
 
