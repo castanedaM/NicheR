@@ -1,6 +1,148 @@
 # Title: Build tab server logic
 # Description: Handles range inputs and e-space plot
-# Date last updated: 06/03/2026
+# Date last updated: 06/04/2026
+
+
+# Observers ----------------------------------------------------------------
+
+observeEvent(input$reset_ranges, {
+
+  req(input$range_method_choice, session_data$vars, session_data$bg_df)
+  vars <- session_data$vars
+
+  switch(input$range_method_choice,
+
+         "man" = {
+           lapply(vars, function(v){
+             vals <- session_data$bg_df[[v]]
+             m <- round(mean(vals, na.rm = TRUE), 2)
+             s <- round(sd(vals, na.rm = TRUE), 2)
+             updateNumericInput(session, paste0("min_", v), value = m)
+             updateNumericInput(session, paste0("max_", v), value = m + s)
+           })
+         },
+
+         "df" = {
+           req(session_data$df_range)
+           lapply(vars, function(v){
+             updateNumericInput(session, paste0("expand_min_df_", v), value = 0)
+             updateNumericInput(session, paste0("expand_max_df_", v), value = 0)
+           })
+         },
+
+         "stats" = {
+           lapply(vars, function(v){
+             vals <- session_data$bg_df[[v]]
+             updateNumericInput(session, paste0("mean_", v),
+                                value = round(mean(vals, na.rm = TRUE), 2))
+             updateNumericInput(session, paste0("sd_", v),
+                                value = round(sd(vals, na.rm = TRUE), 2))
+             updateNumericInput(session, paste0("expand_min_stats_", v), value = 0)
+             updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
+           })
+
+           updateNumericInput(session, "cl_range", value = 0.99)
+         }
+  )
+})
+
+
+# Reactives ---------------------------------------------------------------
+
+range_preview <- reactive({
+
+  req(input$range_method_choice, session_data$vars, session_data$bg_df)
+  vars <- session_data$vars
+
+  switch(input$range_method_choice,
+
+         "man" = {
+           mins <- setNames(sapply(vars, function(v){
+             input[[paste0("min_", v)]]}),
+             vars)
+           maxs <- setNames(sapply(vars, function(v){
+             input[[paste0("max_", v)]]}),
+             vars)
+
+           if(any(is.na(mins)) || any(is.na(maxs))) return(NULL)
+           if(any(maxs <= mins)) return(NULL)
+
+           list(mins = mins, maxs = maxs)
+         },
+
+         "df" = {
+           req(session_data$df_range)
+
+           expand_min <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_min_df_", v)]])){
+               input[[paste0("expand_min_df_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+
+           expand_max <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_max_df_", v)]])){
+               input[[paste0("expand_max_df_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           ranges_df <- ranges_from_data(data = session_data$df_range[, vars, drop = FALSE],
+                                         expand_min = as.list(expand_min),
+                                         expand_max = as.list(expand_max))
+
+           list(mins = ranges_df["min", ],
+                maxs = ranges_df["max", ])
+         },
+
+         "stats" = {
+           means <- setNames(
+             sapply(vars, function(v) input[[paste0("mean_", v)]]),
+             vars)
+
+           sds <- setNames(
+             sapply(vars, function(v) input[[paste0("sd_", v)]]),
+             vars)
+
+           expand_min <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_min_stats_", v)]])){
+               input[[paste0("expand_min_stats_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           expand_max <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_max_stats_", v)]])){
+               input[[paste0("expand_min_stats_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           cl <- if(!is.null(input$cl_range)){
+             input$cl_range
+           }else{
+             0.95
+           }
+
+           range_stats <- ranges_from_stats(mean = means, sd = sds, cl = cl,
+                                            expand_min = as.list(expand_min),
+                                            expand_max = as.list(expand_max))
+
+           list(mins = range_stats["min", ],
+                maxs = range_stats["max", ])
+         }
+  )
+})
+
 
 # Render Outputs ----------------------------------------------------------
 
@@ -16,9 +158,10 @@ output$range_method_ui <- renderUI({
     column(width = 4,
            numericInput(inputId = "cl_range",
                         label = NULL,
-                        value = 95,
-                        step = 5)
-           ))
+                        value = 0.99,
+                        min = 0, max = 1,
+                        step = 0.1)
+    ))
 
   # Same button for all ranges once processed
   build_btn <- fluidRow(
@@ -26,6 +169,12 @@ output$range_method_ui <- renderUI({
            actionButton("build_ell",
                         "Build Ellipsoid",
                         class = "btn-primary"))
+  )
+
+  # Same Reset Button for all
+  reset_btn <- fluidRow(
+    actionLink("reset_ranges",
+               label = tagList(icon("rotate-left"), "Reset to defaults"))
   )
 
   # Choose which UI to show for ranges
@@ -43,18 +192,18 @@ output$range_method_ui <- renderUI({
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
-                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2),
                                    step = 0.5)),
                column(width = 4,
                       numericInput(inputId = paste0("max_", v),
                                    label = NULL,
-                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)) + 2 * as.numeric(format(round(sd(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2) + round(sd(session_data$bg_df[, v], na.rm = TRUE), 2),
                                    step = 0.5))
              )
            })
 
            # Organizing the UI
-           tagList(header, var_rows, cl_row, build_btn)
+           tagList(header, var_rows, cl_row, reset_btn, build_btn)
          },
 
          "df" = {
@@ -96,12 +245,12 @@ output$range_method_ui <- renderUI({
 
                }else{
 
-                # TO DO: check later if i want to keep this as a session data or not
-                session_data$df_range <- df_range
+                 # TO DO: check later if i want to keep this as a session data or not
+                 session_data$df_range <- df_range
 
                  obs_ranges <- lapply(shared_vars, function(v){
-                   list(min = as.numeric(format(round(min(df_range[, v], na.rm = TRUE), 2), nsmall = 2)),
-                        max = as.numeric(format(round(max(df_range[, v], na.rm = TRUE), 2), nsmall = 2)))
+                   list(min = round(min(df_range[, v], na.rm = TRUE), 2),
+                        max = round(max(df_range[, v], na.rm = TRUE), 2))
                  })
 
                  names(obs_ranges) <- shared_vars
@@ -122,12 +271,12 @@ output$range_method_ui <- renderUI({
                      column(width = 2,
                             numericInput(inputId = paste0("expand_min_df_", v),
                                          label = NULL,
-                                         value = 10,
+                                         value = 0,
                                          step = 5)),
                      column(width = 2,
                             numericInput(inputId = paste0("expand_max_df_", v),
                                          label = NULL,
-                                         value = 10,
+                                         value = 0,
                                          step = 5))
                    )
                  })
@@ -137,16 +286,10 @@ output$range_method_ui <- renderUI({
              }
            }
 
-           tagList(upload_row, range_rows, cl_row, build_btn)
+           tagList(upload_row, range_rows, cl_row, reset_btn, build_btn)
          },
 
          "stats" = {
-
-           data_source <- if(!is.null(session_data$sel_df)){
-             session_data$sel_df
-           } else{
-             as.data.frame(session_data$sel_raster, na.rm = TRUE)
-           }
 
            header <- fluidRow(
              p(instructions$range_stats, class = "text-instruction"),
@@ -163,14 +306,14 @@ output$range_method_ui <- renderUI({
                column(width = 2,
                       numericInput(inputId = paste0("mean_", v),
                                    label = NULL,
-                                   value = as.numeric(format(round(mean(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2),
                                    step = 0.5)
                ),
 
                column(width = 2,
                       numericInput(inputId = paste0("sd_", v),
                                    label = NULL,
-                                   value = as.numeric(format(round(sd(session_data$bg_df[, v], na.rm = TRUE), 2), nsmall = 2)),
+                                   value = round(sd(session_data$bg_df[, v], na.rm = TRUE), 2),
                                    step = 0.5)
                ),
                column(width = 2,
@@ -186,133 +329,51 @@ output$range_method_ui <- renderUI({
              )
            })
 
-           tagList(
-             header,
-             var_rows,
-             cl_row,
-             build_btn
-           )
+           tagList(header, var_rows, cl_row, reset_btn, build_btn)
          }
   )
 })
 
-
-
-observeEvent(input$build_ell, {
-
-  req(input$range_method_choice, session_data$vars)
-
-  vars <- session_data$vars
-
-  cl   <- input$cl_range
-
-  range_df <- switch(
-    input$range_method_choice,
-    "man" = {
-      mins <- sapply(vars, function(v) input[[paste0("min_", v)]])
-      maxs <- sapply(vars, function(v) input[[paste0("max_", v)]])
-
-      if(any(is.na(mins)) || any(is.na(maxs))){
-        showNotification("Please fill in all min and max values.",
-                         type = "error")
-        return(NULL)
-      }
-
-      if(any(maxs <= mins)){
-        showNotification("Max must be greater than min for all variables.",
-                         type = "error")
-        return(NULL)
-      }
-
-      range_df <- as.data.frame(rbind(mins, maxs))
-      colnames(range_df) <- vars
-      range_df
-    },
-
-    "df" = {
-      req(session_data$df_range)
-
-      expand_min <- setNames(
-        lapply(vars, function(v) input[[paste0("expand_min_df_", v)]]),
-        shared_vars
-      )
-
-      expand_max <- setNames(
-        lapply(vars, function(v) input[[paste0("expand_max_df_", v)]]),
-        shared_vars
-      )
-
-      ranges_from_data(data = df_range[, vars, drop = FALSE],
-                       expand_min = expand_min,
-                       expand_max = expand_max)
-    },
-
-    "stats" = {
-      data_source <- if(!is.null(session_data$sel_df)){
-        session_data$sel_df
-      }else{
-        as.data.frame(session_data$sel_raster, na.rm = TRUE)
-      }
-
-      means <- setNames(
-        sapply(vars, function(v) mean(data_source[[v]], na.rm = TRUE)),
-        vars
-      )
-
-      sds <- setNames(
-        sapply(vars, function(v) sd(data_source[[v]], na.rm = TRUE)),
-        vars
-      )
-
-      expand_min <- setNames(
-        lapply(vars, function(v) input[[paste0("expand_min_stats_", v)]]),
-        vars
-      )
-
-      expand_max <- setNames(
-        lapply(vars, function(v) input[[paste0("expand_max_stats_", v)]]),
-        vars
-      )
-
-      ranges_from_stats(mean = means,
-                        sd = sds,
-                        cl = cl,
-                        expand_min = expand_min,
-                        expand_max = expand_max)
-    }
-  )
-
-  req(range_df)
-
-  tryCatch({
-    session_data$ellipsoid <- build_ellipsoid(range = range_df,
-                                              cl = cl,
-                                              verbose = FALSE)
-
-    showNotification("Ellipsoid built successfully.", type = "message")
-
-  }, error = function(e){
-
-    showNotification(paste("Error building ellipsoid:", e$message),
-                     type = "error")
-  })
-
-})
-
-
 output$build_espace_plot <- renderPlot({
-  req(session_data$sel_df)
 
-  df <- session_data$bg_df
+  req(range_preview(), session_data$vars, session_data$bg_df)
+
+  # This is how to access the reactive method
+  ranges <- range_preview()
   vars <- session_data$vars
-  vars <- vars[seq_len(min(length(vars), 3))]
-  df <- df[, vars, drop = FALSE]
+  bg <- session_data$bg_df
 
-  if(nrow(df) > 5000) df <- df[sample(nrow(df), 5000), , drop = FALSE]
+  # Build all pairwise combinations
+  pairs <- t(combn(seq_along(vars), 2))
+  n_pairs <- nrow(pairs)
+  n_cols <- ceiling(sqrt(n_pairs))
+  n_rows <- ceiling(n_pairs / n_cols)
 
-  pairs(df)
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
 
+  par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
+
+  for (i in seq_len(n_pairs)) {
+    v1 <- vars[pairs[i, 1]]
+    v2 <- vars[pairs[i, 2]]
+
+    # Background scatter
+    plot(bg[[v1]], bg[[v2]],
+         col  = "grey70",
+         pch  = 20,
+         cex  = 0.3,
+         xlab = v1,
+         ylab = v2,
+         main = paste(v1, "vs.", v2))
+
+    # Vertical lines for v1 range
+    abline(v = ranges$mins[[v1]], col = "#e10000", lwd = 2, lty = 2)
+    abline(v = ranges$maxs[[v1]], col = "#e10000", lwd = 2, lty = 2)
+
+    # Horizontal lines for v2 range
+    abline(h = ranges$mins[[v2]], col = "#0004d5", lwd = 2, lty = 2)
+    abline(h = ranges$maxs[[v2]], col = "#0004d5", lwd = 2, lty = 2)
+  }
 })
-
-
 
