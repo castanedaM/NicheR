@@ -1,6 +1,6 @@
 instructions <- list(
-  data_upload = HTML("This step ask you to upload your BACKGROUND information, i.e., the enviromaetal rastr layers that compose your entire study area. If you have occurece data, hold on to them after this steps, of uploading and selecting the varibales of interest. Upload a raster layer (.tif, .rds) and/or a CSV (can also be .rd).<br>
-                             If both provided they will be validated for matching layers and cell counts."),
+  data_upload = HTML("Background data: your study area's environmental conditions.
+Upload a raster (.tif, .rds) and/or a CSV of the same data. If both are provided they will be validated for consistency. Occurrence records are used later."),
   variable_settings = HTML(paste0("Select up to ", MAX_DIMS,
                                   " variables to use in your analysis.<br>
                                  Uncheck a variable to exclude it.")),

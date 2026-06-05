@@ -4,9 +4,9 @@
 
 dashboardPage(
   dashboardHeader(
-    title = "nicheR Shiny App",
+    title = "nicheR",
     titleWidth = 200
-    ),
+  ),
 
   dashboardSidebar(
     width = 200,
@@ -27,8 +27,25 @@ dashboardPage(
       menuItem("About",
                tabName = "about",
                icon = icon("circle-info"))
+    ),
+
+    tags$div(
+      style = "position: absolute; bottom: 50px; width: 100%; text-align: center;",
+      img(src = "nicheR_lg.png",
+          style = "max-width: 140px;")
+    ),
+
+    tags$div(
+      style = "position: absolute; bottom: 15px; width: 100%; text-align: center;",
+      tags$a(
+        href   = "https://github.com/castanedaM/nicheR",
+        target = "_blank",
+        style  = "color: #aaa; font-size: 0.8em;",
+        icon("github"), " GitHub"
+      )
     )
   ),
+
   dashboardBody(
     useShinyjs(),
     includeCSS("www/styles.css"),
@@ -45,11 +62,21 @@ dashboardPage(
               fluidRow(
                 column(width = 5,
                        fileInput(inputId = "raster_file",
-                                 label = "Choose raster layers",
+                                 label = tagList(
+                                   "Background Layers (Raster)",
+                                   tags$span(icon("circle-info"),
+                                             title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds"
+                                   )
+                                 ),
                                  multiple = FALSE,
                                  accept = c("tif", "tiff", "rds")),
+
                        fileInput(inputId = "df_file",
-                                 label = "Choose CSV File",
+                                 label = tagList(
+                                   "Background Layers (CSV)",
+                                   tags$span(icon("circle-info"),
+                                             title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds")
+                                 ),
                                  multiple = FALSE,
                                  accept = c("text/csv",
                                             "text/comma-separated-values",
@@ -66,12 +93,14 @@ dashboardPage(
 
               fluidRow(
                 column(width = 5,
-                       box(title = "Optional Bias Raster",
-                           width = 12,
+                       box(title = tagList("Optional Bias Raster",
+                                           tags$span(icon("circle-info"),
+                                                     title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds")),
+                           width = 9,
                            collapsible = TRUE,
                            collapsed = TRUE,
                            fileInput(inputId = "bias_raster_file",
-                                     label = "Choose bias raster layers",
+                                     label = "Sampling Bias Layer/s (Raster)",
                                      multiple = FALSE,
                                      accept = c("tif", "tiff", "rds"))
                        )
