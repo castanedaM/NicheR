@@ -50,6 +50,8 @@ observeEvent(input$build_ell, {
   session_data$ellipsoid <- TRUE
 
 })
+
+
 # Reactives ---------------------------------------------------------------
 
 range_preview <- reactive({

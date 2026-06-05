@@ -149,6 +149,14 @@ dashboardPage(
                    width = 12,
                    tabPanel(
                      "E-space",
+                     radioButtons("plot_state",
+                                  label = NULL, choices = c("Pairs" = "plot_pairs",
+                                                            "2D" = "plot_2d")),
+                     conditionalPanel("input.plot_state == 'plot_2d'",
+                                      selectInput("plot_2d_vars", label = NULL,
+                                                  choices = character(0)
+                                      )
+                     ),
                      plotOutput("build_espace_plot")
                    )
                  )
