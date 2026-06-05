@@ -127,29 +127,31 @@ dashboardPage(
       tabItem(
         tabName = "build_tab",
         fluidRow(
-          box(
-            width = 6,
-            p(instructions$range_choice, class = "text-instruction"),
-            radioButtons("range_method_choice",
-                         label = "Select Range Method:",
-                         choices = c("Manual" = "man",
-                                     "From Data" = "df",
-                                     "From Stats" = "stats"),
-                         selected = character(0)),
+          column(width = 6,
+                 box(
+                   width = 12, collapsible = TRUE, collapsed = FALSE,
+                   p(instructions$range_choice, class = "text-instruction"),
+                   radioButtons("range_method_choice",
+                                label = "Select Range Method:",
+                                choices = c("Manual" = "man",
+                                            "From Data" = "df",
+                                            "From Stats" = "stats"),
+                                selected = character(0)),
 
-            uiOutput("range_method_ui")
+                   uiOutput("range_method_ui")
+                 ),
 
+                 uiOutput("covariance_ui")
           ),
-          tabBox(
-            title = "plot",
-            width = 6,
-            tabPanel(
-              "E-space",
-              plotOutput("build_espace_plot")
-            ),
-            tabPanel(
-              "Plot Settings"
-            )
+          column(width = 6,
+                 tabBox(
+                   title = "plot",
+                   width = 12,
+                   tabPanel(
+                     "E-space",
+                     plotOutput("build_espace_plot")
+                   )
+                 )
           )
         )
       ),
@@ -164,7 +166,6 @@ dashboardPage(
             width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
-            tabPanel("Plot Settings")
           )
         )
       ),
@@ -179,7 +180,6 @@ dashboardPage(
             width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
-            tabPanel("Plot Settings")
           )
         )
       ),

@@ -46,7 +46,10 @@ observeEvent(input$reset_ranges, {
   )
 })
 
+observeEvent(input$build_ell, {
+  session_data$ellipsoid <- TRUE
 
+})
 # Reactives ---------------------------------------------------------------
 
 range_preview <- reactive({
@@ -332,6 +335,15 @@ output$range_method_ui <- renderUI({
            tagList(header, var_rows, cl_row, reset_btn, build_btn)
          }
   )
+})
+
+output$covariance_ui <- renderUI({
+  req(session_data$ellipsoid)
+
+  box(title = "Covariance", width = 12,
+      p("Covariance stuff")
+  )
+
 })
 
 output$build_espace_plot <- renderPlot({

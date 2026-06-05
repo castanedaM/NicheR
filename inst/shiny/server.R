@@ -7,7 +7,8 @@ function(input, output, session){
     bias = NULL,
     vars = NULL,
     ranges = NULL,
-    df_range = NULL
+    df_range = NULL,
+    ellipsoid = NULL
   )
 
   source("server/helpers.R", local = TRUE)
