@@ -1,52 +1,208 @@
-.skin-blue .sidebar-menu > li.active > a {
-  border-left: 3px solid #c44;
-  background-color: rgba(255, 0, 0, 0.15);
-  color: #fff;
+/* ============================================================
+   font-size controls how big the text is (pt x 1.33 = px).
+   font-weight: 400 = normal, 500 = medium, 600 = semibold.
+   margin-bottom adds space below the element so content
+   beneath it does not feel cramped.
+   ============================================================ */
+
+/* App title. This is largest text in the app, used in the header */
+.text-app-title {
+  font-size: 26px;
+  font-weight: 500;
+  margin-bottom: 0;
 }
 
-/* instruction text */
-.text-instruction {
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-/* section headers */
-.text-section-header {
-  font-size: 15px;
-  font-weight: 600;
+/* Tab/panel titles — section labels inside tabBoxes or boxes */
+.text-tab-title {
+  font-size: 17px;
+  font-weight: 500;
   margin-bottom: 8px;
 }
 
-/* warning text */
+/* Section headers — labels that divide content within a panel */
+.text-section-header {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+/* Widget titles — titles on individual input widgets or cards */
+/* font-size matches widget icon size so they sit evenly */
+.text-widget-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Widget icons — controls icon rendering size inline */
+/* Tabler icons inherit font-size from parent, so set it here */
+.text-widget-title .ti {
+  font-size: 14px;
+  margin-left: 5px;
+  cursor: help;
+}
+
+/* Body / instruction text — helper text explaining what to do */
+/* Used with p(instructions$x, class = "text-instruction") */
+.text-instruction {
+  font-size: 13px;
+  font-weight: 400;
+  margin-bottom: 12px;
+  line-height: 1.5;        /* adds breathing room between lines */
+}
+
+/* Warning notes — caution messages, uses CSS var for dark mode safety */
+/* var(--color-text-warning) adapts automatically to light and dark mode */
 .text-warning-note {
   font-size: 13px;
-  color: #c09a00;
+  font-weight: 400;
+  color: var(--color-text-warning);
   margin-bottom: 12px;
+  line-height: 1.5;
 }
 
-/* muted small text */
+/* Widget inside text — small labels or values inside a widget */
+.text-widget-inner {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);  /* slightly muted, not full black */
+  line-height: 1.4;
+}
+
+/* Muted small text — hints, fine print, secondary labels */
+/* color uses CSS var so it works in both light and dark mode */
 .text-muted-small {
   font-size: 11px;
-  color: #aaa;
+  font-weight: 400;
+  color: var(--color-text-tertiary);   /* lightest readable gray */
+  line-height: 1.4;
 }
 
-/* checkbox alignment with selects */
+/* centers block-level text within its container */
+/* display: block makes the span fill the full column width */
+/* text-align: center then centers the text within that space */
+.text-center {
+  display: block;
+  text-align: center;
+}
+
+input[type="number"] {
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+/* the filename text area */
+input[type="file"] {
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+/* file input browse button */
+.btn-file {
+  font-size: 12px;
+  padding: 4px 10px;    /* top/bottom  left/right */
+  height: 34px;         /* explicit height locks them together */
+  line-height: 1.5;
+}
+
+/* file input filename display area */
+.form-control[readonly] {
+  font-size: 12px;
+  padding: 4px 10px;
+  height: 34px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION
+   .skin-blue targets the default shinydashboard blue theme wrapper.
+   > means direct child only, not nested elements.
+   li is a list item (each menu entry).
+   a is the anchor/link inside each list item.
+   :hover targets the element only while the mouse is over it.
+   transition animates property changes smoothly over time.
+   ============================================================ */
+
+/* Default state — all menu items slightly transparent white */
+/* border-left: transparent reserves the 3px space so text */
+/* does not jump sideways when the border appears on active */
+.skin-blue .sidebar-menu > li > a {
+  color: rgba(255, 255, 255, 0.7);
+  border-left: 3px solid transparent;
+  transition: all 0.2s;   /* smooth animation on any property change */
+}
+
+/* Hover state — slightly brighter, subtle left border appears */
+.skin-blue .sidebar-menu > li > a:hover {
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+/* Active/selected state — full white bar, bright background tint */
+/* This is what pops when the user is on a tab or gets moved to one */
+/* border-left: white on blue = maximum contrast, impossible to miss */
+.skin-blue .sidebar-menu > li.active > a {
+  border-left: 3px solid #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);  /* subtle white wash */
+  color: #ffffff;
+  font-weight: 500;   /* slightly bolder so the label reads stronger */
+}
+
+
+/* ============================================================
+   LAYOUT HELPERS
+   These are utility classes for common spacing and alignment
+   tasks. Apply them with class = "classname" in Shiny.
+   ============================================================ */
+
+/* Aligns a checkbox vertically with a selectInput next to it */
+/* selectInput has a label above it (~28px tall) so we push */
+/* the checkbox down the same amount */
 .checkbox-align {
   padding-top: 28px;
 }
 
-/* disabled/grayed out selector */
+/* Grays out and disables interaction on an element */
+/* opacity: 0.4 makes it visually faded */
+/* pointer-events: none makes clicks pass through it */
 .selector-disabled {
   opacity: 0.4;
   pointer-events: none;
 }
 
-/* spacing for action buttons */
+/* Adds breathing room above action buttons */
+/* so they do not sit flush against the content above */
 .btn-spaced {
   margin-top: 16px;
 }
 
-/* variable label alignment in range table */
+/* Aligns a plain text label vertically with a numericInput */
+/* numericInput has no label here so 7px pushes the text */
+/* down to match the input field height */
 .var-label {
   padding-top: 7px;
+}
+
+
+/* ============================================================
+   COLLAPSIBLE BIAS SECTION
+   Controls the chevron icon rotation when the section opens.
+   display: inline-block is needed for transform (rotation)
+   to work — transform does not apply to inline elements.
+   transition animates the rotation smoothly.
+   ============================================================ */
+
+/* Default state — chevron points down */
+#toggle_bias .ti-chevron-down {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+/* Open state — chevron flips to point up */
+/* The .open class is toggled by shinyjs::toggleClass() */
+#toggle_bias.open .ti-chevron-down {
+  transform: rotate(180deg);
 }

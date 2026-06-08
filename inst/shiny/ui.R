@@ -1,10 +1,10 @@
-# Title:
-# Description:
-# Lats Updated: 6/2/2026
+# Title: UI for shiny nicheR
+# Description: The UI of the app
+# Lats Updated: 6/8/2026
 
 dashboardPage(
   dashboardHeader(
-    title = "nicheR",
+    title = tags$span("nicheR", class = "text-app-title"),
     titleWidth = 200
   ),
 
@@ -57,26 +57,24 @@ dashboardPage(
             id = "tabset1",
             width = 12,
             tabPanel(
-              "Data Inputs",
+              tags$span("Data Inputs", class = "text-tab-title"),
               p(instructions$data_upload, class = "text-instruction"),
               fluidRow(
                 column(width = 5,
                        fileInput(inputId = "raster_file",
                                  label = tagList(
-                                   "Background Layers (Raster)",
+                                   tags$span("Background Layers (Raster)", class = "text-widget-title"),
                                    tags$span(icon("circle-info"),
-                                             title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds"
-                                   )
-                                 ),
+                                             title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds", class = "text-widget-title")),
                                  multiple = FALSE,
                                  accept = c("tif", "tiff", "rds")),
 
                        fileInput(inputId = "df_file",
                                  label = tagList(
-                                   "Background Layers (CSV)",
+                                   tags$span("Background Layers (CSV)", class = "text-widget-title"),
                                    tags$span(icon("circle-info"),
-                                             title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds")
-                                 ),
+                                             title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds", class = "text-widget-title"))
+                                 ,
                                  multiple = FALSE,
                                  accept = c("text/csv",
                                             "text/comma-separated-values",
@@ -93,14 +91,15 @@ dashboardPage(
 
               fluidRow(
                 column(width = 5,
-                       box(title = tagList("Optional Bias Raster",
+                       box(title = tagList(tags$span("Optional Bias Raster",
+                                                     class = "text-tab-title"),
                                            tags$span(icon("circle-info"),
-                                                     title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds")),
+                                                     title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",  class = "text-widget-title")),
                            width = 9,
                            collapsible = TRUE,
                            collapsed = TRUE,
                            fileInput(inputId = "bias_raster_file",
-                                     label = "Sampling Bias Layer/s (Raster)",
+                                     label = tags$span("Sampling Bias Layer/s (Raster)", class = "text-widget-title"),
                                      multiple = FALSE,
                                      accept = c("tif", "tiff", "rds"))
                        )
@@ -112,13 +111,18 @@ dashboardPage(
               ),
 
               fluidRow(
-                actionButton(inputId = "data_upload",
-                             label = "Upload",
-                             class = "btn-primary")
+                column(
+                  width = 12,
+                  class = "btn-spaced",
+                  actionButton(inputId = "data_upload",
+                               label = "Upload",
+                               class = "btn-primary")
+                )
               )
             ),
             tabPanel(
-              title = "Settings", value = "setting",
+              title = tags$span("Settings", class = "text-tab-title"),
+              value = "setting",
               uiOutput("variable_selectors_ui")
             )
           )
@@ -132,7 +136,7 @@ dashboardPage(
                    width = 12, collapsible = TRUE, collapsed = FALSE,
                    p(instructions$range_choice, class = "text-instruction"),
                    radioButtons("range_method_choice",
-                                label = "Select Range Method:",
+                                label = tags$span("Select Range Method:", class = "text-widget-title"),
                                 choices = c("Manual" = "man",
                                             "From Data" = "df",
                                             "From Stats" = "stats"),

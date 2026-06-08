@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs and e-space plot
-# Date last updated: 06/05/2026
+# Date last updated: 06/08/2026
 
 
 # Observers ----------------------------------------------------------------
@@ -159,7 +159,7 @@ output$range_method_ui <- renderUI({
 
   # Same button in all range method
   cl_row <- fluidRow(
-    column(width = 5, tags$b("Confidence Level (%)")),
+    column(width = 5, tags$span("Confidence Level (%)", class = "text-widget-title text-center")),
     column(width = 4,
            numericInput(inputId = "cl_range",
                         label = NULL,
@@ -170,7 +170,8 @@ output$range_method_ui <- renderUI({
 
   # Same button for all ranges once processed
   build_btn <- fluidRow(
-    column(width = 12, class = "btn-spaced",
+    column(width = 12,
+           class = "btn-spaced",
            actionButton("build_ell",
                         "Build Ellipsoid",
                         class = "btn-primary"))
@@ -178,22 +179,25 @@ output$range_method_ui <- renderUI({
 
   # Same Reset Button for all
   reset_btn <- fluidRow(
-    actionLink("reset_ranges",
-               label = tagList(icon("rotate-left"), "Reset to defaults"))
+    column(width = 12,
+           class = "btn-spaced",
+           actionLink("reset_ranges",
+                      label = tagList(icon("rotate-left"), "Reset to defaults"))
+    )
   )
 
   # Choose which UI to show for ranges
   switch(input$range_method_choice,
          "man" = {
            header <- fluidRow(
-             column(width = 4, tags$b("Variable")),
-             column(width = 4, tags$b("Min")),
-             column(width = 4, tags$b("Max"))
+             column(width = 4, tags$span("Variable", class = "text-widget-title text-center")),
+             column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
+             column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
            )
 
            var_rows <- lapply(vars, function(v) {
              fluidRow(
-               column(width = 4, class = "var-label", tags$span(v)),
+               column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
@@ -217,7 +221,7 @@ output$range_method_ui <- renderUI({
              p(instructions$range_data, class = "text-instruction"),
              column(width = 6,
                     fileInput(inputId = "df_range_file",
-                              label = "Choose CSV file with range data",
+                              label = tags$span("Choose CSV file with range data", class = "text-widget-title"),
                               multiple = FALSE,
                               accept = c("text/csv",
                                          "text/comma-separated-values",
@@ -236,7 +240,7 @@ output$range_method_ui <- renderUI({
              if(is.null(df_range)){
 
                p("Could not read the uploaded file. Please check the format.",
-                 class = "text-warning")
+                 class = "text-warning-note")
 
              }else{
 
@@ -246,7 +250,7 @@ output$range_method_ui <- renderUI({
 
                  p("No matching variables found between the uploaded file and the
                background layers. Check that column names match.",
-                   class = "text-warning")
+                   class = "text-warning-note")
 
                }else{
 
@@ -261,18 +265,18 @@ output$range_method_ui <- renderUI({
                  names(obs_ranges) <- shared_vars
 
                  header <- fluidRow(
-                   column(width = 3, tags$b("Variable")),
-                   column(width = 2, tags$b("Observed Min")),
-                   column(width = 2, tags$b("Observed Max")),
-                   column(width = 2, tags$b("Expand Min (%)")),
-                   column(width = 2, tags$b("Expand Max (%)"))
+                   column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
+                   column(width = 2, tags$span("Observed Min", class = "text-widget-title text-center")),
+                   column(width = 2, tags$span("Observed Max", class = "text-widget-title text-center")),
+                   column(width = 2, tags$span("Expand Min (%)", class = "text-widget-title text-center")),
+                   column(width = 2, tags$span("Expand Max (%)", class = "text-widget-title text-center"))
                  )
 
                  rows <- lapply(shared_vars, function(v){
                    fluidRow(
-                     column(width = 3, class = "var-label", tags$span(v)),
-                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2))),
-                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2))),
+                     column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
+                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2), class = "text-widget-inner text-center")),
+                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2), class = "text-widget-inner text-center")),
                      column(width = 2,
                             numericInput(inputId = paste0("expand_min_df_", v),
                                          label = NULL,
@@ -298,16 +302,16 @@ output$range_method_ui <- renderUI({
 
            header <- fluidRow(
              p(instructions$range_stats, class = "text-instruction"),
-             column(width = 3, tags$b("Variable")),
-             column(width = 2, tags$b("Mean")),
-             column(width = 2, tags$b("SD")),
-             column(width = 2, tags$b("Expand Min (%)")),
-             column(width = 2, tags$b("Expand Max (%)"))
+             column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
+             column(width = 2, tags$span("Mean", class = "text-widget-title text-center")),
+             column(width = 2, tags$span("SD", class = "text-widget-title text-center")),
+             column(width = 2, tags$span("Expand Min (%)", class = "text-widget-title text-center")),
+             column(width = 2, tags$span("Expand Max (%)", class = "text-widget-title text-center"))
            )
 
            var_rows <- lapply(vars, function(v){
              fluidRow(
-               column(width = 3, class = "var-label", tags$span(v)),
+               column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 2,
                       numericInput(inputId = paste0("mean_", v),
                                    label = NULL,
@@ -324,12 +328,12 @@ output$range_method_ui <- renderUI({
                column(width = 2,
                       numericInput(inputId = paste0("expand_min_stats_", v),
                                    label = NULL,
-                                   value = 10,
+                                   value = 0,
                                    step = 5)),
                column(width = 2,
                       numericInput(inputId = paste0("expand_max_stats_", v),
                                    label = NULL,
-                                   value = 10,
+                                   value = 0,
                                    step = 5))
              )
            })
@@ -343,7 +347,7 @@ output$covariance_ui <- renderUI({
   req(session_data$ellipsoid)
 
   box(title = "Covariance", width = 12,
-      p("Covariance stuff")
+      p("Covariance stuff", class = "text-instructions")
   )
 
 })
