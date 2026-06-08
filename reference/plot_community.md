@@ -64,6 +64,10 @@ plot_community(object, background = NULL, dim = c(1, 2), bg_sample = NULL,
   Additional arguments passed to the base `plot` function (e.g., `xlim`,
   `ylim`, `xlab`, `ylab`).
 
+## Value
+
+A plot of the community of ellipses in a 2D plot
+
 ## Examples
 
 ``` r
