@@ -47,8 +47,65 @@ observeEvent(input$reset_ranges, {
 })
 
 observeEvent(input$build_ell, {
-  session_data$ellipsoid <- TRUE
 
+  # If an ellipsoid already exists warn the user
+  if (!is.null(session_data$ellipsoid)) {
+    showModal(modalDialog(
+      title = "Overwrite ellipsoid?",
+      p("An ellipsoid has already been built. Building a new one will
+         overwrite the current ellipsoid and any downstream results."),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("confirm_build_ell",
+                     "Yes, overwrite",
+                     class = "btn-warning")
+      ),
+      easyClose = FALSE
+    ))
+  } else {
+    session_data$confirm_build <- TRUE
+  }
+})
+
+observeEvent(input$confirm_build_ell, {
+  removeModal()
+  session_data$confirm_build <- TRUE
+})
+
+observeEvent(session_data$confirm_build, {
+  req(session_data$confirm_build, session_data$vars)
+
+  # Reset flag immediately so it does not re-trigger
+  session_data$confirm_build <- FALSE
+
+  ranges <- range_preview()
+
+  if(is.null(ranges)){
+    showNotification("Please check your range inputs before building.",
+                     type = "error")
+    return()
+  }
+
+  # Convert mins/maxs back to range_df format for build_ellipsoid
+  vars <- session_data$vars
+  range_df <- as.data.frame(rbind(unlist(ranges$mins),
+                                  unlist(ranges$maxs)),
+                            row.names = c("min", "max"))
+  colnames(range_df) <- vars
+
+  cl <- if(!is.null(input$cl_range)) input$cl_range else 0.95
+
+  tryCatch({
+    session_data$ellipsoid <- build_ellipsoid(range = range_df,
+                                              cl = cl,
+                                              verbose = FALSE)
+
+    showNotification("Ellipsoid built successfully.", type = "message")
+
+  }, error = function(e) {
+    showNotification(paste("Error building ellipsoid:", e$message),
+                     type = "error")
+  })
 })
 
 
@@ -125,7 +182,7 @@ range_preview <- reactive({
 
            expand_max <- setNames(sapply(vars, function(v){
              if(!is.null(input[[paste0("expand_max_stats_", v)]])){
-               input[[paste0("expand_min_stats_", v)]]
+               input[[paste0("expand_max_stats_", v)]]
              }else{
                NULL
              }
@@ -344,12 +401,20 @@ output$range_method_ui <- renderUI({
 })
 
 output$covariance_ui <- renderUI({
+
+  # Requires an ellipsoid to show up
   req(session_data$ellipsoid)
 
   box(title = "Covariance", width = 12,
-      p("Covariance stuff", class = "text-instructions")
+      p(instructions$covariance, class = "text-instruction"),
+      verbatimTextOutput("ellipsoid_print")
   )
 
+})
+
+output$ellipsoid_print <- renderPrint({
+  req(session_data$ellipsoid)
+  print(session_data$ellipsoid)
 })
 
 output$build_espace_plot <- renderPlot({
