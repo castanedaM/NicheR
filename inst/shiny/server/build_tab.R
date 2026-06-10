@@ -3,6 +3,44 @@
 # Date last updated: 06/10/2026
 
 
+
+# Functions ---------------------------------------------------------------
+
+build_ellipsoid_shiny <- function(){
+  req(session_data$vars)
+
+  ranges <- range_preview()
+
+  if(is.null(ranges)){
+    showNotification("Please check your range inputs before building.",
+                     type = "error")
+    return()
+  }
+
+  # Convert mins/maxs back to range_df format for build_ellipsoid
+  vars <- session_data$vars
+  range_df <- as.data.frame(rbind(unlist(ranges$mins),
+                                  unlist(ranges$maxs)),
+                            row.names = c("min", "max"))
+  colnames(range_df) <- vars
+
+  cl <- if(!is.null(input$cl_range)) input$cl_range else 0.95
+
+  tryCatch({
+    session_data$ellipsoid <- build_ellipsoid(range = range_df,
+                                              cl = cl,
+                                              verbose = FALSE)
+
+    session_data$ellipsoid_version <- session_data$ellipsoid_version + 1L
+
+    showNotification("Ellipsoid built successfully.", type = "message")
+
+  }, error = function(e) {
+    showNotification(paste("Error building ellipsoid:", e$message),
+                     type = "error")
+  })
+}
+
 # Observers ----------------------------------------------------------------
 
 observeEvent(input$reset_ranges, {
@@ -63,49 +101,14 @@ observeEvent(input$build_ell, {
       easyClose = FALSE
     ))
   } else {
-    session_data$confirm_build <- TRUE
+    build_ellipsoid_shiny()
   }
 })
 
 observeEvent(input$confirm_build_ell, {
   removeModal()
-  session_data$confirm_build <- TRUE
-})
+  build_ellipsoid_shiny()
 
-observeEvent(session_data$confirm_build, {
-  req(session_data$confirm_build, session_data$vars)
-
-  # Reset flag immediately so it does not re-trigger
-  session_data$confirm_build <- FALSE
-
-  ranges <- range_preview()
-
-  if(is.null(ranges)){
-    showNotification("Please check your range inputs before building.",
-                     type = "error")
-    return()
-  }
-
-  # Convert mins/maxs back to range_df format for build_ellipsoid
-  vars <- session_data$vars
-  range_df <- as.data.frame(rbind(unlist(ranges$mins),
-                                  unlist(ranges$maxs)),
-                            row.names = c("min", "max"))
-  colnames(range_df) <- vars
-
-  cl <- if(!is.null(input$cl_range)) input$cl_range else 0.95
-
-  tryCatch({
-    session_data$ellipsoid <- build_ellipsoid(range = range_df,
-                                              cl = cl,
-                                              verbose = FALSE)
-
-    showNotification("Ellipsoid built successfully.", type = "message")
-
-  }, error = function(e) {
-    showNotification(paste("Error building ellipsoid:", e$message),
-                     type = "error")
-  })
 })
 
 # Covariance update observer
@@ -113,21 +116,23 @@ observeEvent({
   ell <- session_data$ellipsoid
   req(ell)
   vars <- ell$var_names
+  version <- session_data$ellipsoid_version
   pairs <- t(combn(vars, 2))
   pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-  lapply(pair_names, function(pn) input[[paste0("cov_", pn)]])
+  lapply(pair_names, function(pn) input[[paste0("cov_", version, "_", pn)]])
 }, {
   req(session_data$ellipsoid)
 
   ell <- session_data$ellipsoid
   vars <- ell$var_names
+  version <- session_data$ellipsoid_version
   pairs <- t(combn(vars, 2))
   pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
 
   # Collect current slider values as named numeric vector
   cov_vals <- setNames(
     sapply(pair_names, function(pn) {
-      val <- input[[paste0("cov_", pn)]]
+      val <- input[[paste0("cov_", version, "_", pn)]]
       if(is.null(val)) 0 else val
     }),
     pair_names)
@@ -164,7 +169,7 @@ observeEvent({
     remaining_names <- rownames(remaining)
 
     lapply(remaining_names, function(pn){
-      slider_id <- paste0("cov_", pn)
+      slider_id <- paste0("cov_", version, "_", pn)
       cur_val <- input[[slider_id]]
 
       if (!is.null(cur_val)) {
@@ -278,7 +283,6 @@ range_preview <- reactive({
          }
   )
 })
-
 
 # Render Outputs ----------------------------------------------------------
 
@@ -523,9 +527,9 @@ output$covariance_ui <- renderUI({
   req(session_data$ellipsoid)
 
   box(title = tags$span("Covariance", class = "text-tab-title"),
-    width = 12,
-    p(instructions$covariance, class = "text-instruction"),
-    uiOutput("covariance_sliders_ui")
+      width = 12,
+      p(instructions$covariance, class = "text-instruction"),
+      uiOutput("covariance_sliders_ui")
   )
 })
 
@@ -534,6 +538,8 @@ output$covariance_sliders_ui <- renderUI({
 
   ell <- session_data$ellipsoid
   vars <- ell$var_names
+  version <- session_data$ellipsoid_version
+
 
   pairs <- t(combn(vars, 2))
   pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
@@ -561,7 +567,7 @@ output$covariance_sliders_ui <- renderUI({
 
     fluidRow(
       column(width = 12,
-             sliderInput(inputId = paste0("cov_", pn),
+             sliderInput(inputId = paste0("cov_", version, "_", pn),
                          label = pn,
                          min = round(min_val, 2),
                          max = round(max_val, 2),
@@ -572,7 +578,6 @@ output$covariance_sliders_ui <- renderUI({
 
   tagList(sliders)
 })
-
 
 output$ellipsoid_print <- renderPrint({
   req(session_data$ellipsoid)

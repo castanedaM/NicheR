@@ -8,7 +8,8 @@ function(input, output, session){
     vars = NULL,
     ranges = NULL,
     df_range = NULL,
-    ellipsoid = NULL
+    ellipsoid = NULL,
+    ellipsoid_version = 0L
   )
 
   source("server/helpers.R", local = TRUE)
