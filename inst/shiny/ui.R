@@ -163,7 +163,8 @@ dashboardPage(
                      ),
                      plotOutput("build_espace_plot")
                    )
-                 )
+                 ),
+                 verbatimTextOutput("ellipsoid_print")
           )
         )
       ),

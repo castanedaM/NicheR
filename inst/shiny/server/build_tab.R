@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs and e-space plot
-# Date last updated: 06/08/2026
+# Date last updated: 06/10/2026
 
 
 # Observers ----------------------------------------------------------------
@@ -108,6 +108,81 @@ observeEvent(session_data$confirm_build, {
   })
 })
 
+# Covariance update observer
+observeEvent({
+  ell <- session_data$ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+  lapply(pair_names, function(pn) input[[paste0("cov_", pn)]])
+}, {
+  req(session_data$ellipsoid)
+
+  ell <- session_data$ellipsoid
+  vars <- ell$var_names
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  # Collect current slider values as named numeric vector
+  cov_vals <- setNames(
+    sapply(pair_names, function(pn) {
+      val <- input[[paste0("cov_", pn)]]
+      if(is.null(val)) 0 else val
+    }),
+    pair_names)
+
+  # Only update if values differ from current covariance matrix
+  current_cov <- setNames(
+    sapply(seq_len(nrow(pairs)), function(i) {
+      ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
+    }),
+    pair_names)
+
+  if(all(cov_vals == current_cov)) return()
+
+  updated_ell <- tryCatch(
+    update_ellipsoid_covariance(object = ell,
+                                covariance = cov_vals,
+                                verbose = FALSE),
+    error = function(e) {
+      showNotification(paste("Covariance update failed:", e$message),
+                       type = "error")
+      NULL
+    }
+  )
+
+  req(updated_ell)
+
+  session_data$ellipsoid <- updated_ell
+
+  # Silently update slider bounds for remaining pairs using
+  # cov_limits_remaining, preserving current selected values
+  remaining <- updated_ell$cov_limits_remaining
+
+  if(!is.null(remaining)) {
+    remaining_names <- rownames(remaining)
+
+    lapply(remaining_names, function(pn){
+      slider_id <- paste0("cov_", pn)
+      cur_val <- input[[slider_id]]
+
+      if (!is.null(cur_val)) {
+        new_min <- remaining[pn, "min"]
+        new_max <- remaining[pn, "max"]
+
+        # Clamp current value to new limits silently
+        clamped <- max(new_min, min(new_max, cur_val))
+
+        updateSliderInput(session,
+                          inputId = slider_id,
+                          min = round(new_min, 2),
+                          max = round(new_max, 2),
+                          value = round(clamped, 2))
+      }
+    })
+  }
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 # Reactives ---------------------------------------------------------------
 
@@ -143,7 +218,6 @@ range_preview <- reactive({
              }
            }),
            vars)
-
 
            expand_max <- setNames(sapply(vars, function(v){
              if(!is.null(input[[paste0("expand_max_df_", v)]])){
@@ -400,23 +474,6 @@ output$range_method_ui <- renderUI({
   )
 })
 
-output$covariance_ui <- renderUI({
-
-  # Requires an ellipsoid to show up
-  req(session_data$ellipsoid)
-
-  box(title = "Covariance", width = 12,
-      p(instructions$covariance, class = "text-instruction"),
-      verbatimTextOutput("ellipsoid_print")
-  )
-
-})
-
-output$ellipsoid_print <- renderPrint({
-  req(session_data$ellipsoid)
-  print(session_data$ellipsoid)
-})
-
 output$build_espace_plot <- renderPlot({
 
   req(range_preview(), session_data$vars, session_data$bg_df)
@@ -459,4 +516,67 @@ output$build_espace_plot <- renderPlot({
     abline(h = ranges$maxs[[v2]], col = "#0004d5", lwd = 2, lty = 2)
   }
 })
+
+# Covariance sliders UI --------------------------------------------------
+
+output$covariance_ui <- renderUI({
+  req(session_data$ellipsoid)
+
+  box(title = tags$span("Covariance", class = "text-tab-title"),
+    width = 12,
+    p(instructions$covariance, class = "text-instruction"),
+    uiOutput("covariance_sliders_ui")
+  )
+})
+
+output$covariance_sliders_ui <- renderUI({
+  req(session_data$ellipsoid)
+
+  ell <- session_data$ellipsoid
+  vars <- ell$var_names
+
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  # Current off-diagonal values from cov_matrix
+  current_cov <- setNames(
+    sapply(seq_len(nrow(pairs)), function(i){
+      ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
+    }),
+    pair_names)
+
+  # Limits come from cov_limits rownames
+  lims <- ell$cov_limits
+  rownames(lims) <- pair_names
+
+  sliders <- lapply(pair_names, function(pn){
+    min_val <- lims[pn, "min"]
+    max_val <- lims[pn, "max"]
+    cur_val <- current_cov[[pn]]
+
+    # Clamp current value to limits in case of floating point drift
+    cur_val <- max(min_val, min(max_val, cur_val))
+
+    step <- round((max_val - min_val) / 100, 4)
+
+    fluidRow(
+      column(width = 12,
+             sliderInput(inputId = paste0("cov_", pn),
+                         label = pn,
+                         min = round(min_val, 2),
+                         max = round(max_val, 2),
+                         value = round(cur_val, 2),
+                         step = step))
+    )
+  })
+
+  tagList(sliders)
+})
+
+
+output$ellipsoid_print <- renderPrint({
+  req(session_data$ellipsoid)
+  print(session_data$ellipsoid)
+})
+
 
