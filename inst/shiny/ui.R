@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 6/8/2026
+# Lats Updated: 6/10/2026
 
 dashboardPage(
   dashboardHeader(
@@ -132,7 +132,7 @@ dashboardPage(
         tabName = "build_tab",
         fluidRow(
           column(width = 6,
-                 box(
+                 box(title = tags$span("Range", class = "text-tag-title"),
                    width = 12, collapsible = TRUE, collapsed = FALSE,
                    p(instructions$range_choice, class = "text-instruction"),
                    radioButtons("range_method_choice",
@@ -149,19 +149,28 @@ dashboardPage(
           ),
           column(width = 6,
                  tabBox(
-                   title = "plot",
                    width = 12,
                    tabPanel(
                      "E-space",
                      radioButtons("plot_state",
-                                  label = NULL, choices = c("Pairs" = "plot_pairs",
-                                                            "2D" = "plot_2d")),
+                                  label = tags$span("Select plot type:",
+                                                    class = "text-widget-title"),
+                                  choices = c("Pairs" = "plot_pairs",
+                                              "2D" = "plot_2d"),
+                                  inline = TRUE),
                      conditionalPanel("input.plot_state == 'plot_2d'",
-                                      selectInput("plot_2d_vars", label = NULL,
-                                                  choices = character(0)
+                                      column(width = 6,
+                                             selectInput("plot_2d_x", label = NULL,
+                                                         choices = character(0))
+                                      ),
+                                      column(width = 6,
+                                             selectInput("plot_2d_y", label = NULL,
+                                                         choices = character(0))
                                       )
+
                      ),
-                     plotOutput("build_espace_plot")
+                     plotOutput("build_espace_plot",
+                                height = "500px")
                    )
                  ),
                  verbatimTextOutput("ellipsoid_print")
@@ -175,7 +184,6 @@ dashboardPage(
               solidHeader = TRUE, status = "primary",
               "Predict function details"),
           tabBox(
-            title = "plot",
             width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
@@ -189,7 +197,6 @@ dashboardPage(
               solidHeader = TRUE, status = "primary",
               "Generate occurrence function details"),
           tabBox(
-            title = "plot",
             width = 6,
             tabPanel("E-space"),
             tabPanel("G-space"),
