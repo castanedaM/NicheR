@@ -16,6 +16,8 @@ function(input, output, session){
     ellipsoid_version = 0L
   )
 
+  cov_counters <- reactiveVal(list())
+
   source("server/helpers.R", local = TRUE)
   source("server/data_tab.R", local = TRUE)
   source("server/build_tab.R", local = TRUE)
