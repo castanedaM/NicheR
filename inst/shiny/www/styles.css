@@ -57,7 +57,7 @@
 .text-warning-note {
   font-size: 13px;
   font-weight: 400;
-  color: var(--color-text-warning);
+  color:  #CC5500;
   margin-bottom: 12px;
   line-height: 1.5;
 }
@@ -66,7 +66,7 @@
 .text-widget-inner {
   font-size: 12px;
   font-weight: 400;
-  color: var(--color-text-secondary);  /* slightly muted, not full black */
+  color: #383838;  /* slightly muted, not full black */
   line-height: 1.4;
 }
 
@@ -75,7 +75,7 @@
 .text-muted-small {
   font-size: 11px;
   font-weight: 400;
-  color: var(--color-text-tertiary);   /* lightest readable gray */
+  color: #707070;   /* lightest readable gray */
   line-height: 1.4;
 }
 
@@ -87,6 +87,7 @@
   text-align: center;
 }
 
+/* this are for the shiny widgets, they are fixed in the dashboard so i have to edit the texts like this and not with tags*/
 input[type="number"] {
   font-size: 12px;
   color: var(--color-text-primary);
@@ -101,9 +102,9 @@ input[type="file"] {
 /* file input browse button */
 .btn-file {
   font-size: 12px;
-  padding: 4px 10px;    /* top/bottom  left/right */
+  align-items: center;
+  justify-content: center;
   height: 34px;         /* explicit height locks them together */
-  line-height: 1.5;
 }
 
 /* file input filename display area */
