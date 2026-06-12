@@ -118,6 +118,7 @@ ellipsoid_calculator <- function(cov_matrix,
   verbose_message(verbose, "Done: updated ellipsoidal niche metrics")
 
   new_nicheR_ellipsoid(
+    ranges = data.frame(),
     dimensions = ncol(cov_matrix),
     var_names = colnames(cov_matrix),
     centroid = centroid,
@@ -130,7 +131,8 @@ ellipsoid_calculator <- function(cov_matrix,
     semi_axes_lengths = semi_axes_lengths,
     axes_coordinates = axes_coordinates,
     volume = volume,
-    cov_limits = cov_limits
+    cov_limits = cov_limits,
+    cov_limits_remaining = data.frame()
   )
 
 }

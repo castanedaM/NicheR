@@ -129,6 +129,7 @@ build_ellipsoid <- function(range,
   out <- ellipsoid_calculator(cov_matrix = cov_matrix,
                               centroid = mu_vec, cl = cl,
                               verbose = FALSE)
+  out$ranges <- range
 
   verbose_message(verbose, "Done: created ellipsoidal niche.\n")
 

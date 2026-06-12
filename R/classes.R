@@ -18,16 +18,18 @@
 #'
 #' @return
 #' An object of class \code{nicheR_ellipsoid} with the fields described above.
-#' 
+#'
 #' @keywords internal
 
-new_nicheR_ellipsoid <- function(dimensions, var_names, centroid, cov_matrix,
+new_nicheR_ellipsoid <- function(ranges, dimensions, var_names, centroid, cov_matrix,
                                  Sigma_inv, chol_Sigma, eigen, cl,
                                  chi2_cutoff, semi_axes_lengths,
-                                 axes_coordinates, volume, cov_limits) {
-  
+                                 axes_coordinates, volume, cov_limits,
+                                 cov_limits_remaining) {
+
   structure(
     list(
+      ranges = ranges,
       dimensions = dimensions,
       var_names = var_names,
       centroid = centroid,
@@ -40,8 +42,10 @@ new_nicheR_ellipsoid <- function(dimensions, var_names, centroid, cov_matrix,
       semi_axes_lengths = semi_axes_lengths,
       axes_coordinates = axes_coordinates,
       volume = volume,
-      cov_limits = cov_limits
+      cov_limits = cov_limits,
+      cov_limits_remaining = cov_limits_remaining
     ),
+
     class = "nicheR_ellipsoid"
   )
 }
@@ -93,7 +97,7 @@ new_nicheR_community <- function(ellipse_community, reference, pattern, n,
     resolution = resolution,
     seed = seed
   )
-  
+
   structure(
     list(
       details = details,
