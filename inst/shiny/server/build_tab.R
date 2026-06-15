@@ -1,7 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs and e-space plot
-# Date last updated: 06/11/2026
-
+# Date last updated: 06/15/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -57,23 +56,28 @@ build_ellipsoid_shiny <- function(){
 # Reset range values to defaults
 observeEvent(input$reset_ranges, {
 
-  req(input$range_method_choice, session_data$vars, session_data$bg_df)
+  req(input$range_method_choice, session_data$vars)
   vars <- session_data$vars
+  has_bg_df <- !is.null(session_data$bg_df)
 
   switch(input$range_method_choice,
 
          "man" = {
            lapply(vars, function(v){
-             vals <- session_data$bg_df[[v]]
-             m <- round(mean(vals, na.rm = TRUE), 2)
-             s <- round(sd(vals, na.rm = TRUE), 2)
+             if(has_bg_df){
+               vals <- session_data$bg_df[[v]]
+               m <- round(mean(vals, na.rm = TRUE), 2)
+               s <- round(sd(vals, na.rm = TRUE), 2)
+             } else {
+               m <- 0
+               s <- 1
+             }
              updateNumericInput(session, paste0("min_", v), value = m)
              updateNumericInput(session, paste0("max_", v), value = m + s)
            })
          },
 
          "df" = {
-           req(session_data$df_range)
            lapply(vars, function(v){
              updateNumericInput(session, paste0("expand_min_df_", v), value = 0)
              updateNumericInput(session, paste0("expand_max_df_", v), value = 0)
@@ -82,11 +86,16 @@ observeEvent(input$reset_ranges, {
 
          "stats" = {
            lapply(vars, function(v){
-             vals <- session_data$bg_df[[v]]
-             updateNumericInput(session, paste0("mean_", v),
-                                value = round(mean(vals, na.rm = TRUE), 2))
-             updateNumericInput(session, paste0("sd_", v),
-                                value = round(sd(vals, na.rm = TRUE), 2))
+             if(has_bg_df){
+               vals <- session_data$bg_df[[v]]
+               m <- round(mean(vals, na.rm = TRUE), 2)
+               s <- round(sd(vals, na.rm = TRUE), 2)
+             } else {
+               m <- 0
+               s <- 1
+             }
+             updateNumericInput(session, paste0("mean_", v), value = m)
+             updateNumericInput(session, paste0("sd_", v), value = s)
              updateNumericInput(session, paste0("expand_min_stats_", v), value = 0)
              updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
            })
@@ -142,44 +151,6 @@ observeEvent({
   cov_counters(new_cnts)
 })
 
-# Updates the axis showing in 2d plot
-observeEvent({
-  input$plot_state
-  input$plot_2d_x
-  input$plot_2d_y
-  session_data$vars
- }, {
-
-    req(session_data$vars)
-
-    vars <- session_data$vars
-
-    req(input$plot_state == "plot_2d")
-
-    x_sel <- input$plot_2d_x
-    y_sel <- input$plot_2d_y
-
-    # Set defaults if missing or invalid
-    if (is.null(x_sel) || !x_sel %in% vars){
-      x_sel <- vars[1]
-    }
-
-    y_choices <- setdiff(vars, x_sel)
-
-    if (is.null(y_sel) || !y_sel %in% y_choices){
-      y_sel <- y_choices[1]
-    }
-
-    x_choices <- setdiff(vars, y_sel)
-
-    updateSelectInput(session, "plot_2d_x",
-                      choices = x_choices,
-                      selected = x_sel)
-
-    updateSelectInput(session, "plot_2d_y",
-                      choices = y_choices,
-                      selected = y_sel)
-  }, ignoreInit = FALSE)
 
 # Button triggered, builds the ellipsoid
 observeEvent(input$build_ell, {
@@ -313,7 +284,8 @@ range_preview <- reactive({
          },
 
          "df" = {
-           req(session_data$df_range)
+
+           req(input$df_range_file)
 
            expand_min <- setNames(sapply(vars, function(v){
              if(!is.null(input[[paste0("expand_min_df_", v)]])){
@@ -333,7 +305,18 @@ range_preview <- reactive({
            }),
            vars)
 
-           ranges_df <- ranges_from_data(data = session_data$df_range[, vars, drop = FALSE],
+           ext <- tolower(tools::file_ext(input$df_range_file$name))
+
+           df_range <- tryCatch(
+             load_df_file(input$df_range_file$datapath, ext),
+             error = function(e) NULL)
+
+           if(is.null(df_range)) return(NULL)
+
+           shared_vars <- intersect(vars, colnames(df_range))
+           if(length(shared_vars) != length(vars)) return(NULL)
+
+           ranges_df <- ranges_from_data(data = df_range[, vars, drop = FALSE],
                                          expand_min = as.list(expand_min),
                                          expand_max = as.list(expand_max))
 
@@ -388,9 +371,13 @@ range_preview <- reactive({
 
 output$range_method_ui <- renderUI({
 
-  req(input$range_method_choice, session_data$vars, session_data$bg_df)
+  req(input$range_method_choice, session_data$vars)
+  req(isTRUE(session_data$vars_confirmed))
 
   vars <- session_data$vars
+
+  # No background data in virtual mode, default stats to a standard scale
+  has_bg_df <- !is.null(session_data$bg_df)
 
   # Same button in all range method
   cl_row <- fluidRow(
@@ -431,17 +418,29 @@ output$range_method_ui <- renderUI({
            )
 
            var_rows <- lapply(vars, function(v){
+             default_min <- if(has_bg_df){
+               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2)
+             } else {
+               0
+             }
+             default_max <- if(has_bg_df){
+               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2) +
+                 round(sd(session_data$bg_df[, v], na.rm = TRUE), 2)
+             } else {
+               1
+             }
+
              fluidRow(
                column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
-                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2),
+                                   value = default_min,
                                    step = 0.5)),
                column(width = 4,
                       numericInput(inputId = paste0("max_", v),
                                    label = NULL,
-                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2) + round(sd(session_data$bg_df[, v], na.rm = TRUE), 2),
+                                   value = default_max,
                                    step = 0.5))
              )
            })
@@ -456,7 +455,8 @@ output$range_method_ui <- renderUI({
              p(instructions$range_data, class = "text-instruction"),
              column(width = 6,
                     fileInput(inputId = "df_range_file",
-                              label = tags$span("Choose CSV file with range data", class = "text-widget-title"),
+                              label = tags$span("Choose CSV file with range data",
+                                                class = "text-widget-title"),
                               multiple = FALSE,
                               accept = c("text/csv",
                                          "text/comma-separated-values",
@@ -488,9 +488,6 @@ output$range_method_ui <- renderUI({
                    class = "text-warning-note")
 
                }else{
-
-                 # TO DO: check later if i want to keep this as a session data or not
-                 session_data$df_range <- df_range
 
                  obs_ranges <- lapply(shared_vars, function(v){
                    list(min = round(min(df_range[, v], na.rm = TRUE), 2),
@@ -545,19 +542,30 @@ output$range_method_ui <- renderUI({
            )
 
            var_rows <- lapply(vars, function(v){
+             default_mean <- if(has_bg_df){
+               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2)
+             } else {
+               0
+             }
+             default_sd <- if(has_bg_df){
+               round(sd(session_data$bg_df[, v], na.rm = TRUE), 2)
+             } else {
+               1
+             }
+
              fluidRow(
                column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 2,
                       numericInput(inputId = paste0("mean_", v),
                                    label = NULL,
-                                   value = round(mean(session_data$bg_df[, v], na.rm = TRUE), 2),
+                                   value = default_mean,
                                    step = 0.5)
                ),
 
                column(width = 2,
                       numericInput(inputId = paste0("sd_", v),
                                    label = NULL,
-                                   value = round(sd(session_data$bg_df[, v], na.rm = TRUE), 2),
+                                   value = default_sd,
                                    step = 0.5)
                ),
                column(width = 2,
@@ -576,95 +584,6 @@ output$range_method_ui <- renderUI({
            tagList(header, var_rows, cl_row, reset_btn, build_btn)
          }
   )
-})
-
-output$build_espace_plot <- renderPlot({
-
-  req(range_preview(), session_data$vars, session_data$bg_df, input$plot_state)
-
-  # This is how to access the reactive method
-  ranges <- range_preview()
-  vars <- session_data$vars
-  bg <- session_data$bg_df
-
-  switch(input$plot_state,
-         "plot_pairs" = {
-
-           # Build all pairwise combinations
-           pairs <- t(combn(seq_along(vars), 2))
-           n_pairs <- nrow(pairs)
-           n_cols <- ceiling(sqrt(n_pairs))
-           n_rows <- ceiling(n_pairs / n_cols)
-
-           old_par <- par(no.readonly = TRUE)
-           on.exit(par(old_par))
-
-           par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
-
-           for (i in seq_len(n_pairs)){
-             v1 <- vars[pairs[i, 1]]
-             v2 <- vars[pairs[i, 2]]
-
-             # Background scatter
-             plot(bg[[v1]], bg[[v2]],
-                  col  = "grey70",
-                  pch  = 20,
-                  cex  = 0.3,
-                  xlab = v1,
-                  ylab = v2,
-                  main = paste(v1, "vs.", v2))
-
-             # Vertical lines for v1 range
-             abline(v = ranges$mins[[v1]], col = "#e10000", lwd = 2, lty = 2)
-             abline(v = ranges$maxs[[v1]], col = "#e10000", lwd = 2, lty = 2)
-
-             # Horizontal lines for v2 range
-             abline(h = ranges$mins[[v2]], col = "#0004d5", lwd = 2, lty = 2)
-             abline(h = ranges$maxs[[v2]], col = "#0004d5", lwd = 2, lty = 2)
-           }
-         },
-
-         "plot_2d" = {
-
-           req(input$plot_2d_x, input$plot_2d_y)
-
-           v1 <- input$plot_2d_x
-           v2 <- input$plot_2d_y
-
-           old_par <- par(no.readonly = TRUE)
-           on.exit(par(old_par))
-
-           par(mar = c(4, 4, 2, 1))
-
-           plot(bg[[v1]], bg[[v2]],
-                col  = "grey70",
-                pch  = 20,
-                cex  = 0.3,
-                xlab = v1,
-                ylab = v2,
-                main = paste(v1, "vs.", v2))
-
-           # Vertical lines for v1 range
-           abline(v = ranges$mins[[v1]], col = "#e10000", lwd = 2, lty = 2)
-           abline(v = ranges$maxs[[v1]], col = "#e10000", lwd = 2, lty = 2)
-
-           # Horizontal lines for v2 range
-           abline(h = ranges$mins[[v2]], col = "#0004d5", lwd = 2, lty = 2)
-           abline(h = ranges$maxs[[v2]], col = "#0004d5", lwd = 2, lty = 2)
-
-        }
-  )
-}, height = function(){
-
-  if(input$plot_state == "plot_2d"){
-    return(450)
-  }
-
-  if(input$plot_state == "plot_pairs"){
-    return(500)
-  }
-
-  500
 })
 
 output$covariance_ui <- renderUI({
@@ -757,5 +676,3 @@ output$ellipsoid_print <- renderPrint({
 
 
 })
-
-

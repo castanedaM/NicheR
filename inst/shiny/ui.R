@@ -12,15 +12,15 @@ dashboardPage(
     width = 200,
     sidebarMenu(
       id = "sidebarMenu",
-      menuItem("1. Data Inputs",
-               tabName = "data_tab",
-               icon = icon("table")),
-      menuItem("2. Build Ellipsoid",
+      menuItem("1. Build Ellipsoid",
                tabName = "build_tab",
                icon = icon("gear")),
-      menuItem("3. Prediction",
+      menuItem("2. Prediction",
                tabName = "predict_tab",
                icon = icon("angles-right")),
+      menuItem("3. Bias",
+               tabName = "bias_tab",
+               icon = icon("table")),
       menuItem("4. Generate Occurrences",
                tabName = "generate_tab",
                icon = icon("eye-dropper")),
@@ -51,128 +51,65 @@ dashboardPage(
     includeCSS("www/styles.css"),
     tabItems(
       tabItem(
-        tabName = "data_tab",
-        fluidRow(
-          tabBox(
-            id = "tabset1",
-            width = 12,
-            tabPanel(
-              tags$span("Data Inputs", class = "text-tab-title"),
-              p(instructions$data_upload, class = "text-instruction"),
-              fluidRow(
-                column(width = 5,
-                       fileInput(inputId = "raster_file",
-                                 label = tagList(
-                                   tags$span("Background Layers (Raster)", class = "text-widget-title"),
-                                   tags$span(icon("circle-info"),
-                                             title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds", class = "text-widget-title")),
-                                 multiple = FALSE,
-                                 accept = c("tif", "tiff", "rds")),
-
-                       fileInput(inputId = "df_file",
-                                 label = tagList(
-                                   tags$span("Background Layers (CSV)", class = "text-widget-title"),
-                                   tags$span(icon("circle-info"),
-                                             title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds", class = "text-widget-title"))
-                                 ,
-                                 multiple = FALSE,
-                                 accept = c("text/csv",
-                                            "text/comma-separated-values",
-                                            "text/plain",
-                                            ".csv", "rds"))
-
-                ),
-
-                column(width = 7,
-                       verbatimTextOutput("raster_print"),
-                       tableOutput("df_header")
-                )
-              ),
-
-              fluidRow(
-                column(width = 5,
-                       box(title = tagList(tags$span("Optional Bias Raster",
-                                                     class = "text-tab-title"),
-                                           tags$span(icon("circle-info"),
-                                                     title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",  class = "text-widget-title")),
-                           width = 9,
-                           collapsible = TRUE,
-                           collapsed = TRUE,
-                           fileInput(inputId = "bias_raster_file",
-                                     label = tags$span("Sampling Bias Layer/s (Raster)", class = "text-widget-title"),
-                                     multiple = FALSE,
-                                     accept = c("tif", "tiff", "rds"))
-                       )
-                ),
-
-                column(width = 7,
-                       verbatimTextOutput("bias_raster_print")
-                )
-              ),
-
-              fluidRow(
-                column(
-                  width = 12,
-                  class = "btn-spaced",
-                  actionButton(inputId = "data_upload",
-                               label = "Upload",
-                               class = "btn-primary")
-                )
-              )
-            ),
-            tabPanel(
-              title = tags$span("Settings", class = "text-tab-title"),
-              value = "setting",
-              uiOutput("variable_selectors_ui")
-            )
-          )
-        )
-      ),
-      tabItem(
         tabName = "build_tab",
         fluidRow(
           column(width = 6,
-                 box(title = tags$span("Range", class = "text-tag-title"),
-                   width = 12, collapsible = TRUE, collapsed = FALSE,
-                   p(instructions$range_choice, class = "text-instruction"),
-                   radioButtons("range_method_choice",
-                                label = tags$span("Select Range Method:", class = "text-widget-title"),
-                                choices = c("Manual" = "man",
-                                            "From Data" = "df",
-                                            "From Stats" = "stats"),
-                                selected = character(0)),
+                 tabBox(
+                   id = "tabpanel-build",
+                   width = 12,
 
-                   uiOutput("range_method_ui")
-                 ),
+                   tabPanel(
+                     tags$span("Inputs", class = "text-tab-title"),
+                     fluidRow(
+                       radioButtons("data_input_type_choice",
+                                    label = tags$span("Select Input Type:", class = "text-widget-title"),
+                                    choices = c("Background Layers" = "bg_layers",
+                                                "Previous Session" = "prev_session",
+                                                "Virtual Mode" = "virtual_mode",
+                                                "Example Data" = "example_data"),
+                                    selected = character(0), inline = TRUE),
+                       uiOutput("data_input_type")
+                     )
+                   ),
 
-                 uiOutput("covariance_ui")
+                   tabPanel(
+                     title = tags$span("Range", class = "text-tab-title"),
+                     width = 12,
+                     value = "range",
+
+                     uiOutput("variable_selectors_ui"),
+
+                     p(instructions$range_choice, class = "text-instruction"),
+                     radioButtons("range_method_choice",
+                                  label = tags$span("Select Range Method:", class = "text-widget-title"),
+                                  choices = c("Manual" = "man",
+                                              "From Data" = "df",
+                                              "From Stats" = "stats"),
+                                  selected = character(0)),
+
+
+                     uiOutput("range_method_ui")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Covariance", class = "text-tab-title"),
+                     width = 12,
+                     uiOutput("covariance_ui")
+                   )
+                 )
           ),
+
           column(width = 6,
                  tabBox(
                    width = 12,
                    tabPanel(
                      "E-space",
-                     radioButtons("plot_state",
-                                  label = tags$span("Select plot type:",
-                                                    class = "text-widget-title"),
-                                  choices = c("Pairs" = "plot_pairs",
-                                              "2D" = "plot_2d"),
-                                  inline = TRUE),
-                     conditionalPanel("input.plot_state == 'plot_2d'",
-                                      column(width = 6,
-                                             selectInput("plot_2d_x", label = NULL,
-                                                         choices = character(0))
-                                      ),
-                                      column(width = 6,
-                                             selectInput("plot_2d_y", label = NULL,
-                                                         choices = character(0))
-                                      )
-
-                     ),
+                     uiOutput("plot_options_ui"),
                      plotOutput("build_espace_plot",
                                 height = "500px")
                    )
                  ),
+
                  verbatimTextOutput("ellipsoid_print")
           )
         )
@@ -190,6 +127,37 @@ dashboardPage(
           )
         )
       ),
+
+      tabItem(
+        tabName = "bias_tab",
+        fluidRow(
+          column(width = 5,
+                 box(title = tagList(tags$span("Optional Bias Raster",
+                                               class = "text-tab-title"),
+                                     tags$span(icon("circle-info"),
+                                               title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",  class = "text-widget-title")),
+                     width = 9,
+                     collapsible = TRUE,
+                     collapsed = TRUE,
+                     fileInput(inputId = "bias_raster_file",
+                               label = tags$span("Sampling Bias Layer/s (Raster)", class = "text-widget-title"),
+                               multiple = FALSE,
+                               accept = c("tif", "tiff", "rds"))
+                 )
+          ),
+
+          column(width = 7,
+                 verbatimTextOutput("bias_raster_print")
+          )
+        ),
+        tabBox(
+          width = 6,
+          tabPanel("E-space"),
+          tabPanel("G-space"),
+        )
+      ),
+
+
       tabItem(
         tabName = "generate_tab",
         fluidRow(
