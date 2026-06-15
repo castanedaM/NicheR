@@ -1,5 +1,5 @@
 # Title: Build tab server logic
-# Description: Handles range inputs and e-space plot
+# Description: Handles range inputs
 # Date last updated: 06/15/2026
 
 
@@ -596,7 +596,7 @@ output$covariance_ui <- renderUI({
   )
 })
 
-output$covariance_sliders_ui <- renderUI({
+output$covariance_ui <- renderUI({
   req(session_data$ellipsoid_version > 0)
 
   ell <- isolate(session_data$ellipsoid)
@@ -620,16 +620,13 @@ output$covariance_sliders_ui <- renderUI({
                         column(width = 11,
                                sliderInput(inputId = paste0("cov_", version, "_", pn),
                                            label = pn,
-                                           min = round(min_val, 2),
-                                           max = round(max_val, 2),
+                                           min   = round(min_val, 2),
+                                           max   = round(max_val, 2),
                                            value = 0,
-                                           step = step)),
+                                           step  = step)),
                         column(width = 1,
-                               class = "btn-spaced",
-                               actionLink(inputId = paste0("cov_reset_", version, '_', pn),
-                                          label = icon("rotate-left")
-                               )
-                        )
+                               actionLink(inputId = paste0("cov_reset_", version, "_", pn),
+                                          label   = icon("rotate-left")))
                       )
                     })
 

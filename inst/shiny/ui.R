@@ -61,14 +61,16 @@ dashboardPage(
                    tabPanel(
                      tags$span("Inputs", class = "text-tab-title"),
                      fluidRow(
-                       radioButtons("data_input_type_choice",
-                                    label = tags$span("Select Input Type:", class = "text-widget-title"),
-                                    choices = c("Background Layers" = "bg_layers",
-                                                "Previous Session" = "prev_session",
-                                                "Virtual Mode" = "virtual_mode",
-                                                "Example Data" = "example_data"),
-                                    selected = character(0), inline = TRUE),
-                       uiOutput("data_input_type")
+                       column(width = 12,
+                              radioButtons("data_input_type_choice",
+                                           label = tags$span("Select Input Type:", class = "text-widget-title"),
+                                           choices = c("Background Layers" = "bg_layers",
+                                                       "Previous Session" = "prev_session",
+                                                       "Virtual Mode" = "virtual_mode",
+                                                       "Example Data" = "example_data"),
+                                           selected = character(0), inline = TRUE),
+                              uiOutput("data_input_type")
+                       )
                      )
                    ),
 
@@ -94,7 +96,14 @@ dashboardPage(
                    tabPanel(
                      title = tags$span("Covariance", class = "text-tab-title"),
                      width = 12,
-                     uiOutput("covariance_ui")
+                     p(instructions$covariance, class = "text-instruction"),
+                     fluidRow(
+                       column(width = 1),
+                       column(width = 10,
+                              uiOutput("covariance_ui")
+                       ),
+                       column(width = 1),
+                     )
                    )
                  )
           ),

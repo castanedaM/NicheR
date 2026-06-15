@@ -87,6 +87,13 @@
   text-align: center;
 }
 
+/* Remove the colored fill bar */
+.irs-bar {
+  background: transparent !important;
+  border-color: #ddd !important;
+}
+
+
 /* this are for the shiny widgets, they are fixed in the dashboard so i have to edit the texts like this and not with tags*/
 input[type="number"] {
   font-size: 12px;
@@ -115,6 +122,8 @@ input[type="file"] {
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
+
+
 
 /* ============================================================
    SIDEBAR NAVIGATION
