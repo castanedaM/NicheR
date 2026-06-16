@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 06/15/2026
+# Date last updated: 06/16/2026
 
 # Observer Events ---------------------------------------------------------
 
@@ -48,6 +48,10 @@ observeEvent(input$data_upload, {
       "No files selected. Please choose at least one file before uploading.",
       type = "warning", duration = 4)
     return()
+  }
+
+  if(is.null(session_data$bg_df) && !is.null(session_data$bg_raster)){
+    session_data$bg_df <- terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
   }
 
   msg <- paste(c(if(!is.null(session_data$bg_raster)) "Raster loaded successfully.",
@@ -105,8 +109,6 @@ observeEvent(input$reupload, {
   removeModal()
 })
 
-
-# Observers for Virtual Space only
 observeEvent(input$continue_virtual, {
   session_data$input_mode <- "virtual"
   updateTabsetPanel(session, "tabpanel-build", selected = "range")
@@ -117,11 +119,19 @@ observeEvent(input$continue_example, {
 
   session_data$bg_raster <- terra::rast(system.file("extdata", "ma_bios.tif",
                                                     package = "nicheR"))
+  session_data$bg_df <- terra::as.data.frame(session_data$bg_raster,
+                                             xy = TRUE, na.rm = TRUE)
 
   updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
+observeEvent(input$load_session, {
+  session_data$input_mode <- "previous session"
 
+  # look at the rds content and anssigned what it has, depending on it jump to the last recorded thing, if any of the object is NULL, this is why is important for the rest of the step to reset properly.
+
+  # updateTabsetPanel(session, "tabpanel-build", selected = "range")
+})
 
 observeEvent(input$confirm_variables, {
 
@@ -168,25 +178,49 @@ observeEvent(input$confirm_variables, {
 
     session_data$vars <- vars
 
-    if(is.null(session_data$bg_df) && !is.null(session_data$bg_raster)){
-      session_data$bg_df <- terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
-    }
-
     showNotification(paste("Selected variables:", paste(vars, collapse = ", ")),
                      type = "message", duration = 4)
   }
 
   session_data$vars_confirmed <- TRUE
 
+  # Clear everything downstream that depended on the old variable set
+  session_data$ellipsoid <- NULL
+  session_data$ellipsoid_version <- 0
+
 })
 
 observeEvent(input$edit_variables, {
-  session_data$vars_confirmed <- FALSE
+
+  if(!is.null(session_data$ellipsoid)){
+    showModal(modalDialog(
+      title = "Edit variables?",
+      p("You have already built an ellipsoid. Editing your variables will
+         delete the current ellipsoid and any covariance adjustments."),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("confirm_edit_variables",
+                     "Yes, edit variables",
+                     class = "btn-warning")
+      ),
+      easyClose = FALSE
+    ))
+  } else {
+    session_data$vars_confirmed <- FALSE
+  }
 })
 
+observeEvent(input$confirm_edit_variables, {
+  removeModal()
+
+  session_data$vars_confirmed <- FALSE
+  session_data$ellipsoid <- NULL
+  session_data$ellipsoid_version <- 0
+
+  updateRadioButtons(session, "range_method_choice", selected = character(0))
+})
 
 observeEvent({
-
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
 }, {
@@ -223,7 +257,6 @@ observeEvent({
                       selected = current[i])
   })
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
-
 
 # Render Outputs ----------------------------------------------------------
 
@@ -349,8 +382,6 @@ observeEvent(input$data_input_type_choice, {
   session_data$vars_confirmed <- FALSE
 
 }, ignoreInit = TRUE)
-
-
 
 output$raster_print <- renderPrint({
   req(input$raster_file)

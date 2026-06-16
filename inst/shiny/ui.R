@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 6/10/2026
+# Lats Updated: 6/16/2026
 
 dashboardPage(
   dashboardHeader(
@@ -115,7 +115,14 @@ dashboardPage(
                      "E-space",
                      uiOutput("plot_options_ui"),
                      plotOutput("build_espace_plot",
-                                height = "500px")
+                                height = "500px"),
+                     uiOutput("plot_settings_ui"),
+
+                     fluidRow(
+                       column(width = 12, class = "btn-spaced",
+                              downloadButton("export_espace_plot", "Export Figure",
+                                             class = "btn-default"))
+                     )
                    )
                  ),
 

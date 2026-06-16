@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs
-# Date last updated: 06/15/2026
+# Date last updated: 06/16/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -264,7 +264,10 @@ observeEvent({
 
 range_preview <- reactive({
 
-  req(input$range_method_choice, session_data$vars, session_data$bg_df)
+  if(is.null(input$range_method_choice) || is.null(session_data$vars)){
+    return(NULL)
+  }
+
   vars <- session_data$vars
 
   switch(input$range_method_choice,
@@ -276,6 +279,12 @@ range_preview <- reactive({
            maxs <- setNames(sapply(vars, function(v){
              input[[paste0("max_", v)]]}),
              vars)
+
+           # Guard: if any input hasn't rendered yet (e.g. right after editing
+           # variables), mins/maxs may contain NULL. Bail out cleanly instead
+           # of comparing incompatible types.
+           if(!is.numeric(mins) || !is.numeric(maxs)) return(NULL)
+           if(length(mins) != length(vars) || length(maxs) != length(vars)) return(NULL)
 
            if(any(is.na(mins)) || any(is.na(maxs))) return(NULL)
            if(any(maxs <= mins)) return(NULL)
