@@ -64,6 +64,9 @@ First, we load `nicheR`, this will also load `terra` as part of nicheR dependenc
 # Load packages
 library(nicheR)
 
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
+
 # 1. Load environmental background raster
 bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 
@@ -364,6 +367,11 @@ add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
 add_data(occ_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
+```
+
+```{r par_reset}
+# Reset plotting parameters
+par(original_par)
 ```
 
 <br>

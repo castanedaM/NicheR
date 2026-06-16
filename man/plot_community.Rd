@@ -38,6 +38,9 @@ Defaults to a rainbow palette.}
 \item{...}{Additional arguments passed to the base \code{plot} function
 (e.g., \code{xlim}, \code{ylim}, \code{xlab}, \code{ylab}).}
 }
+\value{
+A plot of the community of ellipses in a 2D plot
+}
 \description{
 Visualizes a \code{nicheR_community} object by plotting the background
 environmental space and the community of ellipses.

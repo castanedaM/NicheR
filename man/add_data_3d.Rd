@@ -17,6 +17,9 @@ add_data_3d(data, dim = c(1, 2, 3), col_layer = NULL, alpha = 1, ...)
 
 \item{...}{Additional arguments passed to \code{rgl::points3d}.}
 }
+\value{
+adds data to an existing 3D e-space plot
+}
 \description{
 Add data to an existing 3D E-space plot
 }
@@ -34,11 +37,15 @@ ell5$cov_limits
 ell5u <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12" = 200,
                                              "bio_1-bio_15" = 0,
                                              "bio_12-bio_15" = -3000))
-\dontrun{
+\donttest{
+if(requireNamespace("rgl", quietly = TRUE)){
+
 # Plot the ellipsoid in 3D
 plot_ellipsoid_3d(ell5u)
 
 # Add background points
 add_data_3d(back_data[, c(3, 7, 10)], col = "#8A8A8A")
+
+ }
 }
 }

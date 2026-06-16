@@ -181,7 +181,7 @@ this surface to simulate non-random, biased occurrence sampling.
 
 > For details on bias surface construction, directional effects, and how
 > bias interacts with predictions and sampling, see the [Sampling bias
-> data](https://castanedam.github.io/nicheR/articles/sampling_bias_data.html)
+> data](https://castanedam.github.io/nicheR/articles/bias.html)
 > vignette.
 
 <br>
@@ -201,7 +201,7 @@ centroid.
 > For a full guide to sampling strategies, methods, strict
 > vs. non-strict modes, and biased sampling workflows, see the [Sampling
 > occurrence
-> data](https://castanedam.github.io/nicheR/articles/sampling_occurrence_data.html)
+> data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html)
 > vignette.
 
 <br>
@@ -259,14 +259,11 @@ vignette("creating_ellipsoid_based_niches")
 # Guide to predicting suitability and Mahalanobis distance
 vignette("predict")
 
-# Guide to sampling occurrence data from virtual niches
-vignette("sampling_occurrence_data")
-
-# Guide to virtual occurrence sampling from simulated data
-vignette("sampling_virtual_data")
+# Guide to generate occurrence data from virtual niches
+vignette("generate_occurrence")
 
 # Guide to preparing and applying sampling bias
-vignette("sampling_bias_data")
+vignette("bias")
 
 # Guide to simulating virtual communities
 vignette("virtual_communities")

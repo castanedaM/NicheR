@@ -55,7 +55,7 @@ The main functions that automate community simulations in `nicheR` are:
 
 ## Getting ready
 
-If `nicheR`  has not been installed yet, please do so. See the [Main guide](../index.html) for installation instructions.
+If `nicheR`  has not been installed yet, please do so. See the [Main guide](https://castanedam.github.io/nicheR/index.html) for installation instructions.
 
 Use the following lines of code to load `nicheR` and other packages needed for this vignette, and to set a working directory (if necessary).
 
@@ -80,7 +80,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for North America to represent the background for our simulations. For details on how to create the reference niche, see the vignette [1. Build ellipsoid](creating_ellipsoid_based_niches.html).
+The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for North America to represent the background for our simulations. For details on how to create the reference niche, see the vignette [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 
 ```{r data}
 # Reference niche
@@ -560,7 +560,7 @@ The plot show that when both arguments are small, the ellipses are generally sma
 
 ## Predictions for communities
 
-Once we have our communities simulated using the functions explored above, we can predict over new data to observe the patterns of Mahalanobis distance and suitability derived from the ellipses. The function `predict()` can be used with `nicheR_community` objects to obtain predictions. The difference between predict for community objects and that for `nicheR_ellipsoid` objects (see [2. Make a Prediction](predict.html)) is that only one type of `prediction` can be obtained at a time. The options for the `prediction` argument for `nicheR_community` objects are:
+Once we have our communities simulated using the functions explored above, we can predict over new data to observe the patterns of Mahalanobis distance and suitability derived from the ellipses. The function `predict()` can be used with `nicheR_community` objects to obtain predictions. The difference between predict for community objects and that for `nicheR_ellipsoid` objects (see [2. Make a Prediction](https://castanedam.github.io/nicheR/articles/predict.html) is that only one type of `prediction` can be obtained at a time. The options for the `prediction` argument for `nicheR_community` objects are:
 
 - `Mahalanobis`: Mahalanobis distance from the centroid of ellipses to every point in `newdata`.
 - `suitability`: multivariate normal probability for every point in `newdata`, derived from the Mahalanobis distance, interpreted as suitability. 

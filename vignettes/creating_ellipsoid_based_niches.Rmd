@@ -68,6 +68,10 @@ getwd()
 
 # Define new directory
 #setwd("YOUR/DIRECTORY")  # modify if setting a new directory
+
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
+
 ```
 
 <br>
@@ -106,7 +110,7 @@ terra::plot(c(bios$bio_1, bios$bio_12, bios$bio_15),
 
 ### Background
 
-A key distinction in ecological niche modeling is between environmental space (E-space) and geographic space (G-space). E-space is the multivariate space defined by environmental variables, such as temperature and precipitation, where each axis represents a single variable and each point represents a unique combination of environmental conditions. The ellipsoid niche is defined and parameterized entirely in E-space, where its shape, size, and position have direct ecological meaning. G-space, by contrast, is the familiar two-dimensional geographic map, where each point corresponds to a location on the landscape. Because every geographic location can be characterized by its environmental conditions, there is a direct relationship between the two concepts and once a niche is defined in E-space it can be projected onto G-space to identify which locations on a real landscape fall within the species' tolerances. This projection from E-space to G-space is what produces a map of predicted suitable habitat, and is covered in the [Making Predictions vignette](link).
+A key distinction in ecological niche modeling is between environmental space (E-space) and geographic space (G-space). E-space is the multivariate space defined by environmental variables, such as temperature and precipitation, where each axis represents a single variable and each point represents a unique combination of environmental conditions. The ellipsoid niche is defined and parameterized entirely in E-space, where its shape, size, and position have direct ecological meaning. G-space, by contrast, is the familiar two-dimensional geographic map, where each point corresponds to a location on the landscape. Because every geographic location can be characterized by its environmental conditions, there is a direct relationship between the two concepts and once a niche is defined in E-space it can be projected onto G-space to identify which locations on a real landscape fall within the species' tolerances. This projection from E-space to G-space is what produces a map of predicted suitable habitat, and is covered in the [Making Predictions vignette](https://castanedam.github.io/nicheR/articles/predict.html).
 
 The foundation of niche modeling in `nicheR` is the ellipsoid, which represents the set of environmental conditions a species can tolerate. An ellipsoid in environmental space is defined by three components: a centroid (the optimal or central environmental conditions), a covariance matrix (which controls the shape and orientation of the ellipsoid), and a volume (determined by the size of the environmental ranges). The boundary of the ellipsoid is defined by a threshold of the Mahalanobis distance from the centroid, a multivariate measure of distance that accounts for correlations among variables.
 
@@ -163,7 +167,7 @@ plot_ellipsoid(ell)
 
 <br>
 
-Overlaying background environmental data places the ellipsoid in the context of what is actually available in the study region. This helps evaluate whether the defined niche is ecologically realistic and how much of the available environmental space the species may be predicted to occupy. Note: Background data is not a strict requirement for defining an ellipsoid niche in `nicheR`; niches can also be defined purely in theoretical space without reference to any background data. For a walkthrough of that alternative approach, see [this vignette](link).
+Overlaying background environmental data places the ellipsoid in the context of what is actually available in the study region. This helps evaluate whether the defined niche is ecologically realistic and how much of the available environmental space the species may be predicted to occupy. Note: Background data is not a strict requirement for defining an ellipsoid niche in `nicheR`; niches can also be defined purely in theoretical space without reference to any background data.
 
 ```{r plot_bg}
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2))
@@ -411,6 +415,11 @@ Alternatively, `plot_ellipsoid_pairs()` produces all pairwise projections at onc
 ```{r plot_pairs}
 plot_ellipsoid_pairs(ell5, background = bios_df, pch = ".", cex_bg = 1.5,
                      col_bg = "gray50", lwd = 3, lty = 6, col_ell = "blue")
+```
+
+```{r par_reset}
+# Reset plotting parameters
+par(original_par)
 ```
 
 <br>

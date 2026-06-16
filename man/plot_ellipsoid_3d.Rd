@@ -60,6 +60,9 @@ variable names, if any found.}
 
 \item{...}{Additional graphical parameters.}
 }
+\value{
+A 3d plot of the ellipsoid in E-space, shown in viewer.
+}
 \description{
 Creates an interactive 3D plot of a \code{nicheR_ellipsoid} object with
 support for background points or suitability surfaces.
@@ -80,7 +83,9 @@ ell5 <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12" = 200,
                                             "bio_12-bio_15" = -3000))
 
 # Plot the ellipsoid in 3D
-\dontrun{
-plot_ellipsoid_3d(ell5)
+\donttest{
+if(requireNamespace("rgl", quietly = TRUE)){
+  plot_ellipsoid_3d(ell5)
+ }
 }
 }

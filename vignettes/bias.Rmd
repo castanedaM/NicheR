@@ -57,6 +57,9 @@ First, we load the core packages required for our spatial and niche operations. 
 library(nicheR)
 library(terra)
 
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
+
 # 1. Load reference niche (nicheR_ellipsoid object)
 data("ref_ellipse", package = "nicheR")
 
@@ -197,6 +200,11 @@ par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
 
 terra::plot(pred_3d[["suitability"]], main = "3D Habitat Suitability")
 terra::plot(applied_bias_3d[[1]], main = "3D Suitability + Composite Bias")
+```
+
+```{r par_reset}
+# Reset plotting parameters
+par(original_par)
 ```
 
 # Save and export {#save-and-export}
