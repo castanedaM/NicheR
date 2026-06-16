@@ -227,12 +227,6 @@ output$plot_settings_ui <- renderUI({
                    column(6, numericInput("plot_ylim_max", NULL, value = NA))
                  ))
         )
-      ),
-
-      fluidRow(
-        column(width = 12, class = "btn-spaced",
-               downloadButton("export_espace_plot", "Export Figure",
-                              class = "btn-default"))
       )
   )
 })

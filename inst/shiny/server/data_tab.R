@@ -192,11 +192,11 @@ observeEvent(input$confirm_variables, {
 
 observeEvent(input$edit_variables, {
 
-  if(!is.null(session_data$ellipsoid)){
+  if(!is.null(session_data$ellipsoid) || !is.null(session_data$vars)){
     showModal(modalDialog(
       title = "Edit variables?",
-      p("You have already built an ellipsoid. Editing your variables will
-         delete the current ellipsoid and any covariance adjustments."),
+      p("You have already selected variables or built an ellipsoid. Editing your variables will
+         delete the current selection or ellipsoid and any covariance adjustments."),
       footer = tagList(
         modalButton("Cancel"),
         actionButton("confirm_edit_variables",
@@ -214,6 +214,7 @@ observeEvent(input$confirm_edit_variables, {
   removeModal()
 
   session_data$vars_confirmed <- FALSE
+  session_data$vars <- NULL
   session_data$ellipsoid <- NULL
   session_data$ellipsoid_version <- 0
 
