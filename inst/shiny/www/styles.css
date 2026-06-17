@@ -52,6 +52,18 @@
   line-height: 1.5;        /* adds breathing room between lines */
 }
 
+.tooltip-icon {
+  cursor: pointer;
+  color: #888;
+  margin-left: 4px;
+}
+
+.tooltip-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Warning notes — caution messages, uses CSS var for dark mode safety */
 /* var(--color-text-warning) adapts automatically to light and dark mode */
 .text-warning-note {

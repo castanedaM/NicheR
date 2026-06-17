@@ -62,6 +62,7 @@ dashboardPage(
                      tags$span("Inputs", class = "text-tab-title"),
                      fluidRow(
                        column(width = 12,
+                              p(instructions$data_input_type, class = "text-instruction"),
                               radioButtons("data_input_type_choice",
                                            label = tags$span("Select Input Type:", class = "text-widget-title"),
                                            choices = c("Background Layers" = "bg_layers",
@@ -80,16 +81,7 @@ dashboardPage(
                      value = "range",
 
                      uiOutput("variable_selectors_ui"),
-
-                     p(instructions$range_choice, class = "text-instruction"),
-                     radioButtons("range_method_choice",
-                                  label = tags$span("Select Range Method:", class = "text-widget-title"),
-                                  choices = c("Manual" = "man",
-                                              "From Data" = "df",
-                                              "From Stats" = "stats"),
-                                  selected = character(0)),
-
-
+                     uiOutput("range_method_choice_ui"),
                      uiOutput("range_method_ui")
                    ),
 
@@ -100,7 +92,7 @@ dashboardPage(
                      fluidRow(
                        column(width = 1),
                        column(width = 10,
-                              uiOutput("covariance_ui")
+                          uiOutput("covariance_sliders_ui")
                        ),
                        column(width = 1),
                      )
@@ -112,7 +104,7 @@ dashboardPage(
                  tabBox(
                    width = 12,
                    tabPanel(
-                     "E-space",
+                     tags$span("E-space", class = "text-tab-title"),
                      uiOutput("plot_options_ui"),
                      plotOutput("build_espace_plot",
                                 height = "500px"),
@@ -120,7 +112,10 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12, class = "btn-spaced",
-                              downloadButton("export_espace_plot", "Export Figure",
+                              downloadButton("export_espace_plot",
+                                             tags$span("Export Figure",
+                                                       class = "text-widget-title",
+                                                       title =  "Click Export Figure to download the current plot as a PNG."),
                                              class = "btn-default"))
                      )
                    )
@@ -151,7 +146,8 @@ dashboardPage(
                  box(title = tagList(tags$span("Optional Bias Raster",
                                                class = "text-tab-title"),
                                      tags$span(icon("circle-info"),
-                                               title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",  class = "text-widget-title")),
+                                               title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",
+                                               class = "tooltip-icon")),
                      width = 9,
                      collapsible = TRUE,
                      collapsed = TRUE,

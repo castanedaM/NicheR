@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space plots
-# Date last updated: 06/16/2026
+# Date last updated: 06/17/2026
 
 output$plot_options_ui <- renderUI({
 
@@ -119,7 +119,9 @@ output$plot_settings_ui <- renderUI({
 
   has_ell <- isTRUE(session_data$ellipsoid_version > 0)
 
-  box(title = tags$span("Advanced Plot Settings", class = "text-section-header"),
+  box(title = tagList(
+    tags$span("Advanced Plot Settings", class = "text-section-header"),
+    tags$span(icon("circle-info"), title = instructions$plot_settings, class = "tooltip-icon")),
       width = 12,
       collapsible = TRUE,
       collapsed = TRUE,
@@ -241,7 +243,11 @@ draw_espace_plot <- function(){
   vars <- plot_vars()
   req(vars)
 
-  ranges <- range_preview()  # may be NULL before a range method is set
+  ranges <- tryCatch(
+    range_preview(),
+    error = function(e) NULL,
+    shiny.silent.error = function(e) NULL)
+
   bg <- session_data$bg_df   # NULL in virtual mode
 
   show_lines <- if(!is.null(input$show_range_lines)) input$show_range_lines else TRUE

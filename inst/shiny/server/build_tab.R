@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs
-# Date last updated: 06/16/2026
+# Date last updated: 06/17/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -151,7 +151,6 @@ observeEvent({
   cov_counters(new_cnts)
 })
 
-
 # Button triggered, builds the ellipsoid
 observeEvent(input$build_ell, {
 
@@ -259,6 +258,14 @@ observeEvent({
            })
   }
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+
+# Reset logic for input data
+observeEvent(input$range_method_choice, {
+
+  # input$df_range_file <- NULL
+
+}, ignoreInit = TRUE)
 
 # Reactives ---------------------------------------------------------------
 
@@ -378,6 +385,34 @@ range_preview <- reactive({
 
 # Render Outputs ----------------------------------------------------------
 
+output$range_method_choice_ui <- renderUI({
+  req(isTRUE(session_data$vars_confirmed))
+
+  tagList(
+    p(instructions$range_choice, class = "text-instruction"),
+    radioButtons("range_method_choice",
+                 label = tags$span("Select how to define the ranges for your ellipsoid:",
+                                   class = "text-widget-title"),
+                 choiceNames = list(
+                   tagList("Manual",
+                           tags$span(icon("circle-info"),
+                                     title = "Type minimum and maximum values directly for each variable.",
+                                     class = "tooltip-icon")),
+                   tagList("From Data",
+                           tags$span(icon("circle-info"),
+                                     title = "Upload a CSV to derive observed min/max ranges, with optional expansion.",
+                                     class = "tooltip-icon")),
+                   tagList("From Stats",
+                           tags$span(icon("circle-info"),
+                                     title = "Derive ranges from mean and standard deviation, either from your background data or entered manually.",
+                                     class = "tooltip-icon"))
+                 ),
+                 choiceValues = c("man", "df", "stats"),
+                 selected = character(0))
+  )
+})
+
+
 output$range_method_ui <- renderUI({
 
   req(input$range_method_choice, session_data$vars)
@@ -390,7 +425,9 @@ output$range_method_ui <- renderUI({
 
   # Same button in all range method
   cl_row <- fluidRow(
-    column(width = 5, tags$span("Confidence Level (%)", class = "text-widget-title text-center")),
+    column(width = 5, tags$div(class = "tooltip-label-row",
+      tags$span("Confidence Level (%)", class = "text-widget-title text-center"),
+      tags$span(icon("circle-info"), title = instructions$cl_range_tooltip, class = "tooltip-icon"))),
     column(width = 4,
            numericInput(inputId = "cl_range",
                         label = NULL,
@@ -421,6 +458,7 @@ output$range_method_ui <- renderUI({
   switch(input$range_method_choice,
          "man" = {
            header <- fluidRow(
+             column(width = 12, p(instructions$range_manual, class = "text-instruction")),
              column(width = 4, tags$span("Variable", class = "text-widget-title text-center")),
              column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
              column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
@@ -461,7 +499,7 @@ output$range_method_ui <- renderUI({
          "df" = {
 
            upload_row <- fluidRow(
-             p(instructions$range_data, class = "text-instruction"),
+             column(width = 12, p(instructions$range_data, class = "text-instruction")),
              column(width = 6,
                     fileInput(inputId = "df_range_file",
                               label = tags$span("Choose CSV file with range data",
@@ -509,8 +547,12 @@ output$range_method_ui <- renderUI({
                    column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
                    column(width = 2, tags$span("Observed Min", class = "text-widget-title text-center")),
                    column(width = 2, tags$span("Observed Max", class = "text-widget-title text-center")),
-                   column(width = 2, tags$span("Expand Min (%)", class = "text-widget-title text-center")),
-                   column(width = 2, tags$span("Expand Max (%)", class = "text-widget-title text-center"))
+                   column(width = 2, tags$div(class = "tooltip-label-row",
+                                               tags$span("Expand Min (%)", class = "text-widget-title text-center"),
+                     tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
+                   column(width = 2, tags$div(class = "tooltip-label-row",
+                                               tags$span("Expand Max (%)", class = "text-widget-title text-center"),
+                     tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
                  )
 
                  rows <- lapply(shared_vars, function(v){
@@ -542,12 +584,16 @@ output$range_method_ui <- renderUI({
          "stats" = {
 
            header <- fluidRow(
-             p(instructions$range_stats, class = "text-instruction"),
+             column(width = 12, p(instructions$range_stats, class = "text-instruction")),
              column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
              column(width = 2, tags$span("Mean", class = "text-widget-title text-center")),
              column(width = 2, tags$span("SD", class = "text-widget-title text-center")),
-             column(width = 2, tags$span("Expand Min (%)", class = "text-widget-title text-center")),
-             column(width = 2, tags$span("Expand Max (%)", class = "text-widget-title text-center"))
+             column(width = 2, tags$div(class = "tooltip-label-row",
+                                        tags$span("Expand Min (%)", class = "text-widget-title text-center"),
+                                        tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
+             column(width = 2, tags$div(class = "tooltip-label-row",
+                                        tags$span("Expand Max (%)", class = "text-widget-title text-center"),
+                                        tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
            )
 
            var_rows <- lapply(vars, function(v){
@@ -595,17 +641,18 @@ output$range_method_ui <- renderUI({
   )
 })
 
-output$covariance_ui <- renderUI({
-  req(session_data$ellipsoid_version > 0)
+# output$covariance_ui <- renderUI({
+#   req(session_data$ellipsoid_version > 0)
+#
+#   box(title = tags$span("Covariance", class = "text-tab-title"),
+#       width = 12,
+#       p(instructions$covariance, class = "text-instruction"),
+#       uiOutput("covariance_sliders_ui")
+#   )
+#
+# })
 
-  box(title = tags$span("Covariance", class = "text-tab-title"),
-      width = 12,
-      p(instructions$covariance, class = "text-instruction"),
-      uiOutput("covariance_sliders_ui")
-  )
-})
-
-output$covariance_ui <- renderUI({
+output$covariance_sliders_ui <- renderUI({
   req(session_data$ellipsoid_version > 0)
 
   ell <- isolate(session_data$ellipsoid)
@@ -635,7 +682,8 @@ output$covariance_ui <- renderUI({
                                            step  = step)),
                         column(width = 1,
                                actionLink(inputId = paste0("cov_reset_", version, "_", pn),
-                                          label   = icon("rotate-left")))
+                                          label   = tags$span(icon("rotate-left"),
+                                                              title = instructions$covariance_reset_tooltip)))
                       )
                     })
 

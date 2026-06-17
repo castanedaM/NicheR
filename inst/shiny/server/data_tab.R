@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 06/16/2026
+# Date last updated: 06/17/2026
 
 # Observer Events ---------------------------------------------------------
 
@@ -133,6 +133,44 @@ observeEvent(input$load_session, {
   # updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
+observeEvent({
+  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
+  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
+}, {
+
+  vars <- if(!is.null(session_data$bg_raster)){
+    names(session_data$bg_raster)
+  } else if (!is.null(session_data$bg_df)){
+    names(session_data$bg_df)
+  } else {
+    return()
+  }
+
+  req(vars)
+
+  n_slots <- min(length(vars), MAX_DIMS)
+
+  active <- vapply(seq_len(n_slots), function(i)
+    isTRUE(input[[paste0("var_active_", i)]]), logical(1))
+
+  current <- vapply(seq_len(n_slots), function(i){
+    val <- input[[paste0("var_select_", i)]]
+    if(is.null(val)) vars[i] else val
+  }, character(1))
+
+  # only active slots block choices from others
+  active_selections <- current[active]
+
+  lapply(seq_len(n_slots), function(i){
+    others <- if(active[i]) setdiff(active_selections, current[i]) else active_selections
+    available <- c(current[i], setdiff(vars, others))
+    updateSelectInput(session,
+                      inputId = paste0("var_select_", i),
+                      choices = available,
+                      selected = current[i])
+  })
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
+
 observeEvent(input$confirm_variables, {
 
   if(identical(session_data$input_mode, "virtual")){
@@ -221,43 +259,16 @@ observeEvent(input$confirm_edit_variables, {
   updateRadioButtons(session, "range_method_choice", selected = character(0))
 })
 
-observeEvent({
-  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
-  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
-}, {
+# Reset logic for input data
+observeEvent(input$data_input_type_choice, {
 
-  vars <- if(!is.null(session_data$bg_raster)){
-    names(session_data$bg_raster)
-  } else if (!is.null(session_data$bg_df)){
-    names(session_data$bg_df)
-  } else {
-    return()
-  }
+  session_data$bg_raster <- NULL
+  session_data$bg_df <- NULL
+  session_data$vars <- NULL
+  session_data$input_mode <- NULL
+  session_data$vars_confirmed <- FALSE
 
-  req(vars)
-
-  n_slots <- min(length(vars), MAX_DIMS)
-
-  active <- vapply(seq_len(n_slots), function(i)
-    isTRUE(input[[paste0("var_active_", i)]]), logical(1))
-
-  current <- vapply(seq_len(n_slots), function(i){
-    val <- input[[paste0("var_select_", i)]]
-    if(is.null(val)) vars[i] else val
-  }, character(1))
-
-  # only active slots block choices from others
-  active_selections <- current[active]
-
-  lapply(seq_len(n_slots), function(i){
-    others <- if(active[i]) setdiff(active_selections, current[i]) else active_selections
-    available <- c(current[i], setdiff(vars, others))
-    updateSelectInput(session,
-                      inputId = paste0("var_select_", i),
-                      choices = available,
-                      selected = current[i])
-  })
-}, ignoreNULL = TRUE, ignoreInit = TRUE)
+}, ignoreInit = TRUE)
 
 # Render Outputs ----------------------------------------------------------
 
@@ -373,16 +384,6 @@ output$data_input_type <- renderUI({
   )
 })
 
-# Reset logic for input data
-observeEvent(input$data_input_type_choice, {
-
-  session_data$bg_raster <- NULL
-  session_data$bg_df <- NULL
-  session_data$vars <- NULL
-  session_data$input_mode <- NULL
-  session_data$vars_confirmed <- FALSE
-
-}, ignoreInit = TRUE)
 
 output$raster_print <- renderPrint({
   req(input$raster_file)
