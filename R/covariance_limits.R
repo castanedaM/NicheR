@@ -175,7 +175,8 @@ covariance_limits <- function(varcov_matrix, tol = 1e-6) {
 #'
 #' @description
 #' Updates a variance-covariance matrix with specific values and identifies
-#' the safe limits for all remaining zero-covariance combinations.
+#' the safe, globally constrained limits for all remaining zero-covariance
+#' combinations using simultaneous shrinkage.
 #'
 #' @usage
 #' update_covariance(varcov_matrix, covariance = 0, tol = 1e-6)
@@ -202,16 +203,17 @@ covariance_limits <- function(varcov_matrix, tol = 1e-6) {
 #' update_covariance(v_mat_3d, covariance = 2.0)
 #'
 #' # 3. 3D Partial: Define two, find limits for the remaining precip-hum
-#' update_covariance(v_mat_3d, covariance = c("temp-precip" = -4, "temp-hum" = 5))
+#' update_covariance(v_mat_3d,
+#'                   covariance = c("temp-precip" = -4, "temp-hum" = 5))
 
 update_covariance <- function(varcov_matrix, covariance = 0, tol = 1e-6) {
   n <- nrow(varcov_matrix)
   d_names <- colnames(varcov_matrix)
   if (is.null(d_names)) d_names <- paste0("dim", 1:n)
-
+  
   new_mat <- varcov_matrix
-
-  # 1. Update the matrix with user-provided covariances
+  
+  # Update the matrix with user-provided covariances
   if (length(covariance) == 1 && is.null(names(covariance))) {
     ## Case: Single value for all off-diagonals
     new_mat[lower.tri(new_mat)] <- covariance
@@ -231,12 +233,13 @@ update_covariance <- function(varcov_matrix, covariance = 0, tol = 1e-6) {
     }
   }
 
-  # 2. Immediate PD Check
+  # Immediate PD Check of the updated matrix
   if (inherits(try(chol(new_mat), silent = TRUE), "try-error")) {
-    stop("The provided covariance values result in a non-positive definite matrix.")
+    stop("Provided covariance values result in a non-positive definite matrix.")
   }
 
-  # 3. Calculate limits for remaining combinations (where cov == 0)
+  # Identify remaining zero-pairs and calculate baseline 2D limits
+  zero_pairs <- list()
   mins <- numeric()
   maxs <- numeric()
   row_labels <- character()
@@ -245,19 +248,59 @@ update_covariance <- function(varcov_matrix, covariance = 0, tol = 1e-6) {
     for (i in (j + 1):n) {
       if (new_mat[i, j] == 0) {
         row_labels <- c(row_labels, paste0(d_names[j], "-", d_names[i]))
+        zero_pairs[[length(zero_pairs) + 1]] <- c(i, j)
 
-        ## Use numerical logic to find current safe range
-        lims <- covariance_pairs(new_mat, i, j, tol)
-        mins <- c(mins, lims[1])
-        maxs <- c(maxs, lims[2])
+        limit <- sqrt(new_mat[i, i] * new_mat[j, j]) - tol
+        mins <- c(mins, -limit)
+        maxs <- c(maxs, limit)
       }
     }
   }
 
-  res_df <- if (length(row_labels) > 0) {
-    data.frame(min = mins, max = maxs, row.names = row_labels)
-  } else {
-    NULL # All combinations are already non-zero
+  # Global Shrinkage Check for remaining pairs
+  res_df <- NULL
+
+  if (length(row_labels) > 0) {
+    if (n > 2) {
+      shrink_max <- 1.0
+      shrink_min <- 1.0
+      pd_max_ok <- FALSE
+      pd_min_ok <- FALSE
+
+      ## Shrink Maximums (Positive Space)
+      while (!pd_max_ok && shrink_max > 0) {
+        test_max <- new_mat # Start with the user-updated matrix
+        for (k in seq_along(zero_pairs)) {
+          i <- zero_pairs[[k]][1]
+          j <- zero_pairs[[k]][2]
+          test_max[i, j] <- test_max[j, i] <- maxs[k] * shrink_max
+        }
+        if (!inherits(try(chol(test_max), silent = TRUE), "try-error")) {
+          pd_max_ok <- TRUE
+          maxs <- maxs * shrink_max
+        } else {
+          shrink_max <- shrink_max - 0.01
+        }
+      }
+
+      ## Shrink Minimums (Negative Space)
+      while (!pd_min_ok && shrink_min > 0) {
+        test_min <- new_mat # Start with the user-updated matrix
+        for (k in seq_along(zero_pairs)) {
+          i <- zero_pairs[[k]][1]
+          j <- zero_pairs[[k]][2]
+          test_min[i, j] <- test_min[j, i] <- mins[k] * shrink_min
+        }
+        if (!inherits(try(chol(test_min), silent = TRUE), "try-error")) {
+          pd_min_ok <- TRUE
+          mins <- mins * shrink_min
+        } else {
+          shrink_min <- shrink_min - 0.01
+        }
+      }
+    }
+
+    res_df <- data.frame(min = mins, max = maxs, row.names = row_labels)
   }
 
   return(list(updated_matrix = new_mat, remaining_limits = res_df))
