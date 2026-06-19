@@ -18,6 +18,11 @@ Cobos ![](reference/figures/nicheR_lg.png)
 - [Note on AI usage](#note-on-ai-usage)
 - [Contributing](#contributing)
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/nicheR)](https://CRAN.R-project.org/package=nicheR)
+[![downloads](https://cranlogs.r-pkg.org/badges/grand-total/nicheR)](https://cranlogs.r-pkg.org:443/badges/grand-total/nicheR)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://opensource.org/licenses/MIT)
+
 ## Background
 
 The field of distributional ecology is evolving rapidly, with new
