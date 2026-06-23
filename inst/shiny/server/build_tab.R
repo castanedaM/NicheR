@@ -51,6 +51,17 @@ build_ellipsoid_shiny <- function(){
   })
 }
 
+
+# Recover original mins/maxs from the built ellipsoid
+ranges_from_ellipsoid <- function(ell){
+  mu  <- ell$centroid
+  sds <- sqrt(diag(ell$cov_matrix))
+  list(
+    mins = setNames(mu - 3 * sds, ell$var_names),
+    maxs = setNames(mu + 3 * sds, ell$var_names)
+  )
+}
+
 # Observers ----------------------------------------------------------------
 
 # Reset range values to defaults
@@ -159,7 +170,7 @@ observeEvent(input$build_ell, {
     showModal(modalDialog(
       title = "Overwrite ellipsoid?",
       p("An ellipsoid has already been built. Building a new one will
-         overwrite the current ellipsoid and any downstream results."),
+overwrite the current ellipsoid and any downstream results."),
       footer = tagList(
         modalButton("Cancel"),
         actionButton("confirm_build_ell",
@@ -259,13 +270,34 @@ observeEvent({
   }
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-
 # Reset logic for input data
 observeEvent(input$range_method_choice, {
 
   # input$df_range_file <- NULL
 
 }, ignoreInit = TRUE)
+
+# Rest Cov all
+observeEvent(input[[paste0("cov_reset_all_", session_data$ellipsoid_version)]], {
+
+  req(session_data$ellipsoid)
+
+  ell <- session_data$ellipsoid
+  vars <- ell$var_names
+  version <- session_data$ellipsoid_version
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  lapply(pair_names, function(pn){
+    updateSliderInput(session,
+                      inputId = paste0("cov_", version, "_", pn),
+                      value = 0)
+  })
+
+  # Reset counters so the per-pair reset observer doesn't misfire
+  cov_counters(setNames(lapply(pair_names, function(pn) 0), pair_names))
+
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 # Reactives ---------------------------------------------------------------
 
@@ -388,30 +420,35 @@ range_preview <- reactive({
 output$range_method_choice_ui <- renderUI({
   req(isTRUE(session_data$vars_confirmed))
 
-  tagList(
-    p(instructions$range_choice, class = "text-instruction"),
-    radioButtons("range_method_choice",
-                 label = tags$span("Select how to define the ranges for your ellipsoid:",
-                                   class = "text-widget-title"),
-                 choiceNames = list(
-                   tagList("Manual",
-                           tags$span(icon("circle-info"),
-                                     title = "Type minimum and maximum values directly for each variable.",
-                                     class = "tooltip-icon")),
-                   tagList("From Data",
-                           tags$span(icon("circle-info"),
-                                     title = "Upload a CSV to derive observed min/max ranges, with optional expansion.",
-                                     class = "tooltip-icon")),
-                   tagList("From Stats",
-                           tags$span(icon("circle-info"),
-                                     title = "Derive ranges from mean and standard deviation, either from your background data or entered manually.",
-                                     class = "tooltip-icon"))
-                 ),
-                 choiceValues = c("man", "df", "stats"),
-                 selected = character(0))
+  # Collapse once an ellipsoid has been built, same pattern as variable selector
+  is_built <- isTRUE(session_data$ellipsoid_version > 0)
+
+  box(title = tags$span("Range", class = "text-tab-title"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = is_built,
+      p(instructions$range_choice, class = "text-instruction"),
+      radioButtons("range_method_choice",
+                   label = tags$span("Select how to define the ranges for your ellipsoid:",
+                                     class = "text-widget-title"),
+                   choiceNames = list(
+                     tagList("Manual",
+                             tags$span(icon("circle-info"),
+                                       title = "Type minimum and maximum values directly for each variable.",
+                                       class = "tooltip-icon")),
+                     tagList("From Data",
+                             tags$span(icon("circle-info"),
+                                       title = "Upload a CSV to derive observed min/max ranges, with optional expansion.",
+                                       class = "tooltip-icon")),
+                     tagList("From Stats",
+                             tags$span(icon("circle-info"),
+                                       title = "Derive ranges from mean and standard deviation, either from your background data or entered manually.",
+                                       class = "tooltip-icon"))
+                   ),
+                   choiceValues = c("man", "df", "stats"),
+                   selected = character(0))
   )
 })
-
 
 output$range_method_ui <- renderUI({
 
@@ -426,8 +463,8 @@ output$range_method_ui <- renderUI({
   # Same button in all range method
   cl_row <- fluidRow(
     column(width = 5, tags$div(class = "tooltip-label-row",
-      tags$span("Confidence Level (%)", class = "text-widget-title text-center"),
-      tags$span(icon("circle-info"), title = instructions$cl_range_tooltip, class = "tooltip-icon"))),
+                               tags$span("Confidence Level (%)", class = "text-widget-title text-center"),
+                               tags$span(icon("circle-info"), title = instructions$cl_range_tooltip, class = "tooltip-icon"))),
     column(width = 4,
            numericInput(inputId = "cl_range",
                         label = NULL,
@@ -441,7 +478,7 @@ output$range_method_ui <- renderUI({
     column(width = 12,
            class = "btn-spaced",
            actionButton("build_ell",
-                        "Build Ellipsoid",
+                        "Initialize Ellipsoid",
                         class = "btn-primary"))
   )
 
@@ -493,7 +530,7 @@ output$range_method_ui <- renderUI({
            })
 
            # Organizing the UI
-           tagList(header, var_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, header, var_rows, cl_row, reset_btn, build_btn)
          },
 
          "df" = {
@@ -531,7 +568,7 @@ output$range_method_ui <- renderUI({
                if(length(shared_vars) != length(vars)){
 
                  p("No matching variables found between the uploaded file and the
-               background layers. Check that column names match.",
+background layers. Check that column names match.",
                    class = "text-warning-note")
 
                }else{
@@ -548,11 +585,11 @@ output$range_method_ui <- renderUI({
                    column(width = 2, tags$span("Observed Min", class = "text-widget-title text-center")),
                    column(width = 2, tags$span("Observed Max", class = "text-widget-title text-center")),
                    column(width = 2, tags$div(class = "tooltip-label-row",
-                                               tags$span("Expand Min (%)", class = "text-widget-title text-center"),
-                     tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
+                                              tags$span("Expand Min (%)", class = "text-widget-title text-center"),
+                                              tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
                    column(width = 2, tags$div(class = "tooltip-label-row",
-                                               tags$span("Expand Max (%)", class = "text-widget-title text-center"),
-                     tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
+                                              tags$span("Expand Max (%)", class = "text-widget-title text-center"),
+                                              tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
                  )
 
                  rows <- lapply(shared_vars, function(v){
@@ -578,7 +615,7 @@ output$range_method_ui <- renderUI({
              }
            }
 
-           tagList(upload_row, range_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, upload_row, range_rows, cl_row, reset_btn, build_btn)
          },
 
          "stats" = {
@@ -636,21 +673,22 @@ output$range_method_ui <- renderUI({
              )
            })
 
-           tagList(header, var_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, header, var_rows, cl_row, reset_btn, build_btn)
          }
   )
 })
 
-# output$covariance_ui <- renderUI({
-#   req(session_data$ellipsoid_version > 0)
-#
-#   box(title = tags$span("Covariance", class = "text-tab-title"),
-#       width = 12,
-#       p(instructions$covariance, class = "text-instruction"),
-#       uiOutput("covariance_sliders_ui")
-#   )
-#
-# })
+output$covariance_ui <- renderUI({
+  req(session_data$ellipsoid_version > 0)
+
+  box(title = tags$span("Covariance", class = "text-tab-title"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p(instructions$covariance, class = "text-instruction"),
+      uiOutput("covariance_sliders_ui")
+  )
+})
 
 output$covariance_sliders_ui <- renderUI({
   req(session_data$ellipsoid_version > 0)
@@ -665,34 +703,35 @@ output$covariance_sliders_ui <- renderUI({
   lims <- ell$cov_limits
   rownames(lims) <- pair_names
 
-  sliders <- lapply(pair_names,
-                    function(pn){
-                      min_val <- lims[pn, "min"]
-                      max_val <- lims[pn, "max"]
+  sliders <- lapply(pair_names, function(pn){
+    min_val <- lims[pn, "min"]
+    max_val <- lims[pn, "max"]
+    step <- round((max_val - min_val) / 100, 4)
 
-                      step <- round((max_val - min_val) / 100, 4)
+    fluidRow(
+      column(width = 11,
+             sliderInput(inputId = paste0("cov_", version, "_", pn),
+                         label = pn,
+                         min = round(min_val, 2),
+                         max = round(max_val, 2),
+                         value = 0,
+                         step = step)),
+      column(width = 1,
+             actionLink(inputId = paste0("cov_reset_", version, "_", pn),
+                        label = tags$span(icon("rotate-left"),
+                                          title = instructions$covariance_reset_tooltip))
+      ))
+  })
 
-                      fluidRow(
-                        column(width = 11,
-                               sliderInput(inputId = paste0("cov_", version, "_", pn),
-                                           label = pn,
-                                           min   = round(min_val, 2),
-                                           max   = round(max_val, 2),
-                                           value = 0,
-                                           step  = step)),
-                        column(width = 1,
-                               actionLink(inputId = paste0("cov_reset_", version, "_", pn),
-                                          label   = tags$span(icon("rotate-left"),
-                                                              title = instructions$covariance_reset_tooltip)))
-                      )
-                    })
+  reset_all_btn <- fluidRow(
+    column(width = 12, class = "btn-spaced",
+           actionLink(inputId = paste0("cov_reset_all_", version),
+                      label = tagList(icon("rotate-left"), "Reset all to zero")))
+  )
 
-  # for the reset logic of the action links at counters of zero
-  cov_counters(setNames(lapply(pair_names,
-                               function(pn) 0),
-                        pair_names))
+  cov_counters(setNames(lapply(pair_names, function(pn) 0), pair_names))
 
-  tagList(sliders)
+  tagList(sliders, reset_all_btn)
 })
 
 output$ellipsoid_print <- renderPrint({
@@ -705,10 +744,10 @@ output$ellipsoid_print <- renderPrint({
   cat("nicheR Ellipsoid Object", v, "\n")
   cat("--------------------------\n")
 
-  cat("Dimensions:        ", x$dimensions, "D\n", sep = "")
+  cat("Dimensions: ", x$dimensions, "D\n", sep = "")
   cat("Chi-square cutoff: ", round(x$chi2_cutoff, digits), "\n", sep = "")
 
-  cat("Centroid (mu):     ",
+  cat("Centroid (mu):",
       paste(round(x$centroid, digits), collapse = ", "),
       "\n", sep = "")
 
@@ -723,7 +762,7 @@ output$ellipsoid_print <- renderPrint({
   )
   print(round(cov_lims, digits))
 
-  cat("\nEllipsoid volume:  ", round(x$volume, digits), "\n", sep = "")
+  cat("\nEllipsoid volume:", round(x$volume, digits), "\n", sep = "")
 
   cat("\n")
   invisible(x)

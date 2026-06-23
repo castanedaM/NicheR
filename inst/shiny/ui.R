@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 6/16/2026
+# Lats Updated: 6/23/2026
 
 dashboardPage(
   dashboardHeader(
@@ -76,52 +76,54 @@ dashboardPage(
                    ),
 
                    tabPanel(
-                     title = tags$span("Range", class = "text-tab-title"),
+                     title = tags$span("Build", class = "text-tab-title"),
                      width = 12,
                      value = "range",
 
                      uiOutput("variable_selectors_ui"),
                      uiOutput("range_method_choice_ui"),
-                     uiOutput("range_method_ui")
-                   ),
+                     uiOutput("range_method_ui"),
+                     uiOutput("covariance_ui")
 
-                   tabPanel(
-                     title = tags$span("Covariance", class = "text-tab-title"),
-                     width = 12,
-                     p(instructions$covariance, class = "text-instruction"),
-                     fluidRow(
-                       column(width = 1),
-                       column(width = 10,
-                          uiOutput("covariance_sliders_ui")
-                       ),
-                       column(width = 1),
-                     )
                    )
                  )
           ),
 
           column(width = 6,
                  tabBox(
+                   id    = "plot_tabs",
                    width = 12,
-                   tabPanel(
-                     tags$span("E-space", class = "text-tab-title"),
-                     uiOutput("plot_options_ui"),
-                     plotOutput("build_espace_plot",
-                                height = "500px"),
-                     uiOutput("plot_settings_ui"),
 
-                     fluidRow(
-                       column(width = 12, class = "btn-spaced",
-                              downloadButton("export_espace_plot",
-                                             tags$span("Export Figure",
-                                                       class = "text-widget-title",
-                                                       title =  "Click Export Figure to download the current plot as a PNG."),
-                                             class = "btn-default"))
-                     )
+                   tabPanel(
+                     title = tags$span("E-space", class = "text-tab-title"),
+                     value = "tab_espace",
+                     uiOutput("plot_espace_options_ui"),
+                     plotOutput("build_espace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("G-space", class = "text-tab-title"),
+                     value = "tab_gspace",
+                     plotOutput("build_gspace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Combined", class = "text-tab-title"),
+                     value = "tab_combined",
+                     uiOutput("plot_combined_options_ui"),
+                     plotOutput("build_combined_plot")
                    )
                  ),
 
-                 verbatimTextOutput("ellipsoid_print")
+                 # Export button and settings sit below the tabBox, outside all panels
+                 fluidRow(
+                   column(width = 12, class = "btn-spaced",
+                          uiOutput("export_btn_ui"))
+                 ),
+
+                 uiOutput("plot_settings_ui")
+
+                 # verbatimTextOutput("ellipsoid_print")
           )
         )
       ),
