@@ -19,7 +19,7 @@ function(input, output, session){
 
   source("server/helpers.R", local = TRUE)
   source("server/data_tab.R", local = TRUE)
-  source("server/plot_tab.R", local = TRUE)
+  source("server/build_tab_plot.R", local = TRUE)
   source("server/build_tab.R", local = TRUE)
   source("server/predict_tab.R", local = TRUE)
   source("server/generate_tab.R", local = TRUE)

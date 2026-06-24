@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs
-# Date last updated: 06/17/2026
+# Date last updated: 06/24/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -52,16 +52,6 @@ build_ellipsoid_shiny <- function(){
 }
 
 
-# Recover original mins/maxs from the built ellipsoid
-ranges_from_ellipsoid <- function(ell){
-  mu  <- ell$centroid
-  sds <- sqrt(diag(ell$cov_matrix))
-  list(
-    mins = setNames(mu - 3 * sds, ell$var_names),
-    maxs = setNames(mu + 3 * sds, ell$var_names)
-  )
-}
-
 # Observers ----------------------------------------------------------------
 
 # Reset range values to defaults
@@ -111,7 +101,7 @@ observeEvent(input$reset_ranges, {
              updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
            })
 
-           updateNumericInput(session, "cl_range", value = 0.99)
+           updateNumericInput(session, "cl_range", value = 0.95)
          }
   )
 })
@@ -270,12 +260,6 @@ observeEvent({
   }
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-# Reset logic for input data
-observeEvent(input$range_method_choice, {
-
-  # input$df_range_file <- NULL
-
-}, ignoreInit = TRUE)
 
 # Rest Cov all
 observeEvent(input[[paste0("cov_reset_all_", session_data$ellipsoid_version)]], {
@@ -423,7 +407,7 @@ output$range_method_choice_ui <- renderUI({
   # Collapse once an ellipsoid has been built, same pattern as variable selector
   is_built <- isTRUE(session_data$ellipsoid_version > 0)
 
-  box(title = tags$span("Range", class = "text-tab-title"),
+  box(title = tags$span("Range", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = is_built,
@@ -681,12 +665,25 @@ background layers. Check that column names match.",
 output$covariance_ui <- renderUI({
   req(session_data$ellipsoid_version > 0)
 
-  box(title = tags$span("Covariance", class = "text-tab-title"),
+  box(title = tags$span("Covariance", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
       p(instructions$covariance, class = "text-instruction"),
-      uiOutput("covariance_sliders_ui")
+      uiOutput("covariance_sliders_ui"),
+      fluidRow(
+        column(width = 6,
+               class = "btn-spaced",
+               actionButton("save_cov",
+                            "Continue",
+                            class = "btn-primary")),
+        column(width = 6,
+               class = "btn-spaced",
+               actionButton("save_ell",
+                            "Save Elliposid Version",
+                            class = "btn-primary")
+        )
+      )
   )
 })
 
