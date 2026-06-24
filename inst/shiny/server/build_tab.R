@@ -674,14 +674,15 @@ output$covariance_ui <- renderUI({
       fluidRow(
         column(width = 6,
                class = "btn-spaced",
-               actionButton("save_cov",
-                            "Continue",
-                            class = "btn-primary")),
+               actionButton("save_ell_version",
+                            "Save Elliposid Version",
+                            class = "btn-primary"),
         column(width = 6,
                class = "btn-spaced",
-               actionButton("save_ell",
-                            "Save Elliposid Version",
-                            class = "btn-primary")
+               actionButton("save_cov",
+                            "Continue",
+                            class = "btn-primary"))
+
         )
       )
   )
