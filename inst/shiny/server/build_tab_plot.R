@@ -226,7 +226,8 @@ draw_gspace_panel <- function(s, title = "G-space"){
                 col= c(unsuitable_col, suitable_col),
                 legend = FALSE,
                 axes = TRUE,
-                main = title, xlab = "Longitude", ylab = "Latitude",
+                main = title,
+                xlab = "Longitude", ylab = "Latitude",
                 colNA= map_bg_col)
 
     terra::add_legend(x= "topright",
@@ -237,9 +238,10 @@ draw_gspace_panel <- function(s, title = "G-space"){
 
   } else if(!is.null(rast)){
     terra::plot(rast[[1]],
-                main= title,
+                main = title,
                 colNA = map_bg_col,
-                axes= TRUE)
+                xlab = "Longitude", ylab = "Latitude",
+                axes = TRUE)
   } else {
     plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1),
          xlab = "Longitude", ylab = "Latitude", main = title)
@@ -250,8 +252,8 @@ draw_gspace_panel <- function(s, title = "G-space"){
 draw_espace_pairs <- function(vars, s){
   pairs <- t(combn(seq_along(vars), 2))
   n_pairs <- nrow(pairs)
-  n_cols<- ceiling(sqrt(n_pairs))
-  n_rows<- ceiling(n_pairs / n_cols)
+  n_cols <- ceiling(sqrt(n_pairs))
+  n_rows <- ceiling(n_pairs / n_cols)
   par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
   for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
 }

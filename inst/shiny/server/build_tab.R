@@ -452,7 +452,7 @@ output$range_method_ui <- renderUI({
     column(width = 4,
            numericInput(inputId = "cl_range",
                         label = NULL,
-                        value = 0.99,
+                        value = 0.95,
                         min = 0, max = 1,
                         step = 0.1)
     ))
