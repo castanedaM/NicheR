@@ -5,7 +5,14 @@
 dashboardPage(
   dashboardHeader(
     title = tags$span("nicheR", class = "text-app-title"),
-    titleWidth = 200
+    titleWidth = 200,
+    tags$li(
+      class = "dropdown",
+      downloadButton("save_session_btn",
+                     label = "Save",
+                     icon = icon("floppy-disk"),
+                     title = "Save current session as .rds file")
+    )
   ),
 
   dashboardSidebar(
@@ -79,21 +86,24 @@ dashboardPage(
                      title = tags$span("Build", class = "text-tab-title"),
                      width = 12,
                      value = "range",
+                     fluidRow(
+                       column(width = 12,
 
-                     uiOutput("variable_selectors_ui"),
-                     uiOutput("range_method_choice_ui"),
-                     uiOutput("range_method_ui"),
-                     uiOutput("covariance_ui"),
-                     uiOutput("centroid_mover_ui")
+                              uiOutput("variable_selectors_ui"),
+                              uiOutput("range_method_choice_ui"),
+                              uiOutput("range_method_ui"),
+                              uiOutput("covariance_ui"),
+                              uiOutput("centroid_mover_ui")
+                       )
+                     )
                    )
                  )
           ),
 
           column(width = 6,
-
                  tabBox(
                    id    = "plot_tabs",
-                   width = 12, height = 550,
+                   width = 12,
 
                    tabPanel(
                      width = 12,

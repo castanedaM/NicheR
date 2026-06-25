@@ -730,7 +730,7 @@ output$centroid_mover_ui <- renderUI({
 
   req(session_data$ellipsoid_version > 0)
 
-  box(title = "Centroid Mover",
+  box(title = tags$div("Centroid Mover", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
