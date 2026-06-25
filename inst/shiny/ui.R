@@ -83,18 +83,20 @@ dashboardPage(
                      uiOutput("variable_selectors_ui"),
                      uiOutput("range_method_choice_ui"),
                      uiOutput("range_method_ui"),
-                     uiOutput("covariance_ui")
-
+                     uiOutput("covariance_ui"),
+                     uiOutput("centroid_mover_ui")
                    )
                  )
           ),
 
           column(width = 6,
+
                  tabBox(
                    id    = "plot_tabs",
-                   width = 12,
+                   width = 12, height = 550,
 
                    tabPanel(
+                     width = 12,
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "tab_espace",
                      uiOutput("plot_espace_options_ui"),
@@ -102,12 +104,14 @@ dashboardPage(
                    ),
 
                    tabPanel(
+                     width = 12,
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "tab_gspace",
                      plotOutput("build_gspace_plot")
                    ),
 
                    tabPanel(
+                     width = 12,
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "tab_combined",
                      uiOutput("plot_combined_options_ui"),
@@ -116,16 +120,14 @@ dashboardPage(
                  ),
 
                  # Export button and settings sit below the tabBox, outside all panels
-                 fluidRow(
-                   column(width = 12, class = "btn-spaced",
-                          uiOutput("export_btn_ui"))
-                 ),
-
+                 column(width = 12, class = "btn-spaced",
+                        uiOutput("export_btn_ui"),
+                        br()),
                  uiOutput("plot_settings_ui")
 
                  # verbatimTextOutput("ellipsoid_print")
+                 )
           )
-        )
       ),
       tabItem(
         tabName = "predict_tab",

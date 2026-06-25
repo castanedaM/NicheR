@@ -278,12 +278,14 @@ update_ellipsoid_covariance <- function(object,
 
   up <- update_covariance(object$cov_matrix, covariance = covariance, tol = tol)
 
+  r <- object$ranges
   object <- ellipsoid_calculator(cov_matrix = up$updated_matrix,
                                  centroid = object$centroid,
                                  cl = object$cl,
                                  verbose = verbose)
 
   # new fields
+  object$ranges <- r
   object$cov_limits_remaining <- up$remaining_limits
 
   object

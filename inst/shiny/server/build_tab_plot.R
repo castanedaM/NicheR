@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 06/24/2026
+# Date last updated: 06/25/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -19,28 +19,30 @@ get_input <- function(id, default){
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
 
-  has_ell <- isTRUE(session_data$ellipsoid_version > 0)
+  ranges <- tryCatch(
+    withCallingHandlers(
+      range_preview(),
+      shiny.silent.error = function(e) invokeRestart("muffleWarning")
+    ),
+    error = function(e) NULL
+  )
 
-  # range_preview() outside isolate so plot reacts to range input changes
-  ranges <- tryCatch(range_preview(),
-                     error              = function(e) NULL,
-                     shiny.silent.error = function(e) NULL)
-
-  # Fall back to ellipsoid ranges if preview returns NULL,
-  # isolated so the ellipsoid object itself doesn't cause extra re-renders
-  if(is.null(ranges) && has_ell){
-    ranges <- isolate({
-      ell <- session_data$ellipsoid
-      list(mins = setNames(as.list(ell$ranges[1, ]), ell$var_names),
-           maxs = setNames(as.list(ell$ranges[2, ]), ell$var_names))
-    })
+  if(is.null(ranges) && !is.null(session_data$ellipsoid)){
+    ell <- session_data$ellipsoid
+    if(!is.null(ell$ranges) && !is.null(colnames(ell$ranges)) &&
+       length(colnames(ell$ranges)) > 0){
+      ranges <- list(mins = as.list(ell$ranges[1, ]),
+                     maxs = as.list(ell$ranges[2, ]))
+    }
   }
+
+  has_ell <- isTRUE(session_data$ellipsoid_version > 0)
 
   list(
     has_ell = has_ell,
-    ell = if(has_ell) session_data$ellipsoid else NULL,
+    ell  = if(has_ell) session_data$ellipsoid else NULL,
 
-    show_ell = has_ell && get_input("show_ellipsoid", TRUE),
+    show_ell = has_ell && get_input("show_ellipsoid",  TRUE),
     show_centroid = has_ell && get_input("show_centroid", TRUE),
     show_suitable_espace = has_ell && get_input("show_suitable_espace", TRUE),
     show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
@@ -50,22 +52,22 @@ collect_plot_settings <- function(){
       if(v == ".") "." else as.numeric(v)
     },
     cex_val = get_input("plot_cex", 0.3),
-    bg_col = get_input("plot_bg_col","#B3B3B3"),
+    bg_col = get_input("plot_bg_col", "#B3B3B3"),
 
     suitable_pch = as.numeric(get_input("plot_suitable_pch", "16")),
-    suitable_cex = get_input("plot_suitable_cex",0.3),
-    suitable_col = get_input("plot_suitable_col","#2ECC71"),
-    unsuitable_col = get_input("plot_unsuitable_col","#D3D3D3"),
-    map_bg_col = get_input("plot_map_bg_col","#F0F0F0"),
+    suitable_cex = get_input("plot_suitable_cex", 0.3),
+    suitable_col = get_input("plot_suitable_col", "#2ECC71"),
+    unsuitable_col = get_input("plot_unsuitable_col", "#D3D3D3"),
+    map_bg_col = get_input("plot_map_bg_col", "#F0F0F0"),
 
     show_lines = {
       show <- get_input("show_range_lines", TRUE)
       list(active = show && !is.null(ranges), ranges = ranges)
     },
 
-    xline_col = get_input("plot_xline_col", "#E10000"),
-    yline_col = get_input("plot_yline_col", "#0004D5"),
-    line_lwd = get_input("plot_line_lwd",2),
+    xline_col = get_input("plot_xline_col",  "#E10000"),
+    yline_col = get_input("plot_yline_col",  "#0004D5"),
+    line_lwd = get_input("plot_line_lwd", 2),
 
     ell_col = get_input("plot_ell_col", "#000000"),
     ell_lwd = get_input("plot_ell_lwd", 2),
@@ -75,10 +77,9 @@ collect_plot_settings <- function(){
     centroid_col = get_input("plot_centroid_col", "#000000"),
     centroid_cex = get_input("plot_centroid_cex", 1.5),
 
-    zoom_mode= get_input("plot_zoom_mode", "auto")
+    zoom_mode = get_input("plot_zoom_mode",  "auto")
   )
 }
-
 
 # Helper to avoid repeating the mutual-exclusion update logic in varibales.
 update_axis_selectors <- function(x_id, y_id, vars){
@@ -107,7 +108,7 @@ compute_lims <- function(v1, v2, s){
     xlim <- range(ell_pts[, 1]) + c(-pad_x, pad_x)
     ylim <- range(ell_pts[, 2]) + c(-pad_y, pad_y)
     return(list(xlim = xlim, ylim = ylim,
-                asp  = diff(ylim) / diff(xlim)))
+                asp = diff(ylim) / diff(xlim)))
   }
 
   bg <- session_data$bg_df
@@ -138,16 +139,16 @@ compute_lims <- function(v1, v2, s){
 draw_espace_panel <- function(v1, v2, s){
 
   lims <- compute_lims(v1, v2, s)
-  bg   <- session_data$bg_df
+  bg  <- session_data$bg_df
 
   if(!is.null(bg)){
     plot(bg[[v1]], bg[[v2]],
-         col  = s$bg_col,
-         pch  = s$pch_val,
-         cex  = s$cex_val,
+         col = s$bg_col,
+         pch = s$pch_val,
+         cex = s$cex_val,
          xlim = lims$xlim,
          ylim = lims$ylim,
-         asp  = lims$asp,
+         asp = lims$asp,
          xlab = v1,
          ylab = v2,
          main = paste(v1, "vs.", v2))
@@ -155,7 +156,7 @@ draw_espace_panel <- function(v1, v2, s){
     plot(NA, NA,
          xlim = lims$xlim,
          ylim = lims$ylim,
-         asp  = lims$asp,
+         asp = lims$asp,
          xlab = v1,
          ylab = v2,
          main = paste(v1, "vs.", v2))
@@ -433,7 +434,7 @@ output$plot_settings_ui <- renderUI({
 
     # Range lines
     conditionalPanel(
-      condition = "input.range_method_choice != null && input.range_method_choice != ''",
+      condition = "input.range_method_choice != null && input.range_method_choice != '' || output.ellipsoid_exists",
       fluidRow(
         column(width = 3,
                checkboxInput("show_range_lines", "Show range lines", value = TRUE)),
@@ -523,12 +524,12 @@ output$plot_settings_ui <- renderUI({
                                       "Triangle"= "17",
                                       "Cross" = "3"),
                            selected = "16")),
-      column(width = 3,
-             tags$span("Suitable point size (cex)", class = "text-widget-title"),
-             numericInput("plot_suitable_cex", label = NULL, value = 0.3,
-                          min = 0.1, max = 5, step = 0.1))
-    )
-  ),
+        column(width = 3,
+               tags$span("Suitable point size (cex)", class = "text-widget-title"),
+               numericInput("plot_suitable_cex", label = NULL, value = 0.3,
+                            min = 0.1, max = 5, step = 0.1))
+      )
+    ),
 
     # Map background color
     if(has_raster) fluidRow(

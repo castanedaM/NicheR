@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs
-# Date last updated: 06/24/2026
+# Date last updated: 06/25/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -674,18 +674,12 @@ output$covariance_ui <- renderUI({
       fluidRow(
         column(width = 6,
                class = "btn-spaced",
-               actionButton("save_ell_version",
-                            "Save Elliposid Version",
-                            class = "btn-primary"),
-        column(width = 6,
-               class = "btn-spaced",
-               actionButton("save_cov",
-                            "Continue",
+               actionButton("set_cov",
+                            "Set Covariance",
                             class = "btn-primary"))
 
         )
       )
-  )
 })
 
 output$covariance_sliders_ui <- renderUI({
@@ -728,6 +722,67 @@ output$covariance_sliders_ui <- renderUI({
   )
 
   cov_counters(setNames(lapply(pair_names, function(pn) 0), pair_names))
+
+  tagList(sliders, reset_all_btn)
+})
+
+output$centroid_mover_ui <- renderUI({
+
+  req(session_data$ellipsoid_version > 0)
+
+  box(title = "Centroid Mover",
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p(instructions$centroid_mover, class = "text-instruction"),
+      uiOutput("centroid_sliders_ui"),
+      fluidRow(
+        column(width = 6,
+               class = "btn-spaced",
+               actionButton("seve_ell_version",
+                            "Save Elliposid Version",
+                            class = "btn-primary"))
+
+      )
+  )
+
+})
+
+output$centroid_sliders_ui <- renderUI({
+  req(session_data$ellipsoid_version > 0)
+
+  ell <- isolate(session_data$ellipsoid)
+  vars <- isolate(ell$var_names)
+  version <- session_data$ellipsoid_version
+
+  centroid <- ell$centroid
+
+  sliders <- lapply(vars, function(v){
+    sd_val <- 3 * round(sd(session_data$bg_df[, v], na.rm = TRUE))
+    min_val <- round(max(session_data$bg_df[, v], na.rm = TRUE)) - sd_val
+    max_val <- round(max(session_data$bg_df[, v], na.rm = TRUE)) + sd_val
+    step <- round((max_val - min_val) / 100, 4)
+
+    fluidRow(
+      column(width = 11,
+             sliderInput(inputId = paste0("centroid_", v, "_", version),
+                         label = v,
+                         min = round(min_val, 2),
+                         max = round(max_val, 2),
+                         value = centroid[v],
+                         step = step)),
+      column(width = 1,
+             actionLink(inputId = paste0("centroid_reset_", v, "_", version),
+                        label = tags$span(icon("rotate-left"),
+                                          title = instructions$centroid_reset_tooltip))
+      ))
+  })
+
+  reset_all_btn <- fluidRow(
+    column(width = 12, class = "btn-spaced",
+           actionLink(inputId = paste0("centroid_reset_all_", version),
+                      label = tagList(icon("rotate-left"), "Reset all back to original values")))
+  )
 
   tagList(sliders, reset_all_btn)
 })

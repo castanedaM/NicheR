@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 06/17/2026
+# Date last updated: 06/25/2026
 
 # Observer Events ---------------------------------------------------------
 
