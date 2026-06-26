@@ -349,7 +349,7 @@ output$data_input_type <- renderUI({
                            class = "btn-spaced",
                            actionButton(inputId = "data_upload",
                                         label = "Upload",
-                                        class = "btn-primary")
+                                        class = "btn-default")
                          )
                        )
            ))
@@ -370,7 +370,7 @@ output$data_input_type <- renderUI({
                            class = "btn-spaced",
                            actionButton(inputId = "load_session",
                                         label = "Load Session",
-                                        class = "btn-primary")
+                                        class = "btn-default")
                          )
                        )
            ))
@@ -387,7 +387,7 @@ output$data_input_type <- renderUI({
                            class = "btn-spaced",
                            actionButton(inputId = "continue_virtual",
                                         label = "Continue",
-                                        class = "btn-primary")
+                                        class = "btn-default")
                          )
                        )
            ))
@@ -406,7 +406,7 @@ output$data_input_type <- renderUI({
                      class = "btn-spaced",
                      actionButton(inputId = "continue_example",
                                   label = "Continue",
-                                  class = "btn-primary")
+                                  class = "btn-default")
                    )
                  )
              )
@@ -508,7 +508,7 @@ output$variable_selectors_ui <- renderUI({
           ),
           name_rows,
           fluidRow(column(12, class = "btn-spaced",
-                          actionButton("confirm_variables", "Confirm", class = "btn-primary")))
+                          actionButton("confirm_variables", "Confirm", class = "btn-default")))
       )
     )
   }
@@ -552,7 +552,7 @@ output$variable_selectors_ui <- renderUI({
       p(instructions$variable_settings, class = "text-instruction"),
       var_slots,
       fluidRow(column(12, class = "btn-spaced",
-                      actionButton("confirm_variables", "Confirm", class = "btn-primary")))
+                      actionButton("confirm_variables", "Confirm", class = "btn-default")))
   )
 })
 

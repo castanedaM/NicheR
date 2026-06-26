@@ -60,7 +60,7 @@ dashboardPage(
       tabItem(
         tabName = "build_tab",
         fluidRow(
-          column(width = 6,
+          column(width = 5,
                  tabBox(
                    id = "tabpanel-build",
                    width = 12,
@@ -100,7 +100,7 @@ dashboardPage(
                  )
           ),
 
-          column(width = 6,
+          column(width = 7,
                  tabBox(
                    id    = "plot_tabs",
                    width = 12,
@@ -142,13 +142,48 @@ dashboardPage(
       tabItem(
         tabName = "predict_tab",
         fluidRow(
-          box(title = "Predict", width = 6,
-              solidHeader = TRUE, status = "primary",
-              "Predict function details"),
+          box(title = tags$span("Predict Suitable Area", class = "text-tab-title"),
+              width = 5,
+
+              uiOutput("ell_version_predict"),
+
+              fluidRow(
+                column(width = 8, tags$span("Prediction Layers to Include", class = "text-widget-title"))
+              ),
+              fluidRow(
+                column(width = 6,
+                       checkboxInput("pred_suitability",
+                                     label = tags$span("Suitability", class = "text-widget-inner"),
+                                     value = TRUE)),
+                column(width = 6,
+                       checkboxInput("pred_suitability_trunc",
+                                     label = tags$span("Suitability (truncated)", class = "text-widget-inner"),
+                                     value = FALSE))
+              ),
+              fluidRow(
+                column(width = 6,
+                       checkboxInput("pred_mahalanobis",
+                                     label = tags$span("Mahalanobis", class = "text-widget-inner"),
+                                     value = TRUE)),
+                column(width = 6,
+                       checkboxInput("pred_mahalanobis_trunc",
+                                     label = tags$span("Mahalanobis (truncated)", class = "text-widget-inner"),
+                                     value = FALSE))
+              ),
+              br(),
+              fluidRow(
+                uiOutput("advanced_settings_predict")
+              ),
+
+              actionButton(inputId = "ell_predict",
+                           label = tags$span("Predict", class = "text-widget-title"),
+                           class = "btn-default")
+          ),
           tabBox(
-            width = 6,
+            width = 7,
             tabPanel("E-space"),
             tabPanel("G-space"),
+            tabPanel("Combined")
           )
         )
       ),
@@ -174,12 +209,12 @@ dashboardPage(
 
           column(width = 7,
                  verbatimTextOutput("bias_raster_print")
+          ),
+          tabBox(
+            width = 7,
+            tabPanel("E-space"),
+            tabPanel("G-space"),
           )
-        ),
-        tabBox(
-          width = 6,
-          tabPanel("E-space"),
-          tabPanel("G-space"),
         )
       ),
 

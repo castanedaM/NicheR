@@ -19,6 +19,14 @@
   margin-bottom: 8px;
 }
 
+/* Widget inside text — small labels or values inside a widget */
+.text-widget-inner {
+  font-size: 14px;
+  font-weight: 400;
+  color: #383838;  /* slightly muted, not full black */
+  line-height: 1.4;
+}
+
 /* Section headers — labels that divide content within a panel */
 .text-section-header {
   font-size: 15px;
@@ -74,13 +82,7 @@
   line-height: 1.5;
 }
 
-/* Widget inside text — small labels or values inside a widget */
-.text-widget-inner {
-  font-size: 12px;
-  font-weight: 400;
-  color: #383838;  /* slightly muted, not full black */
-  line-height: 1.4;
-}
+
 
 /* Muted small text — hints, fine print, secondary labels */
 /* color uses CSS var so it works in both light and dark mode */
