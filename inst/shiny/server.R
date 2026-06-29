@@ -12,7 +12,8 @@ function(input, output, session){
     bias = NULL,
     vars = NULL,
     ellipsoid = NULL,
-    ellipsoid_version = 0L
+    ellipsoid_version = 0L,
+    ellipsoid_prediction = NULL
   )
 
   cov_counters <- reactiveVal(list())
