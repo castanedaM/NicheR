@@ -5,11 +5,14 @@
 # Load previous session
 observeEvent(input$load_session, {
 
-  req(input$load_session)
+  req(input$session_file)
+  req(is.data.frame(input$session_file))
+  req(file.exists(input$session_file$datapath))
+
   session_data$input_mode <- "prev_session"
 
   session_list <- tryCatch(
-    readRDS(input$load_session$datapath),
+    readRDS(input$session_file$datapath),
     error = function(e){
       showNotification(paste("Could not load session:", e$message),
                        type = "error", duration = 4)
@@ -19,7 +22,6 @@ observeEvent(input$load_session, {
 
   req(session_list)
 
-  # Unwrap SpatRaster if present
   if(!is.null(session_list$bg_raster)){
     session_list$bg_raster <- tryCatch(
       terra::unwrap(session_list$bg_raster),
@@ -31,35 +33,29 @@ observeEvent(input$load_session, {
     )
   }
 
-  # Restore all session values
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
   }
 
+  covariance_set(FALSE)
+  cov_counters(list())
+
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
-  # Navigate to build tab if ellipsoid was restored
-  if(!is.null(session_data$current_ellipsoid)){
+  if(length(session_data$ellipsoid_list) > 0){
+    updateTabItems(session, "sidebarMenu", selected = "build_tab")
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
 })
-
-
-# Save session
 output$save_session_btn <- downloadHandler(
   filename = function(){
     paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
   },
   content = function(file){
 
-    if(is.null(session_data$current_ellipsoid)){
-      showNotification("Please build an ellipsoid before saving a session.",
-                       type = "warning", duration = 4)
-      # Write an empty file so the browser doesn't error on a failed download
-      saveRDS(list(), file)
-      return()
-    }
+    req(session_data$current_ellipsoid)
 
+    # Must convert to plain list before saving
     session_list <- reactiveValuesToList(session_data)
 
     if(!is.null(session_list$bg_raster)){

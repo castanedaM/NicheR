@@ -27,6 +27,7 @@ function(input, output, session){
   )
 
   source("server/helpers.R", local = TRUE)
+  source("server/save_load_session.R", local = TRUE)
   source("server/data_tab.R", local = TRUE)
   source("server/build_tab_plot.R", local = TRUE)
   source("server/build_tab.R", local = TRUE)

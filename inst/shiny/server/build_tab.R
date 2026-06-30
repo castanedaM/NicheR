@@ -777,97 +777,6 @@ output$centroid_mover_ui <- renderUI({
 
 })
 
-observeEvent(input$save_ell_version, {
-
-  req(session_data$current_ellipsoid)
-
-  n <- length(session_data$ellipsoid_list) + 1L
-  deflt <- paste0("Ellipsoid_", n)
-
-  showModal(modalDialog(
-    title = "Save Ellipsoid Version",
-    p("Give this ellipsoid a name. Use letters, numbers, and spaces only.
-       Spaces will be replaced with underscores."),
-    textInput("ell_save_name",
-              label = NULL,
-              value = deflt,
-              placeholder = deflt),
-    tags$small(paste0("Max 30 characters.")),
-    footer = tagList(
-      modalButton("Cancel"),
-      actionButton("confirm_save_ell_version",
-                   "Save",
-                   class = "btn-primary")
-    ),
-    easyClose = FALSE
-  ))
-})
-
-observeEvent(input$confirm_save_ell_version, {
-
-  req(session_data$current_ellipsoid)
-
-  raw_name <- if(!is.null(input$ell_save_name) && nzchar(trimws(input$ell_save_name))){
-    input$ell_save_name
-  } else {
-    paste0("Ellipsoid_", length(session_data$ellipsoid_list) + 1L)
-  }
-
-  # Clean: trim whitespace, replace spaces with underscores, cap at 30 chars
-  clean_name <- gsub("\\s+", "_", trimws(raw_name))
-  clean_name <- substr(clean_name, 1, 30)
-
-  # Ensure uniqueness by appending a suffix if name already exists
-  existing <- names(session_data$ellipsoid_list)
-  if(clean_name %in% existing){
-    suffix <- sum(grepl(paste0("^", clean_name), existing)) + 1L
-    clean_name <- substr(paste0(clean_name, "_", suffix), 1, 30)
-  }
-
-  # Add to library
-  new_list <- session_data$ellipsoid_list
-  new_list[[clean_name]] <- session_data$current_ellipsoid
-  session_data$ellipsoid_list <- new_list
-
-  removeModal()
-
-  showModal(modalDialog(
-    title = paste0(clean_name, " saved."),
-    p("What would you like to do next?"),
-    footer = tagList(
-      actionButton("next_build_another",
-                   tagList(icon("circle-plus"), "Build another ellipsoid"),
-                   class = "btn-default"),
-      actionButton("next_go_predict",
-                   tagList(icon("arrow-right"), "Continue to Predict"),
-                   class = "btn-primary")
-    ),
-    easyClose = FALSE
-  ))
-})
-
-# Continue building: reset current ellipsoid state for a fresh build
-observeEvent(input$next_build_another, {
-  removeModal()
-
-  base_ell <- session_data$ellipsoid_list[["base"]]
-  req(base_ell)
-
-  session_data$current_ellipsoid <- base_ell
-  session_data$current_ellipsoid_id <- "base"
-  covariance_set(FALSE)
-  cov_counters(list())
-
-  showNotification("Covariance and Centroid move have reset. Adjust and save a new version.",
-                   type = "message", duration = 3)
-})
-
-# Continue to predict: navigate to the predict tab
-observeEvent(input$next_go_predict, {
-  removeModal()
-  updateTabItems(session, "sidebarMenu", selected = "predict_tab")
-})
-
 output$centroid_sliders_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
@@ -906,7 +815,6 @@ output$centroid_sliders_ui <- renderUI({
 
   tagList(sliders, reset_all_btn)
 })
-
 
 output$ellipsoid_library <- renderUI({
   req(length(session_data$ellipsoid_list) > 1)

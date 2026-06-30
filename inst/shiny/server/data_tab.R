@@ -127,48 +127,6 @@ observeEvent(input$continue_example, {
   updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
-# Load previous session
-observeEvent(input$load_session, {
-
-  req(input$load_session)
-  session_data$input_mode <- "prev_session"
-
-  session_list <- tryCatch(
-    readRDS(input$load_session$datapath),
-    error = function(e){
-      showNotification(paste("Could not load session:", e$message),
-                       type = "error", duration = 4)
-      NULL
-    }
-  )
-
-  req(session_list)
-
-  # Unwrap SpatRaster if present
-  if(!is.null(session_list$bg_raster)){
-    session_list$bg_raster <- tryCatch(
-      terra::unwrap(session_list$bg_raster),
-      error = function(e){
-        showNotification("Could not restore raster from session file.",
-                         type = "warning", duration = 4)
-        NULL
-      }
-    )
-  }
-
-  # Restore all session values
-  for(nm in names(session_list)){
-    session_data[[nm]] <- session_list[[nm]]
-  }
-
-  showNotification("Session loaded successfully.", type = "message", duration = 4)
-
-  # Navigate to build tab if ellipsoid was restored
-  if(!is.null(session_data$current_ellipsoid)){
-    updateTabsetPanel(session, "tabpanel-build", selected = "range")
-  }
-})
-
 observeEvent({
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
   lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
