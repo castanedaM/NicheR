@@ -24,6 +24,8 @@ observeEvent(input$df_file, {
 observeEvent(input$data_upload, {
   uploaded <- FALSE
 
+  session_data$input_mode <- "bg_layers"
+
   if(!is.null(input$raster_file)){
     ext <- tolower(tools::file_ext(input$raster_file$name))
     session_data$bg_raster <- tryCatch(
@@ -129,6 +131,7 @@ observeEvent(input$continue_example, {
 observeEvent(input$load_session, {
 
   req(input$load_session)
+  session_data$input_mode <- "prev_session"
 
   session_list <- tryCatch(
     readRDS(input$load_session$datapath),
@@ -253,17 +256,16 @@ observeEvent(input$confirm_variables, {
                      type = "message", duration = 4)
   }
 
-  session_data$vars_confirmed <- TRUE
-
   # Clear everything downstream that depended on the old variable set
+  session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_version <- 0
+  session_data$current_ellipsoid_id <- NULL
 
 })
 
 observeEvent(input$edit_variables, {
 
-  if(!is.null(session_data$current_ellipsoid) || !is.null(session_data$vars)){
+  if(length(session_data$ellipsoid_list) > 0 || !is.null(session_data$vars)){
     showModal(modalDialog(
       title = "Edit variables?",
       p("You have already selected variables or built an ellipsoid. Editing your variables will
@@ -276,18 +278,17 @@ observeEvent(input$edit_variables, {
       ),
       easyClose = FALSE
     ))
-  } else {
-    session_data$vars_confirmed <- FALSE
   }
+
 })
 
 observeEvent(input$confirm_edit_variables, {
   removeModal()
 
   session_data$vars <- NULL
-  session_data$ellipsoid_list <- NULL
+  session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_version <- 0L
+  session_data$current_ellipsoid_id <- NULL
 
 })
 
@@ -298,9 +299,9 @@ observeEvent(input$data_input_type_choice, {
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
   session_data$vars <- NULL
-  session_data$ellipsoid_list <- NULL
+  session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_version <- 0L
+  session_data$current_ellipsoid_id <- NULL
 
   updateRadioButtons(session, "range_method_choice", selected = character(0))
 
@@ -448,10 +449,7 @@ output$df_header <- renderTable({
 output$variable_selectors_ui <- renderUI({
 
   # If variables are already confirmed, show a collapsed summary box
-  if(isTRUE(session_data$vars_confirmed)){
-
-    req(session_data$vars)
-
+  if(!is.null(session_data$vars)){
     return(
       box(title = tags$span("Variables", class = "text-section-header"),
           width = 12,
@@ -547,32 +545,3 @@ output$variable_selectors_ui <- renderUI({
   )
 })
 
-# Save session
-output$save_session_btn <- downloadHandler(
-  filename = function(){
-    paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
-  },
-  content = function(file){
-
-    if(is.null(session_data$current_ellipsoid)){
-      showNotification("Please build an ellipsoid before saving a session.",
-                       type = "warning", duration = 4)
-      # Write an empty file so the browser doesn't error on a failed download
-      saveRDS(list(), file)
-      return()
-    }
-
-    session_list <- reactiveValuesToList(session_data)
-
-    if(!is.null(session_list$bg_raster)){
-      session_list$bg_raster <- terra::wrap(session_list$bg_raster)
-    }
-
-    tryCatch({
-      saveRDS(session_list, file)
-    }, error = function(e){
-      showNotification(paste("Failed to save session:", e$message),
-                       type = "error", duration = 4)
-    })
-  }
-)

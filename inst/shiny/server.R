@@ -14,6 +14,9 @@ function(input, output, session){
 
     vars = NULL,
 
+    range_df = NULL,
+    range_stats = NULL,
+
     bias = NULL,
 
     ellipsoid_list = list(),

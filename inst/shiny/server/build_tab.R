@@ -570,6 +570,8 @@ background layers. Check that column names match.",
 
                }else{
 
+                 session_data$range_df <- df_range
+
                  obs_ranges <- lapply(shared_vars, function(v){
                    list(min = round(min(df_range[, v], na.rm = TRUE), 2),
                         max = round(max(df_range[, v], na.rm = TRUE), 2))
