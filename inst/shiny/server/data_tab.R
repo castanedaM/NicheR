@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 06/25/2026
+# Date last updated: 06/30/2026
 
 # Observer Events ---------------------------------------------------------
 
@@ -161,7 +161,7 @@ observeEvent(input$load_session, {
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
   # Navigate to build tab if ellipsoid was restored
-  if(!is.null(session_data$ellipsoid)){
+  if(!is.null(session_data$current_ellipsoid)){
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
 })
@@ -256,14 +256,14 @@ observeEvent(input$confirm_variables, {
   session_data$vars_confirmed <- TRUE
 
   # Clear everything downstream that depended on the old variable set
-  session_data$ellipsoid <- NULL
-  session_data$ellipsoid_version <- 0
+  session_data$current_ellipsoid <- NULL
+  session_data$current_ellipsoid_version <- 0
 
 })
 
 observeEvent(input$edit_variables, {
 
-  if(!is.null(session_data$ellipsoid) || !is.null(session_data$vars)){
+  if(!is.null(session_data$current_ellipsoid) || !is.null(session_data$vars)){
     showModal(modalDialog(
       title = "Edit variables?",
       p("You have already selected variables or built an ellipsoid. Editing your variables will
@@ -284,22 +284,25 @@ observeEvent(input$edit_variables, {
 observeEvent(input$confirm_edit_variables, {
   removeModal()
 
-  session_data$vars_confirmed <- FALSE
   session_data$vars <- NULL
-  session_data$ellipsoid <- NULL
-  session_data$ellipsoid_version <- 0
+  session_data$ellipsoid_list <- NULL
+  session_data$current_ellipsoid <- NULL
+  session_data$current_ellipsoid_version <- 0L
 
-  updateRadioButtons(session, "range_method_choice", selected = character(0))
 })
 
 # Reset logic for input data
 observeEvent(input$data_input_type_choice, {
 
+  session_data$input_mode <- NULL
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
   session_data$vars <- NULL
-  session_data$input_mode <- NULL
-  session_data$vars_confirmed <- FALSE
+  session_data$ellipsoid_list <- NULL
+  session_data$current_ellipsoid <- NULL
+  session_data$current_ellipsoid_version <- 0L
+
+  updateRadioButtons(session, "range_method_choice", selected = character(0))
 
 }, ignoreInit = TRUE)
 
@@ -442,18 +445,6 @@ output$df_header <- renderTable({
 
 })
 
-output$bias_raster_print <- renderPrint({
-  req(input$bias_raster_file)
-  ext <- tolower(tools::file_ext(input$bias_raster_file$name))
-  result <- tryCatch(
-    load_raster_file(input$bias_raster_file$datapath, ext),
-    error = function(e) stop(safeError(e))
-  )
-
-  removeNotification("bias_raster_preview_msg")
-  print(result)
-})
-
 output$variable_selectors_ui <- renderUI({
 
   # If variables are already confirmed, show a collapsed summary box
@@ -563,7 +554,7 @@ output$save_session_btn <- downloadHandler(
   },
   content = function(file){
 
-    if(is.null(session_data$ellipsoid)){
+    if(is.null(session_data$current_ellipsoid)){
       showNotification("Please build an ellipsoid before saving a session.",
                        type = "warning", duration = 4)
       # Write an empty file so the browser doesn't error on a failed download

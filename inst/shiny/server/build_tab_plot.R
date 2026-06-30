@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 06/25/2026
+# Date last updated: 06/30/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -27,8 +27,8 @@ collect_plot_settings <- function(){
     error = function(e) NULL
   )
 
-  if(is.null(ranges) && !is.null(session_data$ellipsoid)){
-    ell <- session_data$ellipsoid
+  if(is.null(ranges) && !is.null(session_data$current_ellipsoid)){
+    ell <- session_data$current_ellipsoid
     if(!is.null(ell$ranges) && !is.null(colnames(ell$ranges)) &&
        length(colnames(ell$ranges)) > 0){
       ranges <- list(mins = as.list(ell$ranges[1, ]),
@@ -36,11 +36,11 @@ collect_plot_settings <- function(){
     }
   }
 
-  has_ell <- isTRUE(session_data$ellipsoid_version > 0)
+  has_ell <- isTRUE(length(session_data$ellipsoid_list) > 0)
 
   list(
     has_ell = has_ell,
-    ell  = if(has_ell) session_data$ellipsoid else NULL,
+    ell  = if(has_ell) session_data$current_ellipsoid else NULL,
 
     show_ell = has_ell && get_input("show_ellipsoid",  TRUE),
     show_centroid = has_ell && get_input("show_centroid", TRUE),
@@ -267,10 +267,10 @@ draw_espace_pairs <- function(vars, s){
 # E-space uses predict() on bg_df directly inside draw_espace_panel().
 pred_raster_vis <- reactive({
 
-  req(session_data$ellipsoid_version > 0)
+  req(length(session_data$ellipsoid_list) > 0)
   req(session_data$bg_raster)
 
-  ell<- session_data$ellipsoid
+  ell<- session_data$current_ellipsoid
   vars <- ell$var_names
 
   tryCatch(
@@ -398,7 +398,7 @@ output$plot_combined_options_ui <- renderUI({
 # Advanced plot settings UI
 output$plot_settings_ui <- renderUI({
 
-  has_ell <- isTRUE(session_data$ellipsoid_version > 0)
+  has_ell <- isTRUE(length(session_data$ellipsoid_list) > 0)
   has_raster <- !is.null(session_data$bg_raster)
 
   box(title = tagList(
@@ -600,6 +600,54 @@ output$build_combined_plot <- renderPlot({
   draw_gspace_panel(s, title = "G-space")
 
 })
+
+
+output$ellipsoid_info <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  box(title = tags$span("ellipsoid info box", class = "text-tab-title"),
+      width = 12,
+      verbatimTextOutput("ellipsoid_print")
+  )
+
+})
+
+output$ellipsoid_print <- renderPrint({
+  req(session_data$current_ellipsoid)
+
+  x <- session_data$current_ellipsoid
+  v <- session_data$current_ellipsoid_id
+  digits = 3
+
+  cat("nicheR Ellipsoid Object", v, "\n")
+  cat("--------------------------\n")
+
+  cat("Dimensions: ", x$dimensions, "D\n", sep = "")
+  cat("Chi-square cutoff: ", round(x$chi2_cutoff, digits), "\n", sep = "")
+
+  cat("Centroid (mu):",
+      paste(round(x$centroid, digits), collapse = ", "),
+      "\n", sep = "")
+
+  cat("\nCovariance matrix:\n")
+  print(round(x$cov_matrix, digits))
+
+  cat("\nCovariance Limits:\n")
+  cov_lims <- x$cov_limits
+  rownames(cov_lims) <- apply(
+    combn(x$var_names, 2), 2,
+    function(pair) paste(pair, collapse = "-")
+  )
+  print(round(cov_lims, digits))
+
+  cat("\nEllipsoid volume:", round(x$volume, digits), "\n", sep = "")
+
+  cat("\n")
+  invisible(x)
+
+
+})
+
 
 output$export_espace_plot <- downloadHandler(
   filename = function() paste0("espace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".png"),

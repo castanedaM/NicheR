@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 6/23/2026
+# Lats Updated: 6/30/2026
 
 dashboardPage(
   dashboardHeader(
@@ -10,7 +10,7 @@ dashboardPage(
       class = "dropdown",
       downloadButton("save_session_btn",
                      label = "Save",
-                     icon = icon("floppy-disk"),
+                     icon = icon("floppy-disk"), class = "btn-primary",
                      title = "Save current session as .rds file")
     )
   ),
@@ -88,12 +88,12 @@ dashboardPage(
                      value = "range",
                      fluidRow(
                        column(width = 12,
-
                               uiOutput("variable_selectors_ui"),
                               uiOutput("range_method_choice_ui"),
                               uiOutput("range_method_ui"),
                               uiOutput("covariance_ui"),
-                              uiOutput("centroid_mover_ui")
+                              uiOutput("centroid_mover_ui"),
+                              uiOutput("ellipsoid_library")
                        )
                      )
                    )
@@ -102,7 +102,7 @@ dashboardPage(
 
           column(width = 7,
                  tabBox(
-                   id    = "plot_tabs",
+                   id = "plot_tabs",
                    width = 12,
 
                    tabPanel(
@@ -127,7 +127,10 @@ dashboardPage(
                      uiOutput("plot_combined_options_ui"),
                      plotOutput("build_combined_plot")
                    )
+
                  ),
+
+                 uiOutput("ellipsoid_info"),
 
                  # Export button and settings sit below the tabBox, outside all panels
                  column(width = 12, class = "btn-spaced",
@@ -135,7 +138,6 @@ dashboardPage(
                         br()),
                  uiOutput("plot_settings_ui")
 
-                 # verbatimTextOutput("ellipsoid_print")
                  )
           )
       ),
