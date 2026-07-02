@@ -19,6 +19,9 @@ dashboardPage(
     width = 200,
     sidebarMenu(
       id = "sidebarMenu",
+      menuItem("About",
+               tabName = "about",
+               icon = icon("circle-info")),
       menuItem("1. Build Ellipsoid",
                tabName = "build_tab",
                icon = icon("gear")),
@@ -30,10 +33,7 @@ dashboardPage(
                icon = icon("table")),
       menuItem("4. Generate Occurrences",
                tabName = "generate_tab",
-               icon = icon("eye-dropper")),
-      menuItem("About",
-               tabName = "about",
-               icon = icon("circle-info"))
+               icon = icon("eye-dropper"))
     ),
 
     tags$div(
@@ -57,6 +57,163 @@ dashboardPage(
     useShinyjs(),
     includeCSS("www/styles.css"),
     tabItems(
+      tabItem(
+        title = "About",
+        tabName = "about",
+
+        fluidRow(
+          column(width = 12,
+                 tags$div(tags$span("About nicheR", class = "text-app-title"), br(),
+                          p("An R package for ellipsoid-based ecological niche modeling.
+                       Build niche models from environmental ranges, predict suitable
+                       areas, account for sampling bias, and generate virtual
+                       occurrences, all in a single reproducible workflow.",
+                            class = "text-instruction")
+                 ),
+                 br()
+          )
+        ),
+
+        fluidRow(
+          column(width = 2),
+
+          column(width = 4,
+                 box(title = tagList(icon("gear"),
+                                     tags$span("1. Build ellipsoid",
+                                               class = "text-widget-title")),
+                     width = 12,
+                     collapsible = TRUE,
+                     collapsed = TRUE,
+                     solidHeader = TRUE,
+                     status = "primary",
+
+                     p("Define a species niche as an ellipsoid in environmental space
+                  using background layers and user-defined variable ranges.",
+                       class = "text-instruction"),
+                     tags$ul(
+                       tags$li("Set ranges manually, from occurrence data, or from background statistics", class = "text-instruction"),
+                       tags$li("Adjust covariance to rotate the ellipsoid", class = "text-instruction"),
+                       tags$li("Move the centroid without rebuilding", class = "text-instruction"),
+                       tags$li("Save multiple named versions", class = "text-instruction")
+                     ),
+                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/build.html",
+                            target = "_blank",
+                            icon("book"), " Build vignette")
+                 )
+          ),
+
+          column(width = 4,
+                 box(title = tagList(icon("angles-right"),
+                                     tags$span("2. Predict suitable area",
+                                               class = "text-widget-title")),
+                     width = 12,
+                     collapsible = TRUE,
+                     collapsed = TRUE,
+                     solidHeader = TRUE,
+                     status = "primary",
+
+                     p("Project the ellipsoid onto raster layers or a data frame to
+                  produce continuous or binary suitability surfaces.",
+                       class = "text-instruction"),
+                     tags$ul(
+                       tags$li("Output: suitability, Mahalanobis distance, and truncated versions", class = "text-instruction"),
+                       tags$li("Binarization uses the ellipsoid's own confidence level", class = "text-instruction"),
+                       tags$li("E-space and G-space plots included", class = "text-instruction"),
+                       tags$li("Batch predict across multiple saved versions", class = "text-instruction")
+                     ),
+                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/predict.html",
+                            target = "_blank",
+                            icon("book"), " Predict vignette")
+                 )
+          ),
+
+          column(width = 2)
+        ),
+        fluidRow(
+          column(width = 2),
+
+          column(width = 4,
+                 box(title = tagList(icon("table"),
+                                     tags$span("3. Bias correction",
+                                               class = "text-widget-title")),
+                     width = 12,
+                     collapsible = TRUE,
+                     collapsed = TRUE,
+                     solidHeader = TRUE,
+                     status = "primary",
+
+                     p("Upload a sampling bias raster to weight occurrence generation
+                  toward areas with higher observed detection effort.",
+                       class = "text-instruction"),
+                     tags$ul(
+                       tags$li("Optional but important for data-limited species", class = "text-instruction"),
+                       tags$li("Accepts any raster matching the background extent", class = "text-instruction"),
+                       tags$li("Higher cell values increase occurrence probability", class = "text-instruction"),
+                       tags$li("Use road density, collector coverage, or any detection proxy", class = "text-instruction")
+                     ),
+                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/bias.html",
+                            target = "_blank",
+                            icon("book"), " Bias vignette")
+                 )
+          ),
+
+          column(width = 4,
+                 box(title = tagList(icon("eye-dropper"),
+                                     tags$span("4. Generate occurrences",
+                                               class = "text-widget-title")),
+                     width = 12,
+                     collapsible = TRUE,
+                     collapsed = TRUE,
+                     status = "primary",
+                     solidHeader = TRUE,
+                     p("Sample virtual presences and absences from the fitted niche,
+                  optionally weighted by the bias layer.",
+                       class = "text-instruction"),
+                     tags$ul(
+                       tags$li("Specify number of presences and background ratio", class = "text-instruction"),
+                       tags$li("Output is a data frame of coordinates and environmental values", class = "text-instruction"),
+                       tags$li("Designed for virtual species and simulation workflows", class = "text-instruction"),
+                       tags$li("Supports rare-species SDM validation studies", class = "text-instruction")
+                     ),
+                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/generate.html",
+                            target = "_blank",
+                            icon("book"), " Generate vignette")
+                 )
+          ),
+          column(width = 2),
+          br()
+        ),
+
+        fluidRow(
+          column(width = 12,
+                 tags$a(href   = "https://castanedaM.github.io/nicheR/authors.html",
+                        target = "_blank", class = "text-instruction",
+                        icon("user-group"), "If you use nicheR in your research, please cite:"),
+                 br(),
+                 tags$code("Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026).
+                          nicheR: Ellipsoid-based ecological niche modeling. R package version 0.1.0. https://github.com/castanedaM/nicheR",
+                           style="color: grey;"),
+                 br(), br()
+
+          )
+        ),
+
+        fluidRow(
+          column(width = 12,
+                 tags$div(style = "font-size: 12px; color: #aaa; padding: 10px 0; border-top: 0.5px solid #ddd;
+                             display: flex; gap: 12px; flex-wrap: wrap;",
+                          tags$span("nicheR v0.1.0"),
+                          tags$span("·"),
+                          tags$a(href   = "https://github.com/castanedaM/nicheR/blob/main/LICENSE",
+                                 target = "_blank", style = "color: #aaa;", "MIT license"),
+                          tags$span("·"),
+                          tags$a(href   = "https://github.com/castanedaM/nicheR/issues",
+                                 target = "_blank", style = "color: #aaa;", "Report an issue")
+                 )
+          )
+        )
+      ),
+
       tabItem(
         tabName = "build_tab",
         fluidRow(
@@ -90,7 +247,6 @@ dashboardPage(
                        column(width = 12,
                               uiOutput("variable_selectors_ui"),
                               uiOutput("range_method_choice_ui"),
-                              uiOutput("range_method_ui"),
                               uiOutput("covariance_ui"),
                               uiOutput("centroid_mover_ui"),
                               uiOutput("ellipsoid_library")
@@ -233,10 +389,6 @@ dashboardPage(
             tabPanel("G-space"),
           )
         )
-      ),
-      tabItem(
-        tabName = "about",
-        "content of about"
       )
     )
   )

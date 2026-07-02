@@ -603,51 +603,115 @@ output$build_combined_plot <- renderPlot({
 
 
 output$ellipsoid_info <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
 
-  box(title = tags$span("ellipsoid info box", class = "text-tab-title"),
-      width = 12,
-      verbatimTextOutput("ellipsoid_print")
-  )
-
-})
-
-output$ellipsoid_print <- renderPrint({
   req(session_data$current_ellipsoid)
 
-  x <- session_data$current_ellipsoid
-  v <- session_data$current_ellipsoid_id
-  digits = 3
+  ell <- session_data$current_ellipsoid
+  base_ell <- session_data$ellipsoid_list[["base"]]
+  vars <- ell$var_names
+  n_vars <- length(vars)
 
-  cat("nicheR Ellipsoid Object", v, "\n")
-  cat("--------------------------\n")
+  # Volume change relative to base
+  vol_current <- ell$volume
+  vol_base <- if(!is.null(base_ell)) base_ell$volume else vol_current
+  vol_pct <- if(!is.null(base_ell) && vol_base > 0){
+    round((vol_current - vol_base) / vol_base * 100, 1)
+  } else {
+    0
+  }
+  vol_icon  <- if(vol_pct > 0) icon("arrow-up") else if(vol_pct < 0) icon("arrow-down") else icon("minus")
+  vol_color <- if(vol_pct > 0) "#2ecc71" else if(vol_pct < 0) "#e74c3c" else "#888"
 
-  cat("Dimensions: ", x$dimensions, "D\n", sep = "")
-  cat("Chi-square cutoff: ", round(x$chi2_cutoff, digits), "\n", sep = "")
+  # Covariance pairs that differ from zero
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = " / "))
+  cov_vals <- apply(pairs, 1, function(p){
+    round(ell$cov_matrix[p[1], p[2]], 4)
+  })
 
-  cat("Centroid (mu):",
-      paste(round(x$centroid, digits), collapse = ", "),
-      "\n", sep = "")
+  nonzero <- cov_vals != 0
 
-  cat("\nCovariance matrix:\n")
-  print(round(x$cov_matrix, digits))
+  # Covariance table rows
+  cov_rows <- if(any(nonzero)){
+    lapply(which(nonzero), function(i){
+      val <- cov_vals[i]
+      color <- if(val > 0) "#2ecc71" else "#e74c3c"
+      icn <- if(val > 0) icon("arrow-up-right") else icon("arrow-down-right")
+      tags$tr(
+        tags$td(pair_names[i],
+                style = "font-size: 12px; color: #666; padding: 3px 6px;"),
+        tags$td(style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"),
+                icn, " ", format(val, nsmall = 4))
+      )
+    })
+  } else {
+    list(tags$tr(tags$td(
+      colspan = "2",
+      style   = "font-size: 12px; color: #aaa; padding: 3px 6px;",
+      "All covariances at zero (base ellipsoid)"
+    )))
+  }
 
-  cat("\nCovariance Limits:\n")
-  cov_lims <- x$cov_limits
-  rownames(cov_lims) <- apply(
-    combn(x$var_names, 2), 2,
-    function(pair) paste(pair, collapse = "-")
+  # Centroid rows
+  centroid_rows <- lapply(vars, function(v){
+    tags$tr(
+      tags$td(v,
+              style = "font-size: 12px; color: #666; padding: 3px 6px;"),
+      tags$td(round(ell$centroid[v], 3),
+              style = "font-size: 12px; padding: 3px 6px;")
+    )
+  })
+
+  box(title = tags$span("Ellipsoid summary", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+
+      fluidRow(
+        column(width = 4,
+               tags$div(
+                 tags$span("Dimensions", class = "text-widget-title"),
+                 tags$p(paste0(n_vars, "D (", paste(vars, collapse = ", "), ")"),
+                        style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+
+                 tags$span("Confidence level", class = "text-widget-title"),
+                 tags$p(paste0(round(ell$cl * 100, 1), "%"),
+                        style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+
+                 tags$span("Volume", class = "text-widget-title"),
+                 tags$p(
+                   tags$span(format(round(vol_current, 2), big.mark = ","),
+                             style = "font-size: 12px; color: #555;"),
+                   tags$span(
+                     style = paste0("font-size: 11px; color:", vol_color,
+                                    "; margin-left: 6px;"),
+                     vol_icon, " ", abs(vol_pct), "% vs base"
+                   ),
+                   style = "margin: 2px 0 12px;"
+                 )
+               )
+        ),
+
+        # Covariance summary
+        column(width = 4,
+               tags$span("Covariance adjustments", class = "text-widget-title"),
+               tags$table(
+                 style = "width: 100%; margin-top: 4px;",
+                 tags$tbody(cov_rows)
+               )
+        ),
+
+        # Centroid
+        column(width = 4,
+               tags$span("Centroid", class = "text-widget-title"),
+               tags$table(
+                 style = "width: 100%; margin-top: 4px;",
+                 tags$tbody(centroid_rows)
+               )
+        )
+      )
   )
-  print(round(cov_lims, digits))
-
-  cat("\nEllipsoid volume:", round(x$volume, digits), "\n", sep = "")
-
-  cat("\n")
-  invisible(x)
-
-
 })
-
 
 output$export_espace_plot <- downloadHandler(
   filename = function() paste0("espace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".png"),

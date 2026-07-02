@@ -1,6 +1,6 @@
 # Title: Build tab server logic
 # Description: Handles range inputs
-# Date last updated: 06/30/2026
+# Date last updated: 07/02/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -340,22 +340,23 @@ observeEvent(input$confirm_save_ell_version, {
   raw_name <- if(!is.null(input$ell_save_name) && nzchar(trimws(input$ell_save_name))){
     input$ell_save_name
   } else {
-    paste0("Ellipsoid_", length(session_data$ellipsoid_list) + 1L)
+    paste0("Ellipsoid_", length(session_data$ellipsoid_list))
   }
 
-  # Clean: trim whitespace, replace spaces with underscores, cap at 30 chars
   clean_name <- gsub("\\s+", "_", trimws(raw_name))
   clean_name <- substr(clean_name, 1, 30)
 
-  # Ensure uniqueness by appending a suffix if name already exists
-  existing   <- names(session_data$ellipsoid_list)
-  if(clean_name %in% existing){
-    suffix     <- sum(grepl(paste0("^", clean_name), existing)) + 1L
-    clean_name <- substr(paste0(clean_name, "_", suffix), 1, 30)
+  # Ensure uniqueness with exact matching, not regex
+  existing <- setdiff(names(session_data$ellipsoid_list), "base")
+  base_name <- clean_name
+  suffix <- 1L
+
+  while(clean_name %in% existing){
+    clean_name <- substr(paste0(base_name, "_", suffix), 1, 30)
+    suffix <- suffix + 1L
   }
 
-  # Add to library
-  new_list <- session_data$ellipsoid_list
+  new_list  <- session_data$ellipsoid_list
   new_list[[clean_name]] <- session_data$current_ellipsoid
   session_data$ellipsoid_list <- new_list
 
@@ -503,17 +504,64 @@ cov_counters <- reactiveVal(list())
 
 # Render Outputs ----------------------------------------------------------
 
+observeEvent(input$edit_range, {
+
+  showModal(modalDialog(
+    title = "Edit ranges?",
+    p("Editing ranges will delete all built ellipsoids,
+    adjustments,
+       and any prediction results."),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_range",
+                   "Yes, edit ranges",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$confirm_edit_range, {
+  removeModal()
+
+  session_data$current_ellipsoid <- NULL
+  session_data$current_ellipsoid_id <- NULL
+  session_data$ellipsoid_list <- list()
+  session_data$ellipsoid_prediction_list <- list()
+
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  updateRadioButtons(session, "range_method_choice", selected = character(0))
+})
+
 output$range_method_choice_ui <- renderUI({
 
   req(session_data$vars)
 
-  # Collapse once an ellipsoid has been built, same pattern as variable selector
   is_built <- isTRUE(length(session_data$ellipsoid_list) > 0)
+
+  if(is_built){
+    return(
+      box(title = tags$span("Range", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          p("Ranges have been set and the base ellipsoid has been built.",
+            class = "text-instruction"),
+          fluidRow(
+            column(width = 12, class = "btn-spaced",
+                   actionLink("edit_range",
+                              label = tagList(icon("pen"), "Edit ranges")))
+          )
+      )
+    )
+  }
 
   box(title = tags$span("Range", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = is_built,
+      collapsed = FALSE,
       p(instructions$range_choice, class = "text-instruction"),
       radioButtons("range_method_choice",
                    label = tags$span("Select how to define the ranges for your ellipsoid:",
@@ -533,7 +581,8 @@ output$range_method_choice_ui <- renderUI({
                                        class = "tooltip-icon"))
                    ),
                    choiceValues = c("man", "df", "stats"),
-                   selected = character(0))
+                   selected = character(0)),
+      uiOutput("range_method_ui")
   )
 })
 
@@ -616,7 +665,7 @@ output$range_method_ui <- renderUI({
            })
 
            # Organizing the UI
-           column(width = 12, header, var_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, header, var_rows, cl_row, reset_btn, br(), build_btn)
          },
 
          "df" = {
@@ -703,7 +752,7 @@ background layers. Check that column names match.",
              }
            }
 
-           column(width = 12, upload_row, range_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, upload_row, range_rows, cl_row, reset_btn, br(), build_btn)
          },
 
          "stats" = {
@@ -761,7 +810,7 @@ background layers. Check that column names match.",
              )
            })
 
-           column(width = 12, header, var_rows, cl_row, reset_btn, build_btn)
+           column(width = 12, header, var_rows, cl_row, reset_btn, br(), build_btn)
          }
   )
 })
@@ -791,6 +840,7 @@ output$covariance_ui <- renderUI({
       collapsed = FALSE,
       p(instructions$covariance, class = "text-instruction"),
       uiOutput("covariance_sliders_ui"),
+      br(),
       fluidRow(
         column(width = 6,
                class = "btn-spaced",
@@ -902,23 +952,173 @@ output$centroid_sliders_ui <- renderUI({
                       label = tagList(icon("rotate-left"), "Reset all back to original values")))
   )
 
-  tagList(sliders, reset_all_btn)
+  tagList(sliders, br(), reset_all_btn)
 })
+
 
 output$ellipsoid_library <- renderUI({
-  req(length(session_data$ellipsoid_list) > 1)
 
-  box(title = tags$span("Ellipsoids Library", class = "text-section-header"),
-      width = 12,
+  req(length(session_data$ellipsoid_list) > 0)
+
+  versions <- session_data$ellipsoid_list
+  nms <- names(versions)
+
+  rows <- lapply(nms, function(nm){
+
+    is_base <- nm == "base"
+    is_current <- identical(session_data$current_ellipsoid_id, nm)
+
+    fluidRow(
+      style = if(is_current) "background: #f0f7f0; border-radius: 4px;" else "",
+
+      column(width = 6,
+             tags$span(
+               if(is_current) icon("circle-check") else icon("circle"),
+               nm,
+               class = "text-widget-inner",
+               style = if(is_current) "color: #2ecc71; font-weight: 500;" else ""
+             )),
+
+      column(width = 6,
+             tags$div(
+               style = "display: flex; gap: 8px;",
+
+               # Load as current
+               actionLink(
+                 inputId = paste0("ell_load_", nm),
+                 label   = tags$span(icon("pen-to-square"),
+                                     title = paste0("Load ", nm, " as current ellipsoid"),
+                                     class = "tooltip-icon")
+               ),
+
+               # Delete, not available for base
+               if(!is_base){
+                 actionLink(
+                   inputId = paste0("ell_delete_", nm),
+                   label   = tags$span(icon("trash"),
+                                       title = paste0("Delete ", nm),
+                                       class = "tooltip-icon",
+                                       style = "color: #e74c3c;")
+                 )
+               } else {
+                 tags$span(icon("lock"),
+                           title = "Base ellipsoid cannot be deleted",
+                           class = "tooltip-icon",
+                           style = "color: #ccc;")
+               }
+             ))
+    )
+  })
+
+  box(title = tags$span("Ellipsoid library", class = "text-section-header"),
+      width       = 12,
       collapsible = TRUE,
-      collapsed = FALSE,
+      collapsed   = FALSE,
 
-      verbatimTextOutput("ell_library_print")
+      fluidRow(
+        column(width = 6, tags$span("Name",   class = "text-widget-title")),
+        column(width = 6, tags$span("Actions", class = "text-widget-title"))
+      ),
+
+      tagList(rows)
   )
-
 })
 
-output$ell_library_print <- renderPrint({
-  names(session_data$ellipsoid_list)
 
-})
+# Load observer
+observeEvent({
+  nms <- names(session_data$ellipsoid_list)
+  lapply(nms, function(nm) input[[paste0("ell_load_", nm)]])
+}, {
+  nms <- names(session_data$ellipsoid_list)
+  req(length(nms) > 0)
+
+  clicked <- nms[vapply(nms, function(nm){
+    val <- input[[paste0("ell_load_", nm)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  nm <- clicked[1]
+
+  session_data$current_ellipsoid    <- session_data$ellipsoid_list[[nm]]
+  session_data$current_ellipsoid_id <- nm
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  showNotification(paste0(nm, " loaded as current ellipsoid."),
+                   type = "message", duration = 3)
+
+}, ignoreInit = TRUE)
+
+
+# Delete observer
+observeEvent({
+  nms <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(nms, function(nm) input[[paste0("ell_delete_", nm)]])
+}, {
+  nms <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(nms) > 0)
+
+  clicked <- nms[vapply(nms, function(nm){
+    val <- input[[paste0("ell_delete_", nm)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  nm <- clicked[1]
+
+  showModal(modalDialog(
+    title = paste0("Delete ", nm, "?"),
+    p(paste0("This will permanently remove ", nm,
+             " and any prediction results associated with it.")),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton(paste0("confirm_ell_delete_", nm),
+                   "Yes, delete",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+
+}, ignoreInit = TRUE)
+
+
+# Confirmed delete, dynamic per name
+observeEvent({
+  nms <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(nms, function(nm) input[[paste0("confirm_ell_delete_", nm)]])
+}, {
+  nms <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(nms) > 0)
+
+  clicked <- nms[vapply(nms, function(nm){
+    val <- input[[paste0("confirm_ell_delete_", nm)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  nm <- clicked[1]
+
+  removeModal()
+
+  session_data$ellipsoid_list[[nm]] <- NULL
+
+  if(!is.null(session_data$ellipsoid_prediction_list[[nm]])){
+    session_data$ellipsoid_prediction_list[[nm]] <- NULL
+  }
+
+  # If the deleted version was current, fall back to base
+  if(identical(session_data$current_ellipsoid_id, nm)){
+    session_data$current_ellipsoid    <- session_data$ellipsoid_list[["base"]]
+    session_data$current_ellipsoid_id <- "base"
+    covariance_set(FALSE)
+    cov_counters(list())
+    showNotification(paste0(nm, " deleted. Reverted to base ellipsoid."),
+                     type = "message", duration = 3)
+  } else {
+    showNotification(paste0(nm, " deleted."),
+                     type = "message", duration = 3)
+  }
+
+}, ignoreInit = TRUE)
