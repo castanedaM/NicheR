@@ -21,7 +21,6 @@ function(input, output, session){
 
     ellipsoid_list = list(),
     current_ellipsoid = NULL,
-    current_ellipsoid_id = NULL,
 
     ellipsoid_prediction_list = list(),
   )

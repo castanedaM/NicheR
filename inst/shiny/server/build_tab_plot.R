@@ -662,7 +662,10 @@ output$ellipsoid_info <- renderUI({
     )
   })
 
-  box(title = tags$span("Ellipsoid summary", class = "text-section-header"),
+  box(title = tagList(
+    tags$span("Ellipsoid summary", class = "text-section-header"),
+    tags$span(paste0(" — ", session_data$current_ellipsoid_id),
+              style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,

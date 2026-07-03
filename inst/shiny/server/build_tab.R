@@ -1,159 +1,32 @@
-# Title: Build tab server logic
-# Description: Handles range inputs
+# Title: Build Tab Server Script
+
+# Description: This script includes the code for the range, covariance, centroid
+# mover logic. Function from nicheR: build_ellipsoid(),
+# update_ellipsoid_covariance(), rang_from_stats(), range_from_df()
+
+# Author: Mariana Castaneda-Guzman
+
 # Date last updated: 07/02/2026
 
+# ELLIPSOID ---------------------------------------------------------------
 
-# Functions ---------------------------------------------------------------
+# Session-level counter, increments every time a new ellipsoid is created
+ell_id_counter <- reactiveVal(0L)
 
-#' Build elliposid helper function
-#'
-#' @description
-#' helper function is used to keep track of the ellipsoid version being ran,
-#' so if user click on build ellipsoid again it can get prompted that the
-#' other ellipsoid will be overwritten.
-#'
-#' @returns does not return, only calls to main function build_ellipsoid()
-#' @keywords internal
-#'
-#' @noRd
-build_ellipsoid_shiny <- function(){
-  req(session_data$vars)
+make_ell_id <- function(){
+  n <- ell_id_counter() + 1L
+  ell_id_counter(n)
+  paste0("E", n, format(Sys.time(), "%d%m%y"))
+}
 
-  ranges <- range_preview()
-
-  if(is.null(ranges)){
-    showNotification("Please check your range inputs before building.",
-                     type = "error")
-    return()
-  }
-
-  # Convert mins/maxs back to range_df format for build_ellipsoid
-  vars <- session_data$vars
-  range_df <- as.data.frame(rbind(unlist(ranges$mins),
-                                  unlist(ranges$maxs)),
-                            row.names = c("min", "max"))
-  colnames(range_df) <- vars
-
-  cl <- if(!is.null(input$cl_range)) input$cl_range else 0.95
-
-  tryCatch({
-    session_data$current_ellipsoid <- build_ellipsoid(range = range_df,
-                                                      cl = cl,
-                                                      verbose = FALSE)
-    session_data$ellipsoid_list[["base"]] <- session_data$current_ellipsoid
-
-    session_data$current_ellipsoid_id <- "base"
-
-    showNotification("Ellipsoid built successfully.", type = "message")
-
-  }, error = function(e){
-    showNotification(paste("Error building ellipsoid:", e$message),
-                     type = "error")
-  })
+tag_ellipsoid <- function(ell, name){
+  ell$ell_id <- make_ell_id()
+  ell$ell_name <- name
+  ell
 }
 
 
-# Observers ----------------------------------------------------------------
-
-# Reset range values to defaults
-observeEvent(input$reset_ranges, {
-
-  req(input$range_method_choice, session_data$vars)
-  vars <- session_data$vars
-  has_bg_df <- !is.null(session_data$bg_df)
-
-  switch(input$range_method_choice,
-
-         "man" = {
-           lapply(vars, function(v){
-             if(has_bg_df){
-               vals <- session_data$bg_df[[v]]
-               m <- round(mean(vals, na.rm = TRUE), 2)
-               s <- round(sd(vals, na.rm = TRUE), 2)
-             } else {
-               m <- 0
-               s <- 1
-             }
-             updateNumericInput(session, paste0("min_", v), value = m)
-             updateNumericInput(session, paste0("max_", v), value = m + s)
-           })
-         },
-
-         "df" = {
-           lapply(vars, function(v){
-             updateNumericInput(session, paste0("expand_min_df_", v), value = 0)
-             updateNumericInput(session, paste0("expand_max_df_", v), value = 0)
-           })
-         },
-
-         "stats" = {
-           lapply(vars, function(v){
-             if(has_bg_df){
-               vals <- session_data$bg_df[[v]]
-               m <- round(mean(vals, na.rm = TRUE), 2)
-               s <- round(sd(vals, na.rm = TRUE), 2)
-             } else {
-               m <- 0
-               s <- 1
-             }
-             updateNumericInput(session, paste0("mean_", v), value = m)
-             updateNumericInput(session, paste0("sd_", v), value = s)
-             updateNumericInput(session, paste0("expand_min_stats_", v), value = 0)
-             updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
-           })
-
-           updateNumericInput(session, "cl_range", value = 0.95)
-         }
-  )
-})
-
-# Rests covariances to zeros
-observeEvent({
-  ell <- session_data$current_ellipsoid
-  req(ell)
-  vars <- ell$var_names
-  version <- session_data$current_ellipsoid_id
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-  lapply(pair_names, function(pn) input[[paste0("cov_reset_", version, "_", pn)]])
-}, {
-  ell <- session_data$current_ellipsoid
-  req(ell)
-  vars <- ell$var_names
-  version <- session_data$current_ellipsoid_id
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-
-  req(cov_counters)
-
-  old_cnts <- cov_counters()
-
-  # Find which pair was clicked by comparing current vs previous counter
-  reset_pn <- pair_names[sapply(pair_names,
-                                function(pn){
-                                  cur <- input[[paste0("cov_reset_", version, "_", pn)]]
-                                  prev <- old_cnts[[pn]]
-                                  return(!is.null(cur) && !is.null(prev) && cur > prev)
-                                })]
-
-  req(length(reset_pn) > 0)
-  reset_pn <- reset_pn[1]
-
-  updateSliderInput(session,
-                    inputId = paste0("cov_", version, "_", reset_pn),
-                    value = 0)
-
-  # Update stored counters
-  new_cnts <- setNames(lapply(pair_names,
-                              function(pn){
-                                input[[paste0("cov_reset_", version, "_", pn)]]
-                              }),
-                       pair_names)
-
-  cov_counters(new_cnts)
-})
-
-# Button triggered, builds the ellipsoid
+# Button that builds the ellipsoid
 observeEvent(input$build_ell, {
 
   # If an ellipsoid already exists warn the user
@@ -175,144 +48,11 @@ overwrite the all current and saved ellipsoids and any downstream results."),
   }
 })
 
-# Overwrites the elliposoid
-observeEvent(input$confirm_build_ell, {
-  removeModal()
-  build_ellipsoid_shiny()
-
-})
-
-# Covariance update observer
-observeEvent({
-  ell <- session_data$current_ellipsoid
-  req(ell)
-  vars <- ell$var_names
-  version <- session_data$current_ellipsoid_id
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-  lapply(pair_names, function(pn) input[[paste0("cov_", version, "_", pn)]])
-}, {
-  req(session_data$current_ellipsoid)
-
-  ell <- session_data$current_ellipsoid
-  vars <- ell$var_names
-  version <- session_data$current_ellipsoid_id
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-
-  # Collect current slider values as named numeric vector
-  cov_vals <- setNames(sapply(pair_names,
-                              function(pn){
-                                val <- input[[paste0("cov_", version, "_", pn)]]
-                                if(is.null(val)) 0 else val
-                              }),
-                       pair_names)
-
-  # Only update if values differ from current covariance matrix
-  current_cov <- setNames(sapply(seq_len(nrow(pairs)),
-                                 function(i){
-                                   ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
-                                 }),
-                          pair_names)
-
-  if(all(cov_vals == current_cov)) return()
-
-  updated_ell <- tryCatch(
-    update_ellipsoid_covariance(object = ell,
-                                covariance = cov_vals,
-                                verbose = FALSE),
-    error = function(e){
-      showNotification(paste("Covariance update failed:", e$message),
-                       type = "error")
-      NULL
-    }
-  )
-
-  req(updated_ell)
-
-  session_data$current_ellipsoid <- updated_ell
-
-  # Silently update slider bounds for remaining pairs using
-  # cov_limits_remaining, preserving current selected values
-  remaining <- updated_ell$cov_limits_remaining
-
-  if(!is.null(remaining)){
-    remaining_names <- rownames(remaining)
-
-    lapply(remaining_names,
-           function(pn){
-             slider_id <- paste0("cov_", version, "_", pn)
-             cur_val <- input[[slider_id]]
-
-             if (!is.null(cur_val)){
-               new_min <- remaining[pn, "min"]
-               new_max <- remaining[pn, "max"]
-
-               # Clamp current value to new limits silently
-               clamped <- max(new_min, min(new_max, cur_val))
-
-               updateSliderInput(session,
-                                 inputId = slider_id,
-                                 min = round(new_min, 2),
-                                 max = round(new_max, 2),
-                                 value = round(clamped, 2))
-             }
-           })
-  }
-}, ignoreNULL = TRUE, ignoreInit = TRUE)
-
-
-# Rest Cov all
-observeEvent(input[[paste0("cov_reset_all_", session_data$current_ellipsoid_id)]], {
-
-  req(session_data$current_ellipsoid)
-
-  ell <- session_data$current_ellipsoid
-  vars <- ell$var_names
-  version <- session_data$current_ellipsoid_id
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
-
-  lapply(pair_names, function(pn){
-    updateSliderInput(session,
-                      inputId = paste0("cov_", version, "_", pn),
-                      value = 0)
-  })
-
-  # Reset counters so the per-pair reset observer doesn't misfire
-  cov_counters(setNames(lapply(pair_names, function(pn) 0), pair_names))
-
-}, ignoreNULL = TRUE, ignoreInit = TRUE)
-
-observeEvent(input$set_cov, {
-  covariance_set(TRUE)
-})
-
-observeEvent(input$edit_covariance, {
-  covariance_set(FALSE)
-})
-
-observeEvent(input$next_build_another, {
-  removeModal()
-
-  base_ell <- session_data$ellipsoid_list[["base"]]
-  req(base_ell)
-
-  session_data$current_ellipsoid <- base_ell
-  session_data$current_ellipsoid_id <- "base"
-  covariance_set(FALSE)
-  cov_counters(list())
-
-  showNotification("Covariance reset. Adjust and save a new version.",
-                   type = "message", duration = 3)
-})
-
 observeEvent(input$save_ell_version, {
 
   req(session_data$current_ellipsoid)
 
-  n <- length(session_data$ellipsoid_list) + 1L
-  deflt <- paste0("ellipsoid_", n)
+  default_name <- paste0("ellipsoid_", ell_id_counter())
 
   showModal(modalDialog(
     title = "Save Ellipsoid Version",
@@ -320,8 +60,8 @@ observeEvent(input$save_ell_version, {
        Spaces will be replaced with underscores."),
     textInput("ell_save_name",
               label = NULL,
-              value = deflt,
-              placeholder = deflt),
+              value = default_name,
+              placeholder = default_name),
     tags$small(paste0("Max 30 characters.")),
     footer = tagList(
       modalButton("Cancel"),
@@ -340,25 +80,17 @@ observeEvent(input$confirm_save_ell_version, {
   raw_name <- if(!is.null(input$ell_save_name) && nzchar(trimws(input$ell_save_name))){
     input$ell_save_name
   } else {
-    paste0("Ellipsoid_", length(session_data$ellipsoid_list))
+    paste0("ellipsoid_", ell_id_counter())
   }
 
   clean_name <- gsub("\\s+", "_", trimws(raw_name))
   clean_name <- substr(clean_name, 1, 30)
 
-  # Ensure uniqueness with exact matching, not regex
-  existing <- setdiff(names(session_data$ellipsoid_list), "base")
-  base_name <- clean_name
-  suffix <- 1L
+  ell_to_save <- session_data$current_ellipsoid
+  ell_to_save$ell_name <- clean_name
 
-  while(clean_name %in% existing){
-    clean_name <- substr(paste0(base_name, "_", suffix), 1, 30)
-    suffix <- suffix + 1L
-  }
-
-  new_list  <- session_data$ellipsoid_list
-  new_list[[clean_name]] <- session_data$current_ellipsoid
-  session_data$ellipsoid_list <- new_list
+  session_data$ellipsoid_list[[ell_to_save$ell_id]] <- ell_to_save
+  session_data$current_ellipsoid <- ell_to_save
 
   removeModal()
 
@@ -375,6 +107,24 @@ observeEvent(input$confirm_save_ell_version, {
     ),
     easyClose = FALSE
   ))
+
+})
+
+observeEvent(input$next_build_another, {
+  removeModal()
+
+  raw <- isolate(session_data$ellipsoid_list[["base"]])
+  req(raw)
+
+  working_ell <- tag_ellipsoid(raw, name = paste0("elliposid_",
+                                                  ell_id_counter()))
+  session_data$current_ellipsoid <- working_ell
+
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  showNotification("Covariance reset. Adjust and save a new version.",
+                   type = "message", duration = 3)
 })
 
 # Continue to predict: navigate to the predict tab
@@ -383,7 +133,243 @@ observeEvent(input$next_go_predict, {
   updateTabItems(session, "sidebarMenu", selected = "predict_tab")
 })
 
-# Reactives ---------------------------------------------------------------
+output$ellipsoid_library <- renderUI({
+
+  req(length(session_data$ellipsoid_list) > 0)
+
+  versions <- session_data$ellipsoid_list
+  ids <- names(versions)
+  cur_ell <- session_data$current_ellipsoid
+
+  # Working ellipsoid slot
+  working_row <- if(!is.null(cur_ell)){
+    fluidRow(
+      style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
+      column(width = 5,
+             tags$span(icon("pen"),
+                       tags$span(cur_ell$ell_name,
+                                 class  = "text-widget-inner",
+                                 style  = "color: #2ecc71; font-weight: 500;"),
+                       tags$span(" (working)",
+                                 style  = "font-size: 11px; color: #aaa;"))),
+      column(width = 4,
+             tags$span(cur_ell$ell_id,
+                       style = "font-size: 11px; color: #aaa;"))
+    )
+  }
+
+  rows <- lapply(ids, function(id){
+
+    ell <- versions[[id]]
+    is_base <- id == "base"
+
+    fluidRow(
+      style = "padding: 2px 0;",
+      column(width = 5,
+             tags$span(ell$ell_name, class = "text-widget-inner")),
+      column(width = 4,
+             tags$span(id, style = "font-size: 11px; color: #aaa;")),
+      column(width = 3,
+             tags$div(
+               style = "display: flex; gap: 8px;",
+
+               if(is_base){
+                 tagList(
+                   actionLink(
+                     inputId = "ell_view_base",
+                     label = tags$span(icon("eye"),
+                                         title = "View base ellipsoid (read-only)",
+                                         class = "tooltip-icon")
+                   ),
+                   actionLink(
+                     inputId = "ell_new_from_base",
+                     label = tags$span(icon("circle-plus"),
+                                         title = "Create new working copy from base",
+                                         class = "tooltip-icon")
+                   )
+                 )
+               } else {
+                 tagList(
+                   actionLink(
+                     inputId = paste0("ell_load_", id),
+                     label = tags$span(icon("pen-to-square"),
+                                         title = paste0("Edit ", ell$ell_name),
+                                         class = "tooltip-icon")
+                   ),
+                   actionLink(
+                     inputId = paste0("ell_delete_", id),
+                     label = tags$span(icon("trash"),
+                                         title = paste0("Delete ", ell$ell_name),
+                                         class = "tooltip-icon",
+                                         style = "color: #e74c3c;")
+                   )
+                 )
+               }
+             ))
+    )
+  })
+
+  box(title = tags$span("Ellipsoid library", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+
+      if(!is.null(cur_ell)){
+        tagList(
+          tags$span("Working", class = "text-widget-title"),
+          working_row,
+          tags$hr(style = "margin: 8px 0;")
+        )
+      },
+
+      fluidRow(
+        column(width = 5, tags$span("Name", class = "text-widget-title")),
+        column(width = 4, tags$span("ID", class = "text-widget-title")),
+        column(width = 3, tags$span("Actions", class = "text-widget-title"))
+      ),
+
+      tagList(rows)
+  )
+})
+
+# Load a saved ellipsoid for editing
+observeEvent({
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(ids, function(id) input[[paste0("ell_load_", id)]])
+}, {
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("ell_load_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  ell <- session_data$ellipsoid_list[[id]]
+
+  session_data$current_ellipsoid <- ell
+
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  showNotification(paste0(ell$ell_name, " loaded for editing."),
+                   type = "message", duration = 3)
+
+}, ignoreInit = TRUE)
+
+# View base read-only
+observeEvent(input$ell_view_base, {
+
+  base_ell <- session_data$ellipsoid_list[["base"]]
+  req(base_ell)
+
+  session_data$current_ellipsoid <- base_ell
+  covariance_set(TRUE)
+
+  showNotification("Viewing base ellipsoid. Covariance is locked.",
+                   type = "message", duration = 3)
+
+}, ignoreInit = TRUE)
+
+# New working copy from base
+observeEvent(input$ell_new_from_base, {
+
+  raw <- isolate(session_data$ellipsoid_list[["base"]])
+  req(raw)
+
+  working_ell <- tag_ellipsoid(raw,
+                               name = paste0("ellipsoid_", ell_id_counter()))
+
+  session_data$current_ellipsoid <- working_ell
+
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  showNotification("New working copy created from base.",
+                   type = "message", duration = 3)
+
+}, ignoreInit = TRUE)
+
+# Delete a saved ellipsoid
+observeEvent({
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(ids, function(id) input[[paste0("ell_delete_", id)]])
+}, {
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("ell_delete_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  nm <- session_data$ellipsoid_list[[id]]$ell_name
+
+  showModal(modalDialog(
+    title = paste0("Delete ", nm, "?"),
+    p(paste0("This will permanently remove ", nm,
+             " and any prediction results associated with it.")),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton(paste0("confirm_ell_delete_", id),
+                   "Yes, delete",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+
+}, ignoreInit = TRUE)
+
+# Confirmed delete
+observeEvent({
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(ids, function(id) input[[paste0("confirm_ell_delete_", id)]])
+}, {
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("confirm_ell_delete_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  nm <- session_data$ellipsoid_list[[id]]$ell_name
+
+  removeModal()
+
+  session_data$ellipsoid_list[[id]] <- NULL
+
+  if(!is.null(session_data$ellipsoid_prediction_list[[id]])){
+    session_data$ellipsoid_prediction_list[[id]] <- NULL
+  }
+
+  # If the deleted version was the current working ellipsoid,
+  # create a fresh working copy from base
+  if(identical(session_data$current_ellipsoid$ell_id, id)){
+    raw <- isolate(session_data$ellipsoid_list[["base"]])
+    req(raw)
+    working_ell <- tag_ellipsoid(raw,
+                                 name = paste0("ellipsoid_",
+                                               ell_id_counter()))
+    session_data$current_ellipsoid <- working_ell
+    covariance_set(FALSE)
+    cov_counters(list())
+    showNotification(paste0(nm, " deleted. New working copy created from base."),
+                     type = "message", duration = 3)
+  } else {
+    showNotification(paste0(nm, " deleted."),
+                     type = "message", duration = 3)
+  }
+
+}, ignoreInit = TRUE)
+
+# RANGES ------------------------------------------------------------------
 
 range_preview <- reactive({
 
@@ -499,10 +485,57 @@ range_preview <- reactive({
   )
 })
 
-covariance_set <- reactiveVal(FALSE)
-cov_counters <- reactiveVal(list())
+# Reset range values to defaults
+observeEvent(input$reset_ranges, {
 
-# Render Outputs ----------------------------------------------------------
+  req(input$range_method_choice, session_data$vars)
+  vars <- session_data$vars
+  has_bg_df <- !is.null(session_data$bg_df)
+
+  switch(input$range_method_choice,
+
+         "man" = {
+           lapply(vars, function(v){
+             if(has_bg_df){
+               vals <- session_data$bg_df[[v]]
+               m <- round(mean(vals, na.rm = TRUE), 2)
+               s <- round(sd(vals, na.rm = TRUE), 2)
+             } else {
+               m <- 0
+               s <- 1
+             }
+             updateNumericInput(session, paste0("min_", v), value = m)
+             updateNumericInput(session, paste0("max_", v), value = m + s)
+           })
+         },
+
+         "df" = {
+           lapply(vars, function(v){
+             updateNumericInput(session, paste0("expand_min_df_", v), value = 0)
+             updateNumericInput(session, paste0("expand_max_df_", v), value = 0)
+           })
+         },
+
+         "stats" = {
+           lapply(vars, function(v){
+             if(has_bg_df){
+               vals <- session_data$bg_df[[v]]
+               m <- round(mean(vals, na.rm = TRUE), 2)
+               s <- round(sd(vals, na.rm = TRUE), 2)
+             } else {
+               m <- 0
+               s <- 1
+             }
+             updateNumericInput(session, paste0("mean_", v), value = m)
+             updateNumericInput(session, paste0("sd_", v), value = s)
+             updateNumericInput(session, paste0("expand_min_stats_", v), value = 0)
+             updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
+           })
+
+           updateNumericInput(session, "cl_range", value = 0.95)
+         }
+  )
+})
 
 observeEvent(input$edit_range, {
 
@@ -525,7 +558,6 @@ observeEvent(input$confirm_edit_range, {
   removeModal()
 
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_id <- NULL
   session_data$ellipsoid_list <- list()
   session_data$ellipsoid_prediction_list <- list()
 
@@ -815,6 +847,12 @@ background layers. Check that column names match.",
   )
 })
 
+# COVARIANCE --------------------------------------------------------------
+
+# cov - reactives
+covariance_set <- reactiveVal(FALSE)
+cov_counters <- reactiveVal(list())
+
 output$covariance_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
@@ -824,7 +862,8 @@ output$covariance_ui <- renderUI({
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
-          p("Covariance has been set for this ellipsoid.", class = "text-instruction"),
+          p("Covariance has been set for this ellipsoid.",
+            class = "text-instruction"),
           fluidRow(
             column(12, class = "btn-spaced",
                    actionLink("edit_covariance",
@@ -854,10 +893,10 @@ output$covariance_ui <- renderUI({
 output$covariance_sliders_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
+  id <- session_data$current_ellipsoid$ell_id
   ell <- isolate(session_data$current_ellipsoid)
-  vars <- isolate(ell$var_names)
-  version <- session_data$current_ellipsoid_id
 
+  vars <- ell$var_names
   pairs <- t(combn(vars, 2))
   pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
 
@@ -868,17 +907,19 @@ output$covariance_sliders_ui <- renderUI({
     min_val <- lims[pn, "min"]
     max_val <- lims[pn, "max"]
     step <- round((max_val - min_val) / 100, 4)
+    parts <- strsplit(pn, "-")[[1]]
+    cur_cov <- ell$cov_matrix[parts[1], parts[2]]
 
     fluidRow(
-      column(width = 11,
-             sliderInput(inputId = paste0("cov_", version, "_", pn),
+      column(width = 10,
+             sliderInput(inputId = paste0("cov_", id, "_", pn),
                          label = pn,
                          min = round(min_val, 2),
                          max = round(max_val, 2),
-                         value = 0,
+                         value = round(cur_cov, 4),
                          step = step)),
-      column(width = 1,
-             actionLink(inputId = paste0("cov_reset_", version, "_", pn),
+      column(width = 2,
+             actionLink(inputId = paste0("cov_reset_", id, "_", pn),
                         label = tags$span(icon("rotate-left"),
                                           title = instructions$covariance_reset_tooltip))
       ))
@@ -886,7 +927,7 @@ output$covariance_sliders_ui <- renderUI({
 
   reset_all_btn <- fluidRow(
     column(width = 12, class = "btn-spaced",
-           actionLink(inputId = paste0("cov_reset_all_", version),
+           actionLink(inputId = paste0("cov_reset_all_", id),
                       label = tagList(icon("rotate-left"), "Reset all to zero")))
   )
 
@@ -894,6 +935,167 @@ output$covariance_sliders_ui <- renderUI({
 
   tagList(sliders, reset_all_btn)
 })
+
+# Covariance update observer
+observeEvent({
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+  lapply(pair_names, function(pn) input[[paste0("cov_", id, "_", pn)]])
+}, {
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  # Collect current slider values as named numeric vector
+  cov_vals <- setNames(sapply(pair_names,
+                              function(pn){
+                                val <- input[[paste0("cov_", id, "_", pn)]]
+                                if(is.null(val)) 0 else val
+                              }),
+                       pair_names)
+
+  # Only update if values differ from current covariance matrix
+  current_cov <- setNames(sapply(seq_len(nrow(pairs)),
+                                 function(i){
+                                   ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
+                                 }),
+                          pair_names)
+
+  if(all(cov_vals == current_cov)) return()
+
+  updated_ell <- tryCatch(
+    update_ellipsoid_covariance(object = ell,
+                                covariance = cov_vals,
+                                verbose = FALSE),
+    error = function(e){
+      showNotification(paste("Covariance update failed:", e$message),
+                       type = "error")
+      NULL
+    }
+  )
+
+  req(updated_ell)
+
+  updated_ell$ell_id <- ell$ell_id
+  updated_ell$ell_name <- ell$ell_name
+  session_data$current_ellipsoid <- updated_ell
+
+  # Silently update slider bounds for remaining pairs using
+  # cov_limits_remaining, preserving current selected values
+  remaining <- updated_ell$cov_limits_remaining
+
+  if(!is.null(remaining)){
+    remaining_names <- rownames(remaining)
+
+    lapply(remaining_names,
+           function(pn){
+             slider_id <- paste0("cov_", id, "_", pn)
+             cur_val <- input[[slider_id]]
+
+             if (!is.null(cur_val)){
+               new_min <- remaining[pn, "min"]
+               new_max <- remaining[pn, "max"]
+
+               # Clamp current value to new limits silently
+               clamped <- max(new_min, min(new_max, cur_val))
+
+               updateSliderInput(session,
+                                 inputId = slider_id,
+                                 min = round(new_min, 2),
+                                 max = round(new_max, 2),
+                                 value = round(clamped, 2))
+             }
+           })
+  }
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+# Rests covariances to zeros
+observeEvent({
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+  lapply(pair_names, function(pn) input[[paste0("cov_reset_", id, "_", pn)]])
+}, {
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  req(cov_counters)
+
+  old_cnts <- cov_counters()
+
+  # Find which pair was clicked by comparing current vs previous counter
+  reset_pn <- pair_names[sapply(pair_names,
+                                function(pn){
+                                  cur <- input[[paste0("cov_reset_", id, "_", pn)]]
+                                  prev <- old_cnts[[pn]]
+                                  return(!is.null(cur) && !is.null(prev) && cur > prev)
+                                })]
+
+  req(length(reset_pn) > 0)
+  reset_pn <- reset_pn[1]
+
+  updateSliderInput(session,
+                    inputId = paste0("cov_", id, "_", reset_pn),
+                    value = 0)
+
+  # Update stored counters
+  new_cnts <- setNames(lapply(pair_names,
+                              function(pn){
+                                input[[paste0("cov_reset_", id, "_", pn)]]
+                              }),
+                       pair_names)
+
+  cov_counters(new_cnts)
+})
+
+# Rest Covariance all
+observeEvent(input[[paste0("cov_reset_all_", session_data$current_ellipsoid$ell_id)]], {
+
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
+  lapply(pair_names, function(pn){
+    updateSliderInput(session,
+                      inputId = paste0("cov_", id, "_", pn),
+                      value = 0)
+  })
+
+  # Reset counters so the per-pair reset observer doesn't misfire
+  cov_counters(setNames(lapply(pair_names, function(pn) 0), pair_names))
+
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+# Set current ellipsoid covariance
+observeEvent(input$set_cov, {
+  covariance_set(TRUE)
+})
+
+# Edit current ellipsoid covariance
+observeEvent(input$edit_covariance, {
+  covariance_set(FALSE)
+})
+
+# CENTROID ----------------------------------------------------------------
 
 output$centroid_mover_ui <- renderUI({
 
@@ -921,8 +1123,7 @@ output$centroid_sliders_ui <- renderUI({
 
   ell <- isolate(session_data$current_ellipsoid)
   vars <- isolate(ell$var_names)
-  version <- session_data$current_ellipsoid_id
-
+  id <- session_data$current_ellipsoid$ell_id
   centroid <- ell$centroid
 
   sliders <- lapply(vars, function(v){
@@ -932,15 +1133,15 @@ output$centroid_sliders_ui <- renderUI({
     step <- round((max_val - min_val) / 100, 4)
 
     fluidRow(
-      column(width = 11,
-             sliderInput(inputId = paste0("centroid_", v, "_", version),
+      column(width = 10,
+             sliderInput(inputId = paste0("centroid_", v, "_", id),
                          label = v,
                          min = round(min_val, 2),
                          max = round(max_val, 2),
                          value = centroid[v],
                          step = step)),
-      column(width = 1,
-             actionLink(inputId = paste0("centroid_reset_", v, "_", version),
+      column(width = 2,
+             actionLink(inputId = paste0("centroid_reset_", v, "_", id),
                         label = tags$span(icon("rotate-left"),
                                           title = instructions$centroid_reset_tooltip))
       ))
@@ -948,7 +1149,7 @@ output$centroid_sliders_ui <- renderUI({
 
   reset_all_btn <- fluidRow(
     column(width = 12, class = "btn-spaced",
-           actionLink(inputId = paste0("centroid_reset_all_", version),
+           actionLink(inputId = paste0("centroid_reset_all_", id),
                       label = tagList(icon("rotate-left"), "Reset all back to original values")))
   )
 
@@ -956,169 +1157,4 @@ output$centroid_sliders_ui <- renderUI({
 })
 
 
-output$ellipsoid_library <- renderUI({
 
-  req(length(session_data$ellipsoid_list) > 0)
-
-  versions <- session_data$ellipsoid_list
-  nms <- names(versions)
-
-  rows <- lapply(nms, function(nm){
-
-    is_base <- nm == "base"
-    is_current <- identical(session_data$current_ellipsoid_id, nm)
-
-    fluidRow(
-      style = if(is_current) "background: #f0f7f0; border-radius: 4px;" else "",
-
-      column(width = 6,
-             tags$span(
-               if(is_current) icon("circle-check") else icon("circle"),
-               nm,
-               class = "text-widget-inner",
-               style = if(is_current) "color: #2ecc71; font-weight: 500;" else ""
-             )),
-
-      column(width = 6,
-             tags$div(
-               style = "display: flex; gap: 8px;",
-
-               # Load as current
-               actionLink(
-                 inputId = paste0("ell_load_", nm),
-                 label   = tags$span(icon("pen-to-square"),
-                                     title = paste0("Load ", nm, " as current ellipsoid"),
-                                     class = "tooltip-icon")
-               ),
-
-               # Delete, not available for base
-               if(!is_base){
-                 actionLink(
-                   inputId = paste0("ell_delete_", nm),
-                   label   = tags$span(icon("trash"),
-                                       title = paste0("Delete ", nm),
-                                       class = "tooltip-icon",
-                                       style = "color: #e74c3c;")
-                 )
-               } else {
-                 tags$span(icon("lock"),
-                           title = "Base ellipsoid cannot be deleted",
-                           class = "tooltip-icon",
-                           style = "color: #ccc;")
-               }
-             ))
-    )
-  })
-
-  box(title = tags$span("Ellipsoid library", class = "text-section-header"),
-      width       = 12,
-      collapsible = TRUE,
-      collapsed   = FALSE,
-
-      fluidRow(
-        column(width = 6, tags$span("Name",   class = "text-widget-title")),
-        column(width = 6, tags$span("Actions", class = "text-widget-title"))
-      ),
-
-      tagList(rows)
-  )
-})
-
-
-# Load observer
-observeEvent({
-  nms <- names(session_data$ellipsoid_list)
-  lapply(nms, function(nm) input[[paste0("ell_load_", nm)]])
-}, {
-  nms <- names(session_data$ellipsoid_list)
-  req(length(nms) > 0)
-
-  clicked <- nms[vapply(nms, function(nm){
-    val <- input[[paste0("ell_load_", nm)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-  nm <- clicked[1]
-
-  session_data$current_ellipsoid    <- session_data$ellipsoid_list[[nm]]
-  session_data$current_ellipsoid_id <- nm
-  covariance_set(FALSE)
-  cov_counters(list())
-
-  showNotification(paste0(nm, " loaded as current ellipsoid."),
-                   type = "message", duration = 3)
-
-}, ignoreInit = TRUE)
-
-
-# Delete observer
-observeEvent({
-  nms <- setdiff(names(session_data$ellipsoid_list), "base")
-  lapply(nms, function(nm) input[[paste0("ell_delete_", nm)]])
-}, {
-  nms <- setdiff(names(session_data$ellipsoid_list), "base")
-  req(length(nms) > 0)
-
-  clicked <- nms[vapply(nms, function(nm){
-    val <- input[[paste0("ell_delete_", nm)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-  nm <- clicked[1]
-
-  showModal(modalDialog(
-    title = paste0("Delete ", nm, "?"),
-    p(paste0("This will permanently remove ", nm,
-             " and any prediction results associated with it.")),
-    footer = tagList(
-      modalButton("Cancel"),
-      actionButton(paste0("confirm_ell_delete_", nm),
-                   "Yes, delete",
-                   class = "btn-warning")
-    ),
-    easyClose = FALSE
-  ))
-
-}, ignoreInit = TRUE)
-
-
-# Confirmed delete, dynamic per name
-observeEvent({
-  nms <- setdiff(names(session_data$ellipsoid_list), "base")
-  lapply(nms, function(nm) input[[paste0("confirm_ell_delete_", nm)]])
-}, {
-  nms <- setdiff(names(session_data$ellipsoid_list), "base")
-  req(length(nms) > 0)
-
-  clicked <- nms[vapply(nms, function(nm){
-    val <- input[[paste0("confirm_ell_delete_", nm)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-  nm <- clicked[1]
-
-  removeModal()
-
-  session_data$ellipsoid_list[[nm]] <- NULL
-
-  if(!is.null(session_data$ellipsoid_prediction_list[[nm]])){
-    session_data$ellipsoid_prediction_list[[nm]] <- NULL
-  }
-
-  # If the deleted version was current, fall back to base
-  if(identical(session_data$current_ellipsoid_id, nm)){
-    session_data$current_ellipsoid    <- session_data$ellipsoid_list[["base"]]
-    session_data$current_ellipsoid_id <- "base"
-    covariance_set(FALSE)
-    cov_counters(list())
-    showNotification(paste0(nm, " deleted. Reverted to base ellipsoid."),
-                     type = "message", duration = 3)
-  } else {
-    showNotification(paste0(nm, " deleted."),
-                     type = "message", duration = 3)
-  }
-
-}, ignoreInit = TRUE)
