@@ -56,7 +56,7 @@ collect_plot_settings <- function(){
 
     suitable_pch = as.numeric(get_input("plot_suitable_pch", "16")),
     suitable_cex = get_input("plot_suitable_cex", 0.3),
-    suitable_col = get_input("plot_suitable_col", "#2ECC71"),
+    suitable_col = get_input("plot_suitable_col", "#097a21"),
     unsuitable_col = get_input("plot_unsuitable_col", "#D3D3D3"),
     map_bg_col = get_input("plot_map_bg_col", "#F0F0F0"),
 
@@ -270,8 +270,10 @@ pred_raster_vis <- reactive({
   req(length(session_data$ellipsoid_list) > 0)
   req(session_data$bg_raster)
 
-  ell<- session_data$current_ellipsoid
+  ell <- session_data$current_ellipsoid
   vars <- ell$var_names
+
+  message("pred_raster_vis recomputing for: ", ell$ell_name)
 
   tryCatch(
     predict(ell,
@@ -506,7 +508,7 @@ output$plot_settings_ui <- renderUI({
         column(width = 3,
                tags$span("Suitable area color", class = "text-widget-title"),
                colourpicker::colourInput("plot_suitable_col", label = NULL,
-                                         value = "#2ECC71")),
+                                         value = "#097a21")),
         column(width = 3,
                tags$span("Unsuitable area color", class = "text-widget-title"),
                colourpicker::colourInput("plot_unsuitable_col", label = NULL,
@@ -620,7 +622,7 @@ output$ellipsoid_info <- renderUI({
     0
   }
   vol_icon  <- if(vol_pct > 0) icon("arrow-up") else if(vol_pct < 0) icon("arrow-down") else icon("minus")
-  vol_color <- if(vol_pct > 0) "#2ecc71" else if(vol_pct < 0) "#e74c3c" else "#888"
+  vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
 
   # Covariance pairs that differ from zero
   pairs <- t(combn(vars, 2))
@@ -635,8 +637,8 @@ output$ellipsoid_info <- renderUI({
   cov_rows <- if(any(nonzero)){
     lapply(which(nonzero), function(i){
       val <- cov_vals[i]
-      color <- if(val > 0) "#2ecc71" else "#e74c3c"
-      icn <- if(val > 0) icon("arrow-up-right") else icon("arrow-down-right")
+      color <- if(val > 0) "#097a21" else "#e74c3c"
+      icn <- if(val > 0) icon("arrow-trend-up") else icon("arrow-trend-down")
       tags$tr(
         tags$td(pair_names[i],
                 style = "font-size: 12px; color: #666; padding: 3px 6px;"),
@@ -664,7 +666,7 @@ output$ellipsoid_info <- renderUI({
 
   box(title = tagList(
     tags$span("Ellipsoid summary", class = "text-section-header"),
-    tags$span(paste0(" — ", session_data$current_ellipsoid_id),
+    tags$span(paste0(" — ", session_data$current_ellipsoid$ell_name),
               style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
       width = 12,
       collapsible = TRUE,

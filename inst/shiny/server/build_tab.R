@@ -16,7 +16,7 @@ ell_id_counter <- reactiveVal(0L)
 make_ell_id <- function(){
   n <- ell_id_counter() + 1L
   ell_id_counter(n)
-  paste0("E", n, format(Sys.time(), "%d%m%y"))
+  paste0("E", n, "_", format(Sys.time(), "%d%m%y"))
 }
 
 tag_ellipsoid <- function(ell, name){
@@ -147,10 +147,10 @@ output$ellipsoid_library <- renderUI({
       style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
       column(width = 5,
              tags$span(icon("pen"),
-                       tags$span(cur_ell$ell_name,
+                       tags$span(paste0(" ", cur_ell$ell_name),
                                  class  = "text-widget-inner",
-                                 style  = "color: #2ecc71; font-weight: 500;"),
-                       tags$span(" (working)",
+                                 style  = "color: #097a21; font-weight: 500;"),
+                       tags$span("(current)",
                                  style  = "font-size: 11px; color: #aaa;"))),
       column(width = 4,
              tags$span(cur_ell$ell_id,
@@ -216,7 +216,7 @@ output$ellipsoid_library <- renderUI({
 
       if(!is.null(cur_ell)){
         tagList(
-          tags$span("Working", class = "text-widget-title"),
+          # tags$span("Working", class = "text-widget-title"),
           working_row,
           tags$hr(style = "margin: 8px 0;")
         )

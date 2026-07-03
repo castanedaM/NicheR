@@ -1,6 +1,6 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 6/30/2026
+# Date last updated: 7/3/2026
 
 # Load previous session
 observeEvent(input$load_session, {
@@ -37,6 +37,30 @@ observeEvent(input$load_session, {
     session_data[[nm]] <- session_list[[nm]]
   }
 
+  if(length(session_data$ellipsoid_list) > 0){
+    existing_ids <- vapply(session_data$ellipsoid_list,
+                           function(ell) ell$ell_id,
+                           character(1))
+    existing_nums <- suppressWarnings(
+      as.integer(gsub("^E(\\d+)_.*", "\\1", existing_ids))
+    )
+
+    existing_nums <- existing_nums[!is.na(existing_nums)]
+
+    if(length(existing_nums) > 0){
+      ell_id_counter(max(existing_nums))
+    }
+
+    raw <- session_data$ellipsoid_list[["base"]]
+
+    working_ell <- tag_ellipsoid(raw,
+                                 name = paste0("ellipsoid_",
+                                               ell_id_counter()))
+
+    session_data$current_ellipsoid <- working_ell
+
+  }
+
   covariance_set(FALSE)
   cov_counters(list())
 
@@ -46,7 +70,10 @@ observeEvent(input$load_session, {
     updateTabItems(session, "sidebarMenu", selected = "build_tab")
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
+
 })
+
+
 output$save_session_btn <- downloadHandler(
   filename = function(){
     paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")

@@ -6,6 +6,7 @@
 # Outputs -----------------------------------------------------------------
 
 output$ell_version_predict <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
 
   selectInput(inputId = "pred_ell_version",
               label = tagList(tags$span("Elliposid Version", class = "text-widget-title"),
@@ -13,7 +14,8 @@ output$ell_version_predict <- renderUI({
                                         title = "Select ellipsoid version to predict over",
                                         class = "tooltip-icon")
               ),
-              choices = c("All versions", "version 1", "version 2", "version 3"))
+
+              choices = c("all", names(session_data$ellipsoid_list)))
 
 })
 
