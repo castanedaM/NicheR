@@ -143,13 +143,13 @@ dashboardPage(
                      status = "primary",
 
                      p("Upload a sampling bias raster to weight occurrence generation
-                  toward areas with higher observed detection effort.",
+                  toward areas with specific detection effort",
                        class = "text-instruction"),
                      tags$ul(
                        tags$li("Optional but important for data-limited species", class = "text-instruction"),
                        tags$li("Accepts any raster matching the background extent", class = "text-instruction"),
                        tags$li("Higher cell values increase occurrence probability", class = "text-instruction"),
-                       tags$li("Use road density, collector coverage, or any detection proxy", class = "text-instruction")
+                       tags$li("Exmples, urabinaztion, distance to water, road density, collector coverage, any detection proxy", class = "text-instruction")
                      ),
                      tags$a(href   = "https://castanedaM.github.io/nicheR/articles/bias.html",
                             target = "_blank",
@@ -166,7 +166,7 @@ dashboardPage(
                      collapsed = TRUE,
                      status = "primary",
                      solidHeader = TRUE,
-                     p("Sample virtual presences and absences from the fitted niche,
+                     p("Sample virtual presences from the fitted niche,
                   optionally weighted by the bias layer.",
                        class = "text-instruction"),
                      tags$ul(

@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 06/30/2026
+# Date last updated: 07/06/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -14,10 +14,11 @@ get_input <- function(id, default){
   }
 }
 
-
 # Called at the top of every draw function.
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
+
+  if(isTRUE(session_data$session_loading)) return(NULL)
 
   ranges <- tryCatch(
     withCallingHandlers(
@@ -36,11 +37,11 @@ collect_plot_settings <- function(){
     }
   }
 
-  has_ell <- isTRUE(length(session_data$ellipsoid_list) > 0)
+  has_ell <- !is.null(session_data$current_ellipsoid)
 
   list(
     has_ell = has_ell,
-    ell  = if(has_ell) session_data$current_ellipsoid else NULL,
+    ell = if(has_ell) session_data$current_ellipsoid else NULL,
 
     show_ell = has_ell && get_input("show_ellipsoid",  TRUE),
     show_centroid = has_ell && get_input("show_centroid", TRUE),
@@ -77,7 +78,15 @@ collect_plot_settings <- function(){
     centroid_col = get_input("plot_centroid_col", "#000000"),
     centroid_cex = get_input("plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("plot_zoom_mode",  "auto")
+    zoom_mode = get_input("plot_zoom_mode",  "auto"),
+
+    centroid_preview_val = tryCatch(
+      withCallingHandlers(
+        centroid_preview(),
+        shiny.silent.error = function(e) invokeRestart("muffleWarning")
+      ),
+      error = function(e) NULL
+    )
   )
 }
 
@@ -97,17 +106,22 @@ update_axis_selectors <- function(x_id, y_id, vars){
   updateSelectInput(session, y_id, choices = y_choices, selected = y_sel)
 }
 
-
 compute_lims <- function(v1, v2, s){
 
-  if(s$zoom_mode == "ellipsoid" && s$has_ell){
+  ell_valid <- s$has_ell &&
+    !is.null(s$ell$cov_matrix) &&
+    all(is.finite(s$ell$cov_matrix))
+
+  if(s$zoom_mode == "ellipsoid" && ell_valid){
     idx <- match(c(v1, v2), s$ell$var_names)
+    if(any(is.na(idx))) return(list(xlim = c(0, 1), ylim = c(0, 1), asp = NA))
     ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
     pad_x <- diff(range(ell_pts[, 1])) * 0.1
     pad_y <- diff(range(ell_pts[, 2])) * 0.1
     xlim <- range(ell_pts[, 1]) + c(-pad_x, pad_x)
     ylim <- range(ell_pts[, 2]) + c(-pad_y, pad_y)
-    return(list(xlim = xlim, ylim = ylim,
+    return(list(xlim = xlim,
+                ylim = ylim,
                 asp = diff(ylim) / diff(xlim)))
   }
 
@@ -123,18 +137,19 @@ compute_lims <- function(v1, v2, s){
     data.frame(x = c(0, 1), y = c(0, 1))
   }
 
-  if(s$has_ell){
+  if(ell_valid){
     idx <- match(c(v1, v2), s$ell$var_names)
-    ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
-    lims <- safe_lims(pts_xy, ell_pts)
-    return(c(lims, list(asp = NA)))
+    if(!any(is.na(idx))){
+      ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
+      lims <- safe_lims(pts_xy, ell_pts)
+      return(c(lims, list(asp = NA)))
+    }
   }
 
   xlim <- range(pts_xy[, 1], na.rm = TRUE)
   ylim <- range(pts_xy[, 2], na.rm = TRUE)
   list(xlim = xlim, ylim = ylim, asp = NA)
 }
-
 
 draw_espace_panel <- function(v1, v2, s){
 
@@ -200,9 +215,14 @@ draw_espace_panel <- function(v1, v2, s){
                   col_ell = s$ell_col, lwd = s$ell_lwd, lty = s$ell_lty)
   }
 
-  if(s$show_centroid){
+  if(s$show_centroid && !is.null(s$ell)){
     idx <- match(c(v1, v2), s$ell$var_names)
-    points(s$ell$centroid[idx[1]], s$ell$centroid[idx[2]],
+    c_pos <- if(!is.null(s$centroid_preview_val)){
+      s$centroid_preview_val
+    } else {
+      s$ell$centroid
+    }
+    points(c_pos[idx[1]], c_pos[idx[2]],
            pch = s$centroid_pch, col = s$centroid_col, cex = s$centroid_cex)
   }
 }
@@ -259,8 +279,6 @@ draw_espace_pairs <- function(vars, s){
   for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
 }
 
-
-
 # Reactives ---------------------------------------------------------------
 
 # Prediction raster for G-space and Combined tabs only.
@@ -272,8 +290,6 @@ pred_raster_vis <- reactive({
 
   ell <- session_data$current_ellipsoid
   vars <- ell$var_names
-
-  message("pred_raster_vis recomputing for: ", ell$ell_name)
 
   tryCatch(
     predict(ell,
@@ -328,7 +344,6 @@ plot_vars <- reactive({
 
   selected
 })
-
 
 
 # Observers ---------------------------------------------------------------
@@ -400,7 +415,7 @@ output$plot_combined_options_ui <- renderUI({
 # Advanced plot settings UI
 output$plot_settings_ui <- renderUI({
 
-  has_ell <- isTRUE(length(session_data$ellipsoid_list) > 0)
+  has_ell <- !is.null(session_data$current_ellipsoid)
   has_raster <- !is.null(session_data$bg_raster)
 
   box(title = tagList(
@@ -556,10 +571,12 @@ output$plot_settings_ui <- renderUI({
 
 output$build_espace_plot <- renderPlot({
 
-  vars<- plot_vars()
+  vars <- plot_vars()
   req(vars)
 
   s <- collect_plot_settings()
+  req(s)
+
   state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
 
   old_par <- par(no.readonly = TRUE)
@@ -577,8 +594,11 @@ output$build_espace_plot <- renderPlot({
 })
 
 output$build_gspace_plot <- renderPlot({
+  vars <- plot_vars()
+  req(vars)
 
   s <- collect_plot_settings()
+  req(s)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
@@ -592,7 +612,11 @@ output$build_combined_plot <- renderPlot({
 
   req(input$plot_combined_x, input$plot_combined_y)
 
+  vars <- plot_vars()
+  req(vars)
+
   s <- collect_plot_settings()
+  req(s)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
@@ -602,7 +626,6 @@ output$build_combined_plot <- renderPlot({
   draw_gspace_panel(s, title = "G-space")
 
 })
-
 
 output$ellipsoid_info <- renderUI({
 
@@ -615,13 +638,18 @@ output$ellipsoid_info <- renderUI({
 
   # Volume change relative to base
   vol_current <- ell$volume
-  vol_base <- if(!is.null(base_ell)) base_ell$volume else vol_current
+  vol_base <- if(!is.null(base_ell) && !is.null(base_ell$volume)){
+    base_ell$volume
+  } else {
+    vol_current
+  }
+
   vol_pct <- if(!is.null(base_ell) && vol_base > 0){
     round((vol_current - vol_base) / vol_base * 100, 1)
   } else {
     0
   }
-  vol_icon  <- if(vol_pct > 0) icon("arrow-up") else if(vol_pct < 0) icon("arrow-down") else icon("minus")
+  vol_icon  <- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
   vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
 
   # Covariance pairs that differ from zero
@@ -638,7 +666,7 @@ output$ellipsoid_info <- renderUI({
     lapply(which(nonzero), function(i){
       val <- cov_vals[i]
       color <- if(val > 0) "#097a21" else "#e74c3c"
-      icn <- if(val > 0) icon("arrow-trend-up") else icon("arrow-trend-down")
+      icn <- if(val > 0) icon("arrow-up") else icon("arrow-down")
       tags$tr(
         tags$td(pair_names[i],
                 style = "font-size: 12px; color: #666; padding: 3px 6px;"),
@@ -656,11 +684,20 @@ output$ellipsoid_info <- renderUI({
 
   # Centroid rows
   centroid_rows <- lapply(vars, function(v){
+
+    cur_val  <- round(ell$centroid[v], 3)
+    base_val <- if(!is.null(base_ell)) round(base_ell$centroid[v], 3) else cur_val
+    delta <- round(cur_val - base_val, 3)
+    color <- if(delta > 0) "#097a21" else if(delta < 0) "#e74c3c" else "#aaa"
+    delta_str <- if(delta > 0) paste0("+", delta) else if(delta < 0) as.character(delta) else "no change"
+
     tags$tr(
       tags$td(v,
               style = "font-size: 12px; color: #666; padding: 3px 6px;"),
-      tags$td(round(ell$centroid[v], 3),
-              style = "font-size: 12px; padding: 3px 6px;")
+      tags$td(cur_val,
+              style = "font-size: 12px; color: #555; padding: 3px 6px;"),
+      tags$td(delta_str,
+              style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"))
     )
   })
 

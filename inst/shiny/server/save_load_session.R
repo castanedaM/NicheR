@@ -10,12 +10,14 @@ observeEvent(input$load_session, {
   req(file.exists(input$session_file$datapath))
 
   session_data$input_mode <- "prev_session"
+  session_data$session_loading <- TRUE  # block plots during restore
 
   session_list <- tryCatch(
     readRDS(input$session_file$datapath),
     error = function(e){
       showNotification(paste("Could not load session:", e$message),
                        type = "error", duration = 4)
+      session_data$session_loading <- FALSE
       NULL
     }
   )
@@ -37,32 +39,21 @@ observeEvent(input$load_session, {
     session_data[[nm]] <- session_list[[nm]]
   }
 
-  if(length(session_data$ellipsoid_list) > 0){
-    existing_ids <- vapply(session_data$ellipsoid_list,
-                           function(ell) ell$ell_id,
-                           character(1))
-    existing_nums <- suppressWarnings(
-      as.integer(gsub("^E(\\d+)_.*", "\\1", existing_ids))
-    )
-
-    existing_nums <- existing_nums[!is.na(existing_nums)]
-
-    if(length(existing_nums) > 0){
-      ell_id_counter(max(existing_nums))
-    }
-
-    raw <- session_data$ellipsoid_list[["base"]]
-
+  if(!is.null(session_data$ellipsoid_list[["base"]])){
+    raw         <- session_data$ellipsoid_list[["base"]]
     working_ell <- tag_ellipsoid(raw,
                                  name = paste0("ellipsoid_",
-                                               ell_id_counter()))
-
+                                               ell_id_counter() + 1L))
     session_data$current_ellipsoid <- working_ell
-
   }
 
+  ell_id_counter(length(session_data$ellipsoid_list))
+
   covariance_set(FALSE)
+  centroid_set(FALSE)
   cov_counters(list())
+
+  session_data$session_loading <- FALSE  # unblock plots
 
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
@@ -70,17 +61,13 @@ observeEvent(input$load_session, {
     updateTabItems(session, "sidebarMenu", selected = "build_tab")
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
-
 })
-
 
 output$save_session_btn <- downloadHandler(
   filename = function(){
     paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
   },
   content = function(file){
-
-    req(session_data$current_ellipsoid)
 
     # Must convert to plain list before saving
     session_list <- reactiveValuesToList(session_data)

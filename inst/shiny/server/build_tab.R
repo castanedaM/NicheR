@@ -6,7 +6,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/02/2026
+# Date last updated: 07/06/2026
 
 # ELLIPSOID ---------------------------------------------------------------
 
@@ -121,6 +121,8 @@ observeEvent(input$next_build_another, {
   session_data$current_ellipsoid <- working_ell
 
   covariance_set(FALSE)
+  centroid_set(FALSE)
+
   cov_counters(list())
 
   showNotification("Covariance reset. Adjust and save a new version.",
@@ -145,16 +147,21 @@ output$ellipsoid_library <- renderUI({
   working_row <- if(!is.null(cur_ell)){
     fluidRow(
       style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
-      column(width = 5,
+      column(width = 4,
              tags$span(icon("pen"),
                        tags$span(paste0(" ", cur_ell$ell_name),
                                  class  = "text-widget-inner",
                                  style  = "color: #097a21; font-weight: 500;"),
                        tags$span("(current)",
                                  style  = "font-size: 11px; color: #aaa;"))),
-      column(width = 4,
+      column(width = 3,
              tags$span(cur_ell$ell_id,
-                       style = "font-size: 11px; color: #aaa;"))
+                       style = "font-size: 11px; color: #aaa;")),
+
+      column(width = 5, class = "btn-spaced",
+               actionButton("save_ell_version",
+                            "Save Ellipsoid",
+                            class = "btn-primary"))
     )
   }
 
@@ -252,7 +259,27 @@ observeEvent({
   session_data$current_ellipsoid <- ell
 
   covariance_set(FALSE)
+  centroid_set(FALSE)
+
   cov_counters(list())
+
+
+  # Push correct covariance values to sliders explicitly,
+  pair_names <- apply(t(combn(ell$var_names, 2)), 1,
+                      function(p) paste(p, collapse = "-"))
+
+  lapply(pair_names, function(pn){
+    parts <- strsplit(pn, "-")[[1]]
+    updateSliderInput(session,
+                      inputId = paste0("cov_", ell$ell_id, "_", pn),
+                      value = round(ell$cov_matrix[parts[1], parts[2]], 4))
+  })
+
+  lapply(ell$var_names, function(v){
+    updateSliderInput(session,
+                      inputId = paste0("centroid_", v, "_", ell$ell_id),
+                      value = round(ell$centroid[v], 4))
+  })
 
   showNotification(paste0(ell$ell_name, " loaded for editing."),
                    type = "message", duration = 3)
@@ -266,7 +293,9 @@ observeEvent(input$ell_view_base, {
   req(base_ell)
 
   session_data$current_ellipsoid <- base_ell
+
   covariance_set(TRUE)
+  centorid_set(TRUE)
 
   showNotification("Viewing base ellipsoid. Covariance is locked.",
                    type = "message", duration = 3)
@@ -286,6 +315,8 @@ observeEvent(input$ell_new_from_base, {
 
   covariance_set(FALSE)
   cov_counters(list())
+
+  centroid_set(FALSE)
 
   showNotification("New working copy created from base.",
                    type = "message", duration = 3)
@@ -358,8 +389,12 @@ observeEvent({
                                  name = paste0("ellipsoid_",
                                                ell_id_counter()))
     session_data$current_ellipsoid <- working_ell
+
     covariance_set(FALSE)
     cov_counters(list())
+
+    centroid_set(FALSE)
+
     showNotification(paste0(nm, " deleted. New working copy created from base."),
                      type = "message", duration = 3)
   } else {
@@ -563,6 +598,8 @@ observeEvent(input$confirm_edit_range, {
 
   covariance_set(FALSE)
   cov_counters(list())
+
+  centroid_set(FALSE)
 
   updateRadioButtons(session, "range_method_choice", selected = character(0))
 })
@@ -893,8 +930,8 @@ output$covariance_ui <- renderUI({
 output$covariance_sliders_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
-  id <- session_data$current_ellipsoid$ell_id
-  ell <- isolate(session_data$current_ellipsoid)
+  ell <- session_data$current_ellipsoid
+  id <- ell$ell_id
 
   vars <- ell$var_names
   pairs <- t(combn(vars, 2))
@@ -1097,64 +1134,244 @@ observeEvent(input$edit_covariance, {
 
 # CENTROID ----------------------------------------------------------------
 
+centroid_set <- reactiveVal(FALSE)
+
+
+# centroid_preview reactive
+centroid_preview <- reactive({
+
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  vars <- ell$var_names
+  id <- ell$ell_id
+
+  vals <- setNames(sapply(vars, function(v){
+    input[[paste0("centroid_", v, "_", id)]]
+  }), vars)
+
+  if(!is.numeric(vals) || any(is.na(vals))) return(NULL)
+
+  vals
+})
+
+# Centroid mover box
 output$centroid_mover_ui <- renderUI({
 
   req(length(session_data$ellipsoid_list) > 0, isTRUE(covariance_set()))
 
+  if(isTRUE(centroid_set())){
+
+    ell <- session_data$current_ellipsoid
+    centroid <- if(!is.null(ell)) ell$centroid else NULL
+
+    centroid_rows <- if(!is.null(centroid)){
+      lapply(names(centroid), function(v){
+        fluidRow(
+          column(width = 6, tags$span(v, class = "text-widget-inner")),
+          column(width = 6, tags$span(round(centroid[v], 3),
+                                      class = "text-widget-inner"))
+        )
+      })
+    }
+
+    return(
+      box(title = tags$div("Centroid Mover", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+
+          fluidRow(
+            column(width = 6,
+                   tags$span("Variable", class = "text-widget-title")),
+            column(width = 6,
+                   tags$span("Centroid", class = "text-widget-title"))
+          ),
+
+          tagList(centroid_rows),
+
+          br(),
+
+          fluidRow(
+            column(width = 12, class = "btn-spaced",
+                   actionLink("edit_centroid",
+                              label = tagList(icon("pen"), "Edit centroid")))
+          )
+      )
+    )
+  }
+
   box(title = tags$div("Centroid Mover", class = "text-section-header"),
-      width = 12,
+      width       = 12,
       collapsible = TRUE,
-      collapsed = FALSE,
+      collapsed   = FALSE,
       p(instructions$centroid_mover, class = "text-instruction"),
       uiOutput("centroid_sliders_ui"),
       fluidRow(
-        column(width = 6,
-               class = "btn-spaced",
-               actionButton("save_ell_version",
-                            "Save Elliposid Version",
+        column(width = 6, class = "btn-spaced",
+               actionButton("set_centroid",
+                            "Set Centroid",
                             class = "btn-primary"))
       )
   )
-
 })
 
+# Centroid sliders
 output$centroid_sliders_ui <- renderUI({
+
   req(length(session_data$ellipsoid_list) > 0)
 
-  ell <- isolate(session_data$current_ellipsoid)
-  vars <- isolate(ell$var_names)
   id <- session_data$current_ellipsoid$ell_id
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
+
+  vars <- ell$var_names
   centroid <- ell$centroid
 
   sliders <- lapply(vars, function(v){
-    sd_val <- 3 * round(sd(session_data$bg_df[, v], na.rm = TRUE))
-    min_val <- round(max(session_data$bg_df[, v], na.rm = TRUE)) - sd_val
-    max_val <- round(max(session_data$bg_df[, v], na.rm = TRUE)) + sd_val
-    step <- round((max_val - min_val) / 100, 4)
+    sd_val <- 3 * sd(session_data$bg_df[, v], na.rm = TRUE)
+    min_val <- round(min(session_data$bg_df[, v], na.rm = TRUE) - sd_val, 2)
+    max_val <- round(max(session_data$bg_df[, v], na.rm = TRUE) + sd_val, 2)
+    step <- round((max_val - min_val) / 100, 2)
 
     fluidRow(
       column(width = 10,
              sliderInput(inputId = paste0("centroid_", v, "_", id),
                          label = v,
-                         min = round(min_val, 2),
-                         max = round(max_val, 2),
-                         value = centroid[v],
-                         step = step)),
-      column(width = 2,
-             actionLink(inputId = paste0("centroid_reset_", v, "_", id),
-                        label = tags$span(icon("rotate-left"),
-                                          title = instructions$centroid_reset_tooltip))
-      ))
+                         min = min_val,
+                         max = max_val,
+                         value = round(centroid[v], 2),
+                         step = step))
+      # column(width = 2,
+      #        actionLink(inputId = paste0("centroid_reset_", v, "_", id),
+      #                   label = tags$span(icon("rotate-left"),
+      #                                     title = instructions$centroid_reset_tooltip,
+      #                                     class = "tooltip-icon"))
+      #
+      )
   })
 
   reset_all_btn <- fluidRow(
     column(width = 12, class = "btn-spaced",
            actionLink(inputId = paste0("centroid_reset_all_", id),
-                      label = tagList(icon("rotate-left"), "Reset all back to original values")))
+                      label = tagList(icon("rotate-left"),
+                                      "Reset all to base centroid")))
   )
 
-  tagList(sliders, br(), reset_all_btn)
+  tagList(sliders, br(), reset_all_btn, br())
 })
+
+# Set centroid observer
+observeEvent(input$set_centroid, {
+  centroid_set(TRUE)
+})
+
+observeEvent({
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+  lapply(vars, function(v) input[[paste0("centroid_", v, "_", id)]])
+}, {
+
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  vars <- ell$var_names
+  id <- session_data$current_ellipsoid$ell_id
+
+  ell_base <- session_data$ellipsoid_list[["base"]]
+  base_c <- ell_base$centroid
+
+
+  # Collect current slider values as named numeric vector
+  centroid_vals <- setNames(sapply(vars,
+                              function(v){
+                                val <- input[[paste0("centroid_", v, "_", id)]]
+                                if(is.null(val)) base_c[v] else val
+                              }),
+                       vars)
+
+  # Only update if values differ from current covariance matrix
+  current_centroid <- setNames(sapply(vars,
+                                 function(v){
+                                   ell$centroid[v]
+                                 }),
+                          vars)
+
+  if(all(centroid_vals == current_centroid)) return()
+
+
+  updated_ell <- tryCatch(
+    update_ellipsoid_centroid(session_data$current_ellipsoid,
+                              new_centroid = centroid_vals,
+                              verbose = FALSE),
+    error = function(e){
+      showNotification(paste("Centroid update failed:", e$message),
+                       type = "error")
+      NULL
+    }
+  )
+
+  req(updated_ell)
+
+  updated_ell$ell_id <- ell$ell_id
+  updated_ell$ell_name <- ell$ell_name
+  session_data$current_ellipsoid <- updated_ell
+
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+
+# Edit centroid observer
+observeEvent(input$edit_centroid, {
+  centroid_set(FALSE)
+}, ignoreInit = TRUE)
+
+# Per-variable centroid reset observer
+observeEvent({
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  id <- ell$ell_id
+  lapply(ell$var_names, function(v) input[[paste0("centroid_reset_", v, "_", id)]])
+}, {
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  id <- ell$ell_id
+  base_c <- session_data$ellipsoid_list[["base"]]$centroid
+
+  clicked <- ell$var_names[vapply(ell$var_names, function(v){
+    val <- input[[paste0("centroid_reset_", v, "_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+
+  lapply(clicked, function(v){
+    updateSliderInput(session,
+                      inputId = paste0("centroid_", v, "_", id),
+                      value = round(base_c[v], 4))
+  })
+
+}, ignoreInit = TRUE)
+
+# Reset all centroid observer
+observeEvent(input[[paste0("centroid_reset_all_", session_data$current_ellipsoid$ell_id)]], {
+
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  id <- ell$ell_id
+  ell_base <- session_data$ellipsoid_list[["base"]]
+  base_c <- ell_base$centroid
+
+  lapply(ell$var_names, function(v){
+    updateSliderInput(session,
+                      inputId = paste0("centroid_", v, "_", id),
+                      value = round(base_c[v], 2))
+  })
+
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 
 
