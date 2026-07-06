@@ -1,6 +1,7 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 7/3/2026
+# Date last updated: 7/6/2026
+
 
 # Load previous session
 observeEvent(input$load_session, {
@@ -8,9 +9,6 @@ observeEvent(input$load_session, {
   req(input$session_file)
   req(is.data.frame(input$session_file))
   req(file.exists(input$session_file$datapath))
-
-  session_data$input_mode <- "prev_session"
-  session_data$session_loading <- TRUE  # block plots during restore
 
   session_list <- tryCatch(
     readRDS(input$session_file$datapath),
@@ -35,12 +33,14 @@ observeEvent(input$load_session, {
     )
   }
 
+
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
+    message(paste0(nm, " unwrapped to ", session_list[[nm]]))
   }
 
   if(!is.null(session_data$ellipsoid_list[["base"]])){
-    raw         <- session_data$ellipsoid_list[["base"]]
+    raw <- session_data$ellipsoid_list[["base"]]
     working_ell <- tag_ellipsoid(raw,
                                  name = paste0("ellipsoid_",
                                                ell_id_counter() + 1L))
@@ -50,15 +50,15 @@ observeEvent(input$load_session, {
   ell_id_counter(length(session_data$ellipsoid_list))
 
   covariance_set(FALSE)
-  centroid_set(FALSE)
   cov_counters(list())
+
+  centroid_set(FALSE)
 
   session_data$session_loading <- FALSE  # unblock plots
 
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
   if(length(session_data$ellipsoid_list) > 0){
-    updateTabItems(session, "sidebarMenu", selected = "build_tab")
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
 })
@@ -71,6 +71,8 @@ output$save_session_btn <- downloadHandler(
 
     # Must convert to plain list before saving
     session_list <- reactiveValuesToList(session_data)
+    session_list$session_loading <- TRUE
+    session_list$input_mode <- "prev_session"
 
     if(!is.null(session_list$bg_raster)){
       session_list$bg_raster <- terra::wrap(session_list$bg_raster)

@@ -1,6 +1,11 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 7/3/2026
+# Date last updated: 07/06/2026
+
+observeEvent(input$start_session, {
+  updateTabItems(session, "sidebarMenu", selected = "build_tab")
+})
+
 
 # Observer Events ---------------------------------------------------------
 

@@ -199,6 +199,16 @@ dashboardPage(
         ),
 
         fluidRow(
+          column(width = 5),
+          column(width = 2,
+                 actionButton(inputId = "start_session",
+                              icon = icon("play"),
+                              label = "START", class = "btn-warning", width = "150px")
+                 ),
+          column(width = 5)
+        ),
+
+        fluidRow(
           column(width = 12,
                  tags$div(style = "font-size: 12px; color: #aaa; padding: 10px 0; border-top: 0.5px solid #ddd;
                              display: flex; gap: 12px; flex-wrap: wrap;",

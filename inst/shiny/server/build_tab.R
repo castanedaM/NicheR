@@ -295,7 +295,7 @@ observeEvent(input$ell_view_base, {
   session_data$current_ellipsoid <- base_ell
 
   covariance_set(TRUE)
-  centorid_set(TRUE)
+  centroid_set(TRUE)
 
   showNotification("Viewing base ellipsoid. Covariance is locked.",
                    type = "message", duration = 3)
@@ -1338,7 +1338,8 @@ observeEvent({
   ell <- session_data$current_ellipsoid
   req(ell)
   id <- ell$ell_id
-  base_c <- session_data$ellipsoid_list[["base"]]$centroid
+  ell_base <- session_data$ellipsoid_list[["base"]]
+  base_c <- ell_base$centroid
 
   clicked <- ell$var_names[vapply(ell$var_names, function(v){
     val <- input[[paste0("centroid_reset_", v, "_", id)]]
@@ -1356,14 +1357,17 @@ observeEvent({
 }, ignoreInit = TRUE)
 
 # Reset all centroid observer
-observeEvent(input[[paste0("centroid_reset_all_", session_data$current_ellipsoid$ell_id)]], {
+observeEvent({
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  input[[paste0("centroid_reset_all_", ell$ell_id)]]}, {
 
   req(session_data$current_ellipsoid)
 
   ell <- session_data$current_ellipsoid
   id <- ell$ell_id
   ell_base <- session_data$ellipsoid_list[["base"]]
-  base_c <- ell_base$centroid
+  base_c <- setNames(object = ell_base$centroid, nm = ell$var_names)
 
   lapply(ell$var_names, function(v){
     updateSliderInput(session,

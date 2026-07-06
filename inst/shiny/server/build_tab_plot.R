@@ -154,7 +154,7 @@ compute_lims <- function(v1, v2, s){
 draw_espace_panel <- function(v1, v2, s){
 
   lims <- compute_lims(v1, v2, s)
-  bg  <- session_data$bg_df
+  bg <- session_data$bg_df
 
   if(!is.null(bg)){
     plot(bg[[v1]], bg[[v2]],
@@ -212,7 +212,8 @@ draw_espace_panel <- function(v1, v2, s){
   if(s$show_ell){
     idx <- match(c(v1, v2), s$ell$var_names)
     add_ellipsoid(s$ell, dim = idx,
-                  col_ell = s$ell_col, lwd = s$ell_lwd, lty = s$ell_lty)
+                  col_ell = s$ell_col,
+                  lwd = s$ell_lwd, lty = s$ell_lty)
   }
 
   if(s$show_centroid && !is.null(s$ell)){
@@ -244,18 +245,18 @@ draw_gspace_panel <- function(s, title = "G-space"){
                               include.lowest = TRUE)
 
     terra::plot(binary,
-                col= c(unsuitable_col, suitable_col),
+                col = c(unsuitable_col, suitable_col),
                 legend = FALSE,
                 axes = TRUE,
                 main = title,
                 xlab = "Longitude", ylab = "Latitude",
-                colNA= map_bg_col)
+                colNA = map_bg_col)
 
-    terra::add_legend(x= "topright",
+    terra::add_legend(x = "topright",
                       legend = c("Suitable", "Unsuitable"),
                       fill = c(suitable_col, unsuitable_col),
-                      bty= "n",
-                      cex= 0.8)
+                      bty = "n",
+                      cex = 0.8)
 
   } else if(!is.null(rast)){
     terra::plot(rast[[1]],
@@ -285,7 +286,7 @@ draw_espace_pairs <- function(vars, s){
 # E-space uses predict() on bg_df directly inside draw_espace_panel().
 pred_raster_vis <- reactive({
 
-  req(length(session_data$ellipsoid_list) > 0)
+  req(session_data$current_ellipsoid)
   req(session_data$bg_raster)
 
   ell <- session_data$current_ellipsoid
@@ -575,6 +576,8 @@ output$build_espace_plot <- renderPlot({
   req(vars)
 
   s <- collect_plot_settings()
+  message(paste0("the contencts of s is null? ", is.null(s)))
+
   req(s)
 
   state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
