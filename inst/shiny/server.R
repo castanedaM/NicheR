@@ -8,7 +8,6 @@ function(input, output, session){
   session_data <- reactiveValues(
 
     input_mode = NULL,
-    session_loading = FALSE,
 
     bg_raster = NULL,
     bg_df = NULL,

@@ -1,6 +1,6 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 7/6/2026
+# Date last updated: 07/06/2026
 
 
 # Load previous session
@@ -15,7 +15,6 @@ observeEvent(input$load_session, {
     error = function(e){
       showNotification(paste("Could not load session:", e$message),
                        type = "error", duration = 4)
-      session_data$session_loading <- FALSE
       NULL
     }
   )
@@ -36,8 +35,9 @@ observeEvent(input$load_session, {
 
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
-    message(paste0(nm, " unwrapped to ", session_list[[nm]]))
   }
+
+
 
   if(!is.null(session_data$ellipsoid_list[["base"]])){
     raw <- session_data$ellipsoid_list[["base"]]
@@ -47,6 +47,13 @@ observeEvent(input$load_session, {
     session_data$current_ellipsoid <- working_ell
   }
 
+  # Align vars after working copy is set, using the correct object
+  if(!is.null(session_data$current_ellipsoid)){
+    session_data$vars <- session_data$current_ellipsoid$var_names
+    message("vars aligned to: ", paste(session_data$vars, collapse = ", "))
+  }
+
+
   ell_id_counter(length(session_data$ellipsoid_list))
 
   covariance_set(FALSE)
@@ -54,13 +61,9 @@ observeEvent(input$load_session, {
 
   centroid_set(FALSE)
 
-  session_data$session_loading <- FALSE  # unblock plots
 
   showNotification("Session loaded successfully.", type = "message", duration = 4)
-
-  if(length(session_data$ellipsoid_list) > 0){
-    updateTabsetPanel(session, "tabpanel-build", selected = "range")
-  }
+  updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
 output$save_session_btn <- downloadHandler(
@@ -71,7 +74,6 @@ output$save_session_btn <- downloadHandler(
 
     # Must convert to plain list before saving
     session_list <- reactiveValuesToList(session_data)
-    session_list$session_loading <- TRUE
     session_list$input_mode <- "prev_session"
 
     if(!is.null(session_list$bg_raster)){

@@ -18,7 +18,7 @@ get_input <- function(id, default){
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
 
-  if(isTRUE(session_data$session_loading)) return(NULL)
+  # if(isTRUE(session_data$session_loading)) return(NULL)
 
   ranges <- tryCatch(
     withCallingHandlers(
@@ -212,8 +212,7 @@ draw_espace_panel <- function(v1, v2, s){
   if(s$show_ell){
     idx <- match(c(v1, v2), s$ell$var_names)
     add_ellipsoid(s$ell, dim = idx,
-                  col_ell = s$ell_col,
-                  lwd = s$ell_lwd, lty = s$ell_lty)
+                  col_ell = s$ell_col, lwd = s$ell_lwd, lty = s$ell_lty)
   }
 
   if(s$show_centroid && !is.null(s$ell)){
@@ -310,8 +309,7 @@ pred_raster_vis <- reactive({
 # After confirm: session_data$vars.
 plot_vars <- reactive({
 
-  if(isTRUE(session_data$vars_confirmed)){
-    req(session_data$vars)
+  if(!is.null(session_data$vars)){
     return(session_data$vars)
   }
 
@@ -576,7 +574,6 @@ output$build_espace_plot <- renderPlot({
   req(vars)
 
   s <- collect_plot_settings()
-  message(paste0("the contencts of s is null? ", is.null(s)))
 
   req(s)
 

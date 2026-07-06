@@ -2,10 +2,10 @@
 # Description: Handles file upload, validation, and variable selection
 # Date last updated: 07/06/2026
 
+# Start session button in about
 observeEvent(input$start_session, {
   updateTabItems(session, "sidebarMenu", selected = "build_tab")
 })
-
 
 # Observer Events ---------------------------------------------------------
 
@@ -118,6 +118,7 @@ observeEvent(input$reupload, {
 
 observeEvent(input$continue_virtual, {
   session_data$input_mode <- "virtual"
+
   updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
