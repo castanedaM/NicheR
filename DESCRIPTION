@@ -1,7 +1,7 @@
 Package: nicheR
 Type: Package
 Title: Ellipsoid-Based Virtual Niches and Visualization
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person(
       "Mariana", "Castaneda-Guzman",
@@ -49,7 +49,11 @@ BugReports: https://github.com/castanedaM/nicheR/issues
 Depends:
     R (>= 3.5)
 Imports:
-    terra
+    terra, 
+    shiny, 
+    shinydashboard, 
+    shinyjs, 
+    colourpicker
 Suggests: 
     rgl (>= 1.3),
     knitr,

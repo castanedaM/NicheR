@@ -11,3 +11,4 @@ SPATIAL_COL_PATTERN <- "^(x|y|lon|long|longitude|lat|latitude|easting|northing)$
 
 # Sourcing the instructions for each step
 source("instructions.R")
+
