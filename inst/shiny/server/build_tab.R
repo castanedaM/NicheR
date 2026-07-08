@@ -6,7 +6,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/06/2026
+# Date last updated: 07/08/2026
 
 # ELLIPSOID ---------------------------------------------------------------
 
@@ -29,23 +29,9 @@ tag_ellipsoid <- function(ell, name){
 # Button that builds the ellipsoid
 observeEvent(input$build_ell, {
 
-  # If an ellipsoid already exists warn the user
-  if (length(session_data$ellipsoid_list) > 0){
-    showModal(modalDialog(
-      title = "Overwrite ellipsoid?",
-      p("One or more ellipsoids have already been built. Building a new one will
-overwrite the all current and saved ellipsoids and any downstream results."),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("confirm_build_ell",
-                     "Yes, overwrite",
-                     class = "btn-warning")
-      ),
-      easyClose = FALSE
-    ))
-  } else {
-    build_ellipsoid_shiny()
-  }
+  session_data$session_range <- isolate(range_preview())
+  build_ellipsoid_shiny()
+
 })
 
 observeEvent(input$save_ell_version, {
@@ -406,204 +392,6 @@ observeEvent({
 
 # RANGES ------------------------------------------------------------------
 
-range_preview <- reactive({
-
-  if(is.null(input$range_method_choice) || is.null(session_data$vars)){
-    return(NULL)
-  }
-
-  vars <- session_data$vars
-
-  switch(input$range_method_choice,
-
-         "man" = {
-           mins <- setNames(sapply(vars, function(v){
-             input[[paste0("min_", v)]]}),
-             vars)
-           maxs <- setNames(sapply(vars, function(v){
-             input[[paste0("max_", v)]]}),
-             vars)
-
-           # Guard: if any input hasn't rendered yet (e.g. right after editing
-           # variables), mins/maxs may contain NULL. Bail out cleanly instead
-           # of comparing incompatible types.
-           if(!is.numeric(mins) || !is.numeric(maxs)) return(NULL)
-           if(length(mins) != length(vars) || length(maxs) != length(vars)) return(NULL)
-
-           if(any(is.na(mins)) || any(is.na(maxs))) return(NULL)
-           if(any(maxs <= mins)) return(NULL)
-
-           list(mins = mins, maxs = maxs)
-         },
-
-         "df" = {
-
-           req(input$df_range_file)
-
-           expand_min <- setNames(sapply(vars, function(v){
-             if(!is.null(input[[paste0("expand_min_df_", v)]])){
-               input[[paste0("expand_min_df_", v)]]
-             }else{
-               NULL
-             }
-           }),
-           vars)
-
-           expand_max <- setNames(sapply(vars, function(v){
-             if(!is.null(input[[paste0("expand_max_df_", v)]])){
-               input[[paste0("expand_max_df_", v)]]
-             }else{
-               NULL
-             }
-           }),
-           vars)
-
-           ext <- tolower(tools::file_ext(input$df_range_file$name))
-
-           df_range <- tryCatch(
-             load_df_file(input$df_range_file$datapath, ext),
-             error = function(e) NULL)
-
-           if(is.null(df_range)) return(NULL)
-
-           shared_vars <- intersect(vars, colnames(df_range))
-           if(length(shared_vars) != length(vars)) return(NULL)
-
-           ranges_df <- ranges_from_data(data = df_range[, vars, drop = FALSE],
-                                         expand_min = as.list(expand_min),
-                                         expand_max = as.list(expand_max))
-
-           list(mins = ranges_df["min", ],
-                maxs = ranges_df["max", ])
-         },
-
-         "stats" = {
-           means <- setNames(
-             sapply(vars, function(v) input[[paste0("mean_", v)]]),
-             vars)
-
-           sds <- setNames(
-             sapply(vars, function(v) input[[paste0("sd_", v)]]),
-             vars)
-
-           expand_min <- setNames(sapply(vars, function(v){
-             if(!is.null(input[[paste0("expand_min_stats_", v)]])){
-               input[[paste0("expand_min_stats_", v)]]
-             }else{
-               NULL
-             }
-           }),
-           vars)
-
-           expand_max <- setNames(sapply(vars, function(v){
-             if(!is.null(input[[paste0("expand_max_stats_", v)]])){
-               input[[paste0("expand_max_stats_", v)]]
-             }else{
-               NULL
-             }
-           }),
-           vars)
-
-           cl <- if(!is.null(input$cl_range)){
-             input$cl_range
-           }else{
-             0.95
-           }
-
-           range_stats <- ranges_from_stats(mean = means, sd = sds, cl = cl,
-                                            expand_min = as.list(expand_min),
-                                            expand_max = as.list(expand_max))
-
-           list(mins = range_stats["min", ],
-                maxs = range_stats["max", ])
-         }
-  )
-})
-
-# Reset range values to defaults
-observeEvent(input$reset_ranges, {
-
-  req(input$range_method_choice, session_data$vars)
-  vars <- session_data$vars
-  has_bg_df <- !is.null(session_data$bg_df)
-
-  switch(input$range_method_choice,
-
-         "man" = {
-           lapply(vars, function(v){
-             if(has_bg_df){
-               vals <- session_data$bg_df[[v]]
-               m <- round(mean(vals, na.rm = TRUE), 2)
-               s <- round(sd(vals, na.rm = TRUE), 2)
-             } else {
-               m <- 0
-               s <- 1
-             }
-             updateNumericInput(session, paste0("min_", v), value = m)
-             updateNumericInput(session, paste0("max_", v), value = m + s)
-           })
-         },
-
-         "df" = {
-           lapply(vars, function(v){
-             updateNumericInput(session, paste0("expand_min_df_", v), value = 0)
-             updateNumericInput(session, paste0("expand_max_df_", v), value = 0)
-           })
-         },
-
-         "stats" = {
-           lapply(vars, function(v){
-             if(has_bg_df){
-               vals <- session_data$bg_df[[v]]
-               m <- round(mean(vals, na.rm = TRUE), 2)
-               s <- round(sd(vals, na.rm = TRUE), 2)
-             } else {
-               m <- 0
-               s <- 1
-             }
-             updateNumericInput(session, paste0("mean_", v), value = m)
-             updateNumericInput(session, paste0("sd_", v), value = s)
-             updateNumericInput(session, paste0("expand_min_stats_", v), value = 0)
-             updateNumericInput(session, paste0("expand_max_stats_", v), value = 0)
-           })
-
-           updateNumericInput(session, "cl_range", value = 0.95)
-         }
-  )
-})
-
-observeEvent(input$edit_range, {
-
-  showModal(modalDialog(
-    title = "Edit ranges?",
-    p("Editing ranges will delete all built ellipsoids,
-    adjustments,
-       and any prediction results."),
-    footer = tagList(
-      modalButton("Cancel"),
-      actionButton("confirm_edit_range",
-                   "Yes, edit ranges",
-                   class = "btn-warning")
-    ),
-    easyClose = FALSE
-  ))
-})
-
-observeEvent(input$confirm_edit_range, {
-  removeModal()
-
-  session_data$current_ellipsoid <- NULL
-  session_data$ellipsoid_list <- list()
-  session_data$ellipsoid_prediction_list <- list()
-
-  covariance_set(FALSE)
-  cov_counters(list())
-
-  centroid_set(FALSE)
-
-  updateRadioButtons(session, "range_method_choice", selected = character(0))
-})
-
 output$range_method_choice_ui <- renderUI({
 
   req(session_data$vars)
@@ -695,6 +483,24 @@ output$range_method_ui <- renderUI({
     )
   )
 
+  if(!is.null(session_data$session_range)){
+    dft_values <- session_data$session_range
+  } else if (has_bg_df){
+    q <- sapply(session_data$bg_df[, vars, drop = FALSE], quantile, na.rm = TRUE)
+    dft_values <- list(min = as.list(q[2, ]), max = as.list(q[4, ]),
+                       mean = as.list((q[2, ] + q[4, ])/2),
+                       sd = as.list((q[4, ] - q[2, ])/4),
+                       expand_min = setNames(as.list(rep(0, length(vars))), vars),
+                       expand_max = setNames(as.list(rep(0, length(vars))), vars))
+  } else {
+    dft_values <- list(min = setNames(as.list(rep(0, length(vars))), vars),
+                       max = setNames(as.list(rep(1, length(vars))), vars),
+                       mean = setNames(as.list(rep(0, length(vars))), vars),
+                       sd = setNames(as.list(rep(1, length(vars))), vars),
+                       expand_min = setNames(as.list(rep(0, length(vars))), vars),
+                       expand_max = setNames(as.list(rep(0, length(vars))), vars))
+  }
+
   # Choose which UI to show for ranges
   switch(input$range_method_choice,
          "man" = {
@@ -706,29 +512,18 @@ output$range_method_ui <- renderUI({
            )
 
            var_rows <- lapply(vars, function(v){
-             default_min <- if(has_bg_df){
-               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2)
-             } else {
-               0
-             }
-             default_max <- if(has_bg_df){
-               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2) +
-                 round(sd(session_data$bg_df[, v], na.rm = TRUE), 2)
-             } else {
-               1
-             }
 
              fluidRow(
                column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
-                                   value = default_min,
+                                   value = dft_values$min[[v]],
                                    step = 0.5)),
                column(width = 4,
                       numericInput(inputId = paste0("max_", v),
                                    label = NULL,
-                                   value = default_max,
+                                   value = dft_values$max[[v]],
                                    step = 0.5))
              )
            })
@@ -752,73 +547,98 @@ output$range_method_ui <- renderUI({
                                          ".csv", ".rds")))
            )
 
-           range_rows <- if(!is.null(input$df_range_file)){
+           obs_ranges <- NULL
+           shared_vars <- character(0)
+           df_range <- NULL
+
+           if(!is.null(session_data$df_range)){
+             shared_vars <- intersect(session_data$vars, colnames(session_data$df_range))
+             obs_ranges  <- lapply(shared_vars, function(v){
+               list(min = round(min(session_data$df_range[, v], na.rm = TRUE), 2),
+                    max = round(max(session_data$df_range[, v], na.rm = TRUE), 2))
+             })
+
+             names(obs_ranges) <- shared_vars
+
+           } else if(!is.null(input$df_range_file)){
 
              ext <- tolower(tools::file_ext(input$df_range_file$name))
-
              df_range <- tryCatch(
                load_df_file(input$df_range_file$datapath, ext),
-               error = function(e) NULL)
+               error = function(e) NULL
+             )
 
-             if(is.null(df_range)){
-
-               p("Could not read the uploaded file. Please check the format.",
-                 class = "text-warning-note")
-
-             }else{
-
+             if(!is.null(df_range)){
                shared_vars <- intersect(vars, colnames(df_range))
 
-               if(length(shared_vars) != length(vars)){
-
-                 p("No matching variables found between the uploaded file and the
-background layers. Check that column names match.",
-                   class = "text-warning-note")
-
-               }else{
-
-                 session_data$range_df <- df_range
-
+               if(length(shared_vars) == length(vars)){
+                 session_data$df_range <- df_range
                  obs_ranges <- lapply(shared_vars, function(v){
                    list(min = round(min(df_range[, v], na.rm = TRUE), 2),
                         max = round(max(df_range[, v], na.rm = TRUE), 2))
                  })
-
                  names(obs_ranges) <- shared_vars
-
-                 header <- fluidRow(
-                   column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
-                   column(width = 2, tags$span("Observed Min", class = "text-widget-title text-center")),
-                   column(width = 2, tags$span("Observed Max", class = "text-widget-title text-center")),
-                   column(width = 2, tags$div(class = "tooltip-label-row",
-                                              tags$span("Expand Min (%)", class = "text-widget-title text-center"),
-                                              tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
-                   column(width = 2, tags$div(class = "tooltip-label-row",
-                                              tags$span("Expand Max (%)", class = "text-widget-title text-center"),
-                                              tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
-                 )
-
-                 rows <- lapply(shared_vars, function(v){
-                   fluidRow(
-                     column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
-                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2), class = "text-widget-inner text-center")),
-                     column(width = 2, tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2), class = "text-widget-inner text-center")),
-                     column(width = 2,
-                            numericInput(inputId = paste0("expand_min_df_", v),
-                                         label = NULL,
-                                         value = 0,
-                                         step = 5)),
-                     column(width = 2,
-                            numericInput(inputId = paste0("expand_max_df_", v),
-                                         label = NULL,
-                                         value = 0,
-                                         step = 5))
-                   )
-                 })
-
-                 tagList(header, rows)
                }
              }
+           }
+
+           header <- fluidRow(
+             column(width = 3,
+                    tags$span("Variable", class = "text-widget-title text-center")),
+             column(width = 2,
+                    tags$span("Observed Min", class = "text-widget-title text-center")),
+             column(width = 2,
+                    tags$span("Observed Max", class = "text-widget-title text-center")),
+             column(width = 2,
+                    tags$div(class = "tooltip-label-row",
+                             tags$span("Expand Min (%)", class = "text-widget-title text-center"),
+                             tags$span(icon("circle-info"),
+                                       title = instructions$expand_range_tooltip,
+                                       class = "tooltip-icon"))),
+             column(width = 2,
+                    tags$div(class = "tooltip-label-row",
+                             tags$span("Expand Max (%)", class = "text-widget-title text-center"),
+                             tags$span(icon("circle-info"),
+                                       title = instructions$expand_range_tooltip,
+                                       class = "tooltip-icon")))
+           )
+
+           rows <- lapply(shared_vars, function(v){
+             fluidRow(
+               column(width = 3, class = "var-label",
+                      tags$span(v, class = "text-widget-inner")),
+               column(width = 2,
+                      tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2),
+                                class = "text-widget-inner text-center")),
+               column(width = 2,
+                      tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2),
+                                class = "text-widget-inner text-center")),
+               column(width = 2,
+                      numericInput(inputId = paste0("expand_min_df_", v),
+                                   label = NULL,
+                                   value = dft_values$expand_min[[v]],
+                                   step = 5)),
+               column(width = 2,
+                      numericInput(inputId = paste0("expand_max_df_", v),
+                                   label = NULL,
+                                   value = dft_values$expand_max[[v]],
+                                   step = 5))
+             )
+           })
+
+           range_rows <- if(!is.null(obs_ranges) && length(shared_vars) > 0){
+             tagList(header, rows)
+           } else if(!is.null(input$df_range_file)){
+             if(is.null(df_range)){
+               p("Could not read the uploaded file. Please check the format.",
+                 class = "text-warning-note")
+             } else if(length(shared_vars) != length(vars)){
+               p("No matching variables found between the uploaded file and the
+         background layers. Check that column names match.",
+                 class = "text-warning-note")
+             }
+           } else {
+             NULL
            }
 
            column(width = 12, upload_row, range_rows, cl_row, reset_btn, br(), build_btn)
@@ -827,54 +647,61 @@ background layers. Check that column names match.",
          "stats" = {
 
            header <- fluidRow(
-             column(width = 12, p(instructions$range_stats, class = "text-instruction")),
-             column(width = 3, tags$span("Variable", class = "text-widget-title text-center")),
-             column(width = 2, tags$span("Mean", class = "text-widget-title text-center")),
-             column(width = 2, tags$span("SD", class = "text-widget-title text-center")),
-             column(width = 2, tags$div(class = "tooltip-label-row",
-                                        tags$span("Expand Min (%)", class = "text-widget-title text-center"),
-                                        tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon"))),
-             column(width = 2, tags$div(class = "tooltip-label-row",
-                                        tags$span("Expand Max (%)", class = "text-widget-title text-center"),
-                                        tags$span(icon("circle-info"), title = instructions$expand_range_tooltip, class = "tooltip-icon")))
+             column(width = 12,
+                    p(instructions$range_stats, class = "text-instruction")
+             ),
+             column(width = 3,
+                    tags$span("Variable", class = "text-widget-title text-center")
+             ),
+             column(width = 2,
+                    tags$span("Mean", class = "text-widget-title text-center")
+             ),
+             column(width = 2,
+                    tags$span("SD", class = "text-widget-title text-center")
+             ),
+             column(width = 2,
+                    tags$div(class = "tooltip-label-row",
+                             tags$span("Expand Min (%)",
+                                       class = "text-widget-title text-center"),
+                             tags$span(icon("circle-info"),
+                                       title = instructions$expand_range_tooltip,
+                                       class = "tooltip-icon"))
+             ),
+             column(width = 2,
+                    tags$div(class = "tooltip-label-row",
+                             tags$span("Expand Max (%)",
+                                       class = "text-widget-title text-center"),
+                             tags$span(icon("circle-info"),
+                                       title = instructions$expand_range_tooltip,
+                                       class = "tooltip-icon"))
+             )
            )
 
            var_rows <- lapply(vars, function(v){
-             default_mean <- if(has_bg_df){
-               round(mean(session_data$bg_df[, v], na.rm = TRUE), 2)
-             } else {
-               0
-             }
-             default_sd <- if(has_bg_df){
-               round(sd(session_data$bg_df[, v], na.rm = TRUE), 2)
-             } else {
-               1
-             }
-
              fluidRow(
                column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
                column(width = 2,
                       numericInput(inputId = paste0("mean_", v),
                                    label = NULL,
-                                   value = default_mean,
+                                   value = dft_values$mean[[v]],
                                    step = 0.5)
                ),
 
                column(width = 2,
                       numericInput(inputId = paste0("sd_", v),
                                    label = NULL,
-                                   value = default_sd,
+                                   value = dft_values$sd[[v]],
                                    step = 0.5)
                ),
                column(width = 2,
                       numericInput(inputId = paste0("expand_min_stats_", v),
                                    label = NULL,
-                                   value = 0,
+                                   value = dft_values$expand_min[[v]],
                                    step = 5)),
                column(width = 2,
                       numericInput(inputId = paste0("expand_max_stats_", v),
                                    label = NULL,
-                                   value = 0,
+                                   value =  dft_values$expand_max[[v]],
                                    step = 5))
              )
            })
@@ -883,6 +710,221 @@ background layers. Check that column names match.",
          }
   )
 })
+
+range_preview <- reactive({
+
+  if(is.null(input$range_method_choice) || is.null(session_data$vars)){
+    return(NULL)
+  }
+
+  vars <- session_data$vars
+
+  switch(input$range_method_choice,
+
+         "man" = {
+           mins <- setNames(sapply(vars, function(v){
+             input[[paste0("min_", v)]]}),
+             vars)
+           maxs <- setNames(sapply(vars, function(v){
+             input[[paste0("max_", v)]]}),
+             vars)
+
+           # Guard: if any input hasn't rendered yet (e.g. right after editing
+           # variables), mins/maxs may contain NULL. Bail out cleanly instead
+           # of comparing incompatible types.
+           if(!is.numeric(mins) || !is.numeric(maxs)) return(NULL)
+           if(length(mins) != length(vars) || length(maxs) != length(vars)) return(NULL)
+
+           if(any(is.na(mins)) || any(is.na(maxs))) return(NULL)
+           if(any(maxs <= mins)) return(NULL)
+
+           list(mins = mins, maxs = maxs)
+         },
+
+         "df" = {
+
+           req(input$df_range_file)
+
+           expand_min <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_min_df_", v)]])){
+               input[[paste0("expand_min_df_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           expand_max <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_max_df_", v)]])){
+               input[[paste0("expand_max_df_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           ext <- tolower(tools::file_ext(input$df_range_file$name))
+
+           df_range <- tryCatch(
+             load_df_file(input$df_range_file$datapath, ext),
+             error = function(e) NULL)
+
+           if(is.null(df_range)) return(NULL)
+
+           shared_vars <- intersect(vars, colnames(df_range))
+           if(length(shared_vars) != length(vars)) return(NULL)
+
+           ranges_df <- ranges_from_data(data = df_range[, vars, drop = FALSE],
+                                         expand_min = as.list(expand_min),
+                                         expand_max = as.list(expand_max))
+
+           list(mins = ranges_df["min", ],
+                maxs = ranges_df["max", ],
+                expand_min = expand_min,
+                expand_max = expand_max)
+         },
+
+         "stats" = {
+           means <- setNames(
+             sapply(vars, function(v) input[[paste0("mean_", v)]]),
+             vars)
+
+           sds <- setNames(
+             sapply(vars, function(v) input[[paste0("sd_", v)]]),
+             vars)
+
+           expand_min <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_min_stats_", v)]])){
+               input[[paste0("expand_min_stats_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           expand_max <- setNames(sapply(vars, function(v){
+             if(!is.null(input[[paste0("expand_max_stats_", v)]])){
+               input[[paste0("expand_max_stats_", v)]]
+             }else{
+               NULL
+             }
+           }),
+           vars)
+
+           cl <- if(!is.null(input$cl_range)){
+             input$cl_range
+           }else{
+             0.95
+           }
+
+           range_stats <- ranges_from_stats(mean = means, sd = sds, cl = cl,
+                                            expand_min = as.list(expand_min),
+                                            expand_max = as.list(expand_max))
+
+           list(mins = range_stats["min", ],
+                maxs = range_stats["max", ],
+                mean = means, sd = sds,
+                expand_min = expand_min,
+                expand_max = expand_max)
+         }
+  )
+})
+
+observeEvent(input$reset_ranges, {
+
+  req(input$range_method_choice, session_data$vars)
+  vars <- session_data$vars
+  has_bg_df <- !is.null(session_data$bg_df)
+
+  if(!is.null(session_data$session_range)){
+    dft_values <- session_data$session_range
+  } else if(has_bg_df){
+    q <- sapply(session_data$bg_df[, vars, drop = FALSE], quantile, na.rm = TRUE)
+    dft_values <- list(min = as.list(q[2, ]), max = as.list(q[4, ]),
+                       mean = as.list((q[2, ] + q[4, ])/2),
+                       sd = as.list((q[4, ] - q[2, ])/4),
+                       expand_min = setNames(as.list(rep(0, length(vars))), vars),
+                       expand_max = setNames(as.list(rep(0, length(vars))), vars))
+  } else {
+    dft_values <- list(min = setNames(as.list(rep(0, length(vars))), vars),
+                       max = setNames(as.list(rep(1, length(vars))), vars),
+                       mean = setNames(as.list(rep(0, length(vars))), vars),
+                       sd = setNames(as.list(rep(1, length(vars))), vars),
+                       expand_min = setNames(as.list(rep(0, length(vars))), vars),
+                       expand_max = setNames(as.list(rep(0, length(vars))), vars))
+  }
+
+  switch(input$range_method_choice,
+
+         "man" = {
+           lapply(vars, function(v){
+             updateNumericInput(session, paste0("min_", v),
+                                value = dft_values$min[[v]])
+             updateNumericInput(session, paste0("max_", v),
+                                value = dft_values$max[[v]])
+           })
+         },
+
+         "df" = {
+           lapply(vars, function(v){
+             updateNumericInput(session, paste0("expand_min_df_", v),
+                                value = dft_values$expand_min[[v]])
+             updateNumericInput(session, paste0("expand_max_df_", v),
+                                value = dft_values$expand_max[[v]])
+           })
+         },
+
+         "stats" = {
+           lapply(vars, function(v){
+             updateNumericInput(session, paste0("mean_", v),
+                                value = dft_values$mean[[v]])
+             updateNumericInput(session, paste0("sd_", v),
+                                value = dft_values$sd[[v]])
+             updateNumericInput(session, paste0("expand_min_stats_", v),
+                                value = dft_values$expand_min[[v]])
+             updateNumericInput(session, paste0("expand_max_stats_", v),
+                                value = dft_values$expand_max[[v]])
+           })
+
+           updateNumericInput(session, "cl_range", value = 0.95)
+         }
+  )
+})
+
+observeEvent(input$edit_range, {
+
+  showModal(modalDialog(
+    title = "Edit ranges?",
+    p("Editing ranges will delete all built ellipsoids,
+    adjustments, and any downstream results."),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_range",
+                   "Yes, edit ranges",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+
+})
+
+observeEvent(input$confirm_edit_range, {
+  removeModal()
+
+  session_data$current_ellipsoid <- NULL
+  session_data$ellipsoid_list <- list()
+  session_data$ellipsoid_prediction_list <- list()
+  session_data$session_range <- NULL
+
+  covariance_set(FALSE)
+  cov_counters(list())
+
+  centroid_set(FALSE)
+
+
+  updateRadioButtons(session, "range_method_choice", selected = character(0))
+})
+
 
 # COVARIANCE --------------------------------------------------------------
 

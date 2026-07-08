@@ -1,6 +1,6 @@
 # Title: Server for shiny nicheR
 # Description: The server of the app
-# Lats Updated: 6/30/2026
+# Lats Updated: 7/8/2026
 
 
 function(input, output, session){
@@ -14,15 +14,15 @@ function(input, output, session){
 
     vars = NULL,
 
+    session_range = NULL,
     range_df = NULL,
-    range_stats = NULL,
-
-    bias = NULL,
 
     ellipsoid_list = list(),
     current_ellipsoid = NULL,
 
     ellipsoid_prediction_list = list(),
+
+    bias = NULL
   )
 
   source("server/helpers.R", local = TRUE)
