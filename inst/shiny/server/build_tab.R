@@ -486,7 +486,7 @@ output$range_method_ui <- renderUI({
   if(!is.null(session_data$session_range)){
     dft_values <- session_data$session_range
   } else if (has_bg_df){
-    q <- sapply(session_data$bg_df[, vars, drop = FALSE], quantile, na.rm = TRUE)
+    q <- round(apply(session_data$bg_df[, vars, drop = FALSE], 2, quantile, na.rm = TRUE), 2)
     dft_values <- list(min = as.list(q[2, ]), max = as.list(q[4, ]),
                        mean = as.list((q[2, ] + q[4, ])/2),
                        sd = as.list((q[4, ] - q[2, ])/4),
@@ -536,7 +536,7 @@ output$range_method_ui <- renderUI({
 
            upload_row <- fluidRow(
              column(width = 12, p(instructions$range_data, class = "text-instruction")),
-             column(width = 6,
+             column(width = 12,
                     fileInput(inputId = "df_range_file",
                               label = tags$span("Choose CSV file with range data",
                                                 class = "text-widget-title"),
@@ -582,20 +582,25 @@ output$range_method_ui <- renderUI({
              }
            }
 
-           header <- fluidRow(
-             column(width = 3,
+           header1 <- fluidRow(
+             column(width = 4,
                     tags$span("Variable", class = "text-widget-title text-center")),
-             column(width = 2,
+             column(width = 4,
                     tags$span("Observed Min", class = "text-widget-title text-center")),
-             column(width = 2,
-                    tags$span("Observed Max", class = "text-widget-title text-center")),
-             column(width = 2,
+             column(width = 4,
+                    tags$span("Observed Max", class = "text-widget-title text-center"))
+             )
+
+           header2 <- fluidRow(
+             column(width = 4,
+                    tags$span("Variable", class = "text-widget-title text-center")),
+             column(width = 4,
                     tags$div(class = "tooltip-label-row",
                              tags$span("Expand Min (%)", class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon"))),
-             column(width = 2,
+             column(width = 4,
                     tags$div(class = "tooltip-label-row",
                              tags$span("Expand Max (%)", class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
@@ -603,22 +608,28 @@ output$range_method_ui <- renderUI({
                                        class = "tooltip-icon")))
            )
 
-           rows <- lapply(shared_vars, function(v){
+           rows1 <- lapply(shared_vars, function(v){
              fluidRow(
-               column(width = 3, class = "var-label",
+               column(width = 4, class = "var-label",
                       tags$span(v, class = "text-widget-inner")),
-               column(width = 2,
+               column(width = 4,
                       tags$span(format(round(obs_ranges[[v]]$min, 2), nsmall = 2),
                                 class = "text-widget-inner text-center")),
-               column(width = 2,
+               column(width = 4,
                       tags$span(format(round(obs_ranges[[v]]$max, 2), nsmall = 2),
-                                class = "text-widget-inner text-center")),
-               column(width = 2,
+                                class = "text-widget-inner text-center")))
+           })
+
+           rows2 <- lapply(shared_vars, function(v){
+             fluidRow(
+               column(width = 4, class = "var-label",
+                      tags$span(v, class = "text-widget-inner")),
+               column(width = 4,
                       numericInput(inputId = paste0("expand_min_df_", v),
                                    label = NULL,
                                    value = dft_values$expand_min[[v]],
                                    step = 5)),
-               column(width = 2,
+               column(width = 4,
                       numericInput(inputId = paste0("expand_max_df_", v),
                                    label = NULL,
                                    value = dft_values$expand_max[[v]],
@@ -627,7 +638,7 @@ output$range_method_ui <- renderUI({
            })
 
            range_rows <- if(!is.null(obs_ranges) && length(shared_vars) > 0){
-             tagList(header, rows)
+             tagList(header1, rows1, br(), header2, rows2)
            } else if(!is.null(input$df_range_file)){
              if(is.null(df_range)){
                p("Could not read the uploaded file. Please check the format.",
@@ -646,20 +657,25 @@ output$range_method_ui <- renderUI({
 
          "stats" = {
 
-           header <- fluidRow(
+           header1 <- fluidRow(
              column(width = 12,
                     p(instructions$range_stats, class = "text-instruction")
              ),
-             column(width = 3,
+             column(width = 4,
                     tags$span("Variable", class = "text-widget-title text-center")
              ),
-             column(width = 2,
+             column(width = 4,
                     tags$span("Mean", class = "text-widget-title text-center")
              ),
-             column(width = 2,
+             column(width = 4,
                     tags$span("SD", class = "text-widget-title text-center")
+             ))
+
+           header2 <- fluidRow(
+             column(width = 4,
+                    tags$span("Variable", class = "text-widget-title text-center")
              ),
-             column(width = 2,
+             column(width = 4,
                     tags$div(class = "tooltip-label-row",
                              tags$span("Expand Min (%)",
                                        class = "text-widget-title text-center"),
@@ -667,7 +683,7 @@ output$range_method_ui <- renderUI({
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon"))
              ),
-             column(width = 2,
+             column(width = 4,
                     tags$div(class = "tooltip-label-row",
                              tags$span("Expand Max (%)",
                                        class = "text-widget-title text-center"),
@@ -677,28 +693,33 @@ output$range_method_ui <- renderUI({
              )
            )
 
-           var_rows <- lapply(vars, function(v){
+           var_rows1 <- lapply(vars, function(v){
              fluidRow(
-               column(width = 3, class = "var-label", tags$span(v, class = "text-widget-inner")),
-               column(width = 2,
+               column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
+               column(width = 4,
                       numericInput(inputId = paste0("mean_", v),
                                    label = NULL,
                                    value = dft_values$mean[[v]],
                                    step = 0.5)
                ),
 
-               column(width = 2,
+               column(width = 4,
                       numericInput(inputId = paste0("sd_", v),
                                    label = NULL,
                                    value = dft_values$sd[[v]],
                                    step = 0.5)
-               ),
-               column(width = 2,
+               ))
+             })
+
+           var_rows2 <- lapply(vars, function(v){
+             fluidRow(
+               column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
+               column(width = 4,
                       numericInput(inputId = paste0("expand_min_stats_", v),
                                    label = NULL,
                                    value = dft_values$expand_min[[v]],
                                    step = 5)),
-               column(width = 2,
+               column(width = 4,
                       numericInput(inputId = paste0("expand_max_stats_", v),
                                    label = NULL,
                                    value =  dft_values$expand_max[[v]],
@@ -706,7 +727,8 @@ output$range_method_ui <- renderUI({
              )
            })
 
-           column(width = 12, header, var_rows, cl_row, reset_btn, br(), build_btn)
+           column(width = 12, header1, var_rows1, header2, var_rows2,
+                  cl_row, reset_btn, br(), build_btn)
          }
   )
 })
@@ -839,7 +861,7 @@ observeEvent(input$reset_ranges, {
   if(!is.null(session_data$session_range)){
     dft_values <- session_data$session_range
   } else if(has_bg_df){
-    q <- sapply(session_data$bg_df[, vars, drop = FALSE], quantile, na.rm = TRUE)
+    q <- round(apply(session_data$bg_df[, vars, drop = FALSE], 2, quantile, na.rm = TRUE), 2)
     dft_values <- list(min = as.list(q[2, ]), max = as.list(q[4, ]),
                        mean = as.list((q[2, ] + q[4, ])/2),
                        sd = as.list((q[4, ] - q[2, ])/4),
@@ -921,8 +943,13 @@ observeEvent(input$confirm_edit_range, {
 
   centroid_set(FALSE)
 
+  if(!is.null(session_data$df_range) &&
+     identical(session_data$input_mode, "prev_session")){
+    updateRadioButtons(session, "range_method_choice", selected = "df")
+  } else {
+    updateRadioButtons(session, "range_method_choice", selected = character(0))
+  }
 
-  updateRadioButtons(session, "range_method_choice", selected = character(0))
 })
 
 
