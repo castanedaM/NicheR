@@ -1,6 +1,6 @@
 # Title: Server for shiny nicheR
 # Description: The server of the app
-# Lats Updated: 7/8/2026
+# Lats Updated: 7/9 /2026
 
 
 function(input, output, session){

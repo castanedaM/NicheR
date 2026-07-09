@@ -297,11 +297,6 @@ dashboardPage(
                  ),
 
                  uiOutput("ellipsoid_info"),
-
-                 # Export button and settings sit below the tabBox, outside all panels
-                 column(width = 12, class = "btn-spaced",
-                        uiOutput("export_btn_ui"),
-                        br()),
                  uiOutput("plot_settings_ui")
 
                  )

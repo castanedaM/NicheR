@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/06/2026
+# Date last updated: 07/09/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -17,9 +17,6 @@ get_input <- function(id, default){
 # Called at the top of every draw function.
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
-
-  # if(isTRUE(session_data$session_loading)) return(NULL)
-
   ranges <- tryCatch(
     withCallingHandlers(
       range_preview(),
@@ -28,12 +25,18 @@ collect_plot_settings <- function(){
     error = function(e) NULL
   )
 
-  if(is.null(ranges) && !is.null(session_data$current_ellipsoid)){
-    ell <- session_data$current_ellipsoid
-    if(!is.null(ell$ranges) && !is.null(colnames(ell$ranges)) &&
-       length(colnames(ell$ranges)) > 0){
-      ranges <- list(mins = as.list(ell$ranges[1, ]),
-                     maxs = as.list(ell$ranges[2, ]))
+  if(is.null(ranges)){
+    # Prefer base ellipsoid ranges for range lines since they represent
+    # the original niche definition and should not move with the centroid
+    base_ell <- session_data$ellipsoid_list[["base"]]
+    ref_ell<- if(!is.null(base_ell)) base_ell else session_data$current_ellipsoid
+
+    if(!is.null(ref_ell) &&
+       !is.null(ref_ell$ranges) &&
+       !is.null(colnames(ref_ell$ranges)) &&
+       length(colnames(ref_ell$ranges)) > 0){
+      ranges <- list(mins = as.list(ref_ell$ranges[1, ]),
+                     maxs = as.list(ref_ell$ranges[2, ]))
     }
   }
 
@@ -43,7 +46,7 @@ collect_plot_settings <- function(){
     has_ell = has_ell,
     ell = if(has_ell) session_data$current_ellipsoid else NULL,
 
-    show_ell = has_ell && get_input("show_ellipsoid",  TRUE),
+    show_ell = has_ell && get_input("show_ellipsoid",TRUE),
     show_centroid = has_ell && get_input("show_centroid", TRUE),
     show_suitable_espace = has_ell && get_input("show_suitable_espace", TRUE),
     show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
@@ -66,8 +69,8 @@ collect_plot_settings <- function(){
       list(active = show && !is.null(ranges), ranges = ranges)
     },
 
-    xline_col = get_input("plot_xline_col",  "#E10000"),
-    yline_col = get_input("plot_yline_col",  "#0004D5"),
+    xline_col = get_input("plot_xline_col","#E10000"),
+    yline_col = get_input("plot_yline_col","#0004D5"),
     line_lwd = get_input("plot_line_lwd", 2),
 
     ell_col = get_input("plot_ell_col", "#000000"),
@@ -78,7 +81,7 @@ collect_plot_settings <- function(){
     centroid_col = get_input("plot_centroid_col", "#000000"),
     centroid_cex = get_input("plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("plot_zoom_mode",  "auto"),
+    zoom_mode = get_input("plot_zoom_mode","auto"),
 
     centroid_preview_val = tryCatch(
       withCallingHandlers(
@@ -120,9 +123,7 @@ compute_lims <- function(v1, v2, s){
     pad_y <- diff(range(ell_pts[, 2])) * 0.1
     xlim <- range(ell_pts[, 1]) + c(-pad_x, pad_x)
     ylim <- range(ell_pts[, 2]) + c(-pad_y, pad_y)
-    return(list(xlim = xlim,
-                ylim = ylim,
-                asp = diff(ylim) / diff(xlim)))
+    return(list(xlim = xlim, ylim = ylim, asp = diff(ylim) / diff(xlim)))
   }
 
   bg <- session_data$bg_df
@@ -141,7 +142,7 @@ compute_lims <- function(v1, v2, s){
     idx <- match(c(v1, v2), s$ell$var_names)
     if(!any(is.na(idx))){
       ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
-      lims <- safe_lims(pts_xy, ell_pts)
+      lims<- safe_lims(pts_xy, ell_pts)
       return(c(lims, list(asp = NA)))
     }
   }
@@ -277,6 +278,23 @@ draw_espace_pairs <- function(vars, s){
   n_rows <- ceiling(n_pairs / n_cols)
   par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
   for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
+}
+
+open_device <- function(file, ext){
+  if(ext == "png"){
+    w <- if(!is.null(input$export_width_px))input$export_width_px else 1400
+    h <- if(!is.null(input$export_height_px)) input$export_height_px else 1000
+    res <- if(!is.null(input$export_res))input$export_res else 150
+    png(file, width = w, height = h, res = res)
+  } else if(ext == "pdf"){
+    w <- if(!is.null(input$export_width_in))input$export_width_in else 10
+    h <- if(!is.null(input$export_height_in)) input$export_height_in else 7
+    pdf(file, width = w, height = h)
+  } else if(ext == "svg"){
+    w <- if(!is.null(input$export_width_in))input$export_width_in else 10
+    h <- if(!is.null(input$export_height_in)) input$export_height_in else 7
+    svg(file, width = w, height = h)
+  }
 }
 
 # Reactives ---------------------------------------------------------------
@@ -563,10 +581,18 @@ output$plot_settings_ui <- renderUI({
                           choices= c("Auto"= "auto",
                                      "Zoom to ellipsoid" = "ellipsoid"),
                           selected = "auto"))
+    ),
+
+    # Export button and settings sit below the tabBox, outside all panels
+    fluidRow(
+      column(width = 4,
+             br(),
+             actionButton("open_export_modal",
+                          tagList(icon("download"), "Export Figure"),
+                          class = "btn-default"))
     )
   )
 })
-
 
 output$build_espace_plot <- renderPlot({
 
@@ -618,13 +644,35 @@ output$build_combined_plot <- renderPlot({
   s <- collect_plot_settings()
   req(s)
 
+  layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+  mfrow<- if(layout == "col") c(2, 1) else c(1, 2)
+
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
-  par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+  par(mfrow = mfrow, mar = c(4, 4, 2, 1))
 
   draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
   draw_gspace_panel(s, title = "G-space")
 
+})
+
+output$plot_combined_options_ui <- renderUI({
+
+  vars <- plot_vars()
+  req(vars)
+
+  fluidRow(
+    column(width = 4,
+           radioButtons("plot_combined_layout",
+                        label = tags$span("Layout:", class = "text-widget-title"),
+                        choices = c("Stacked" = "col", "Side by side" = "row"),
+                        selected = "col",
+                        inline = TRUE)),
+    column(width = 4,
+           selectInput("plot_combined_x", label = NULL, choices = character(0))),
+    column(width = 4,
+           selectInput("plot_combined_y", label = NULL, choices = character(0)))
+  )
 })
 
 output$ellipsoid_info <- renderUI({
@@ -649,7 +697,7 @@ output$ellipsoid_info <- renderUI({
   } else {
     0
   }
-  vol_icon  <- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
+  vol_icon<- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
   vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
 
   # Covariance pairs that differ from zero
@@ -677,7 +725,7 @@ output$ellipsoid_info <- renderUI({
   } else {
     list(tags$tr(tags$td(
       colspan = "2",
-      style   = "font-size: 12px; color: #aaa; padding: 3px 6px;",
+      style = "font-size: 12px; color: #aaa; padding: 3px 6px;",
       "All covariances at zero (base ellipsoid)"
     )))
   }
@@ -685,7 +733,7 @@ output$ellipsoid_info <- renderUI({
   # Centroid rows
   centroid_rows <- lapply(vars, function(v){
 
-    cur_val  <- round(ell$centroid[v], 3)
+    cur_val<- round(ell$centroid[v], 3)
     base_val <- if(!is.null(base_ell)) round(base_ell$centroid[v], 3) else cur_val
     delta <- round(cur_val - base_val, 3)
     color <- if(delta > 0) "#097a21" else if(delta < 0) "#e74c3c" else "#aaa"
@@ -705,67 +753,70 @@ output$ellipsoid_info <- renderUI({
     tags$span("Ellipsoid summary", class = "text-section-header"),
     tags$span(paste0(" — ", session_data$current_ellipsoid$ell_name),
               style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
-      width = 12,
-      collapsible = TRUE,
-      collapsed = FALSE,
+    width = 12,
+    collapsible = TRUE,
+    collapsed = FALSE,
 
-      fluidRow(
-        column(width = 4,
-               tags$div(
-                 tags$span("Dimensions", class = "text-widget-title"),
-                 tags$p(paste0(n_vars, "D (", paste(vars, collapse = ", "), ")"),
-                        style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+    fluidRow(
+      column(width = 4,
+             tags$div(
+               tags$span("Dimensions", class = "text-widget-title"),
+               tags$p(paste0(n_vars, "D (", paste(vars, collapse = ", "), ")"),
+                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
 
-                 tags$span("Confidence level", class = "text-widget-title"),
-                 tags$p(paste0(round(ell$cl * 100, 1), "%"),
-                        style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+               tags$span("Confidence level", class = "text-widget-title"),
+               tags$p(paste0(round(ell$cl * 100, 1), "%"),
+                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
 
-                 tags$span("Volume", class = "text-widget-title"),
-                 tags$p(
-                   tags$span(format(round(vol_current, 2), big.mark = ","),
-                             style = "font-size: 12px; color: #555;"),
-                   tags$span(
-                     style = paste0("font-size: 11px; color:", vol_color,
-                                    "; margin-left: 6px;"),
-                     vol_icon, " ", abs(vol_pct), "% vs base"
-                   ),
-                   style = "margin: 2px 0 12px;"
-                 )
+               tags$span("Volume", class = "text-widget-title"),
+               tags$p(
+                 tags$span(format(round(vol_current, 2), big.mark = ","),
+                           style = "font-size: 12px; color: #555;"),
+                 tags$span(
+                   style = paste0("font-size: 11px; color:", vol_color,
+                                  "; margin-left: 6px;"),
+                   vol_icon, " ", abs(vol_pct), "% vs base"
+                 ),
+                 style = "margin: 2px 0 12px;"
                )
-        ),
+             )
+      ),
 
-        # Covariance summary
-        column(width = 4,
-               tags$span("Covariance adjustments", class = "text-widget-title"),
-               tags$table(
-                 style = "width: 100%; margin-top: 4px;",
-                 tags$tbody(cov_rows)
-               )
-        ),
+      # Covariance summary
+      column(width = 4,
+             tags$span("Covariance adjustments", class = "text-widget-title"),
+             tags$table(
+               style = "width: 100%; margin-top: 4px;",
+               tags$tbody(cov_rows)
+             )
+      ),
 
-        # Centroid
-        column(width = 4,
-               tags$span("Centroid", class = "text-widget-title"),
-               tags$table(
-                 style = "width: 100%; margin-top: 4px;",
-                 tags$tbody(centroid_rows)
-               )
-        )
+      # Centroid
+      column(width = 4,
+             tags$span("Centroid", class = "text-widget-title"),
+             tags$table(
+               style = "width: 100%; margin-top: 4px;",
+               tags$tbody(centroid_rows)
+             )
       )
+    )
   )
 })
 
 output$export_espace_plot <- downloadHandler(
-  filename = function() paste0("espace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".png"),
-  content= function(file){
-
+  filename = function(){
+    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+    paste0("espace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
+  },
+  content = function(file){
     vars<- plot_vars()
     req(vars)
-
     s <- collect_plot_settings()
+    req(s)
     state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
+    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
 
-    png(file, width = 1400, height = if(state == "plot_2d") 800 else 1000, res = 150)
+    open_device(file, ext)
 
     switch(state,
            "plot_pairs" = draw_espace_pairs(vars, s),
@@ -781,10 +832,17 @@ output$export_espace_plot <- downloadHandler(
 )
 
 output$export_gspace_plot <- downloadHandler(
-  filename = function() paste0("gspace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".png"),
-  content= function(file){
+  filename = function(){
+    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+    paste0("gspace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
+  },
+  content = function(file){
     s <- collect_plot_settings()
-    png(file, width = 1000, height = 800, res = 150)
+    req(s)
+    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+
+    open_device(file, ext)
+
     par(mar = c(4, 4, 2, 1))
     draw_gspace_panel(s)
     dev.off()
@@ -792,31 +850,115 @@ output$export_gspace_plot <- downloadHandler(
 )
 
 output$export_combined_plot <- downloadHandler(
-  filename = function() paste0("combined_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".png"),
-  content= function(file){
+  filename = function(){
+    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+    paste0("combined_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
+  },
+  content = function(file){
     req(input$plot_combined_x, input$plot_combined_y)
-    s <- collect_plot_settings()
-    png(file, width = 1000, height = 1400, res = 150)
-    par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+    s<- collect_plot_settings()
+    req(s)
+    layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+    mfrow<- if(layout == "col") c(2, 1) else c(1, 2)
+    ext<- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+
+    open_device(file, ext)
+
+    par(mfrow = mfrow, mar = c(4, 4, 2, 1))
     draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
     draw_gspace_panel(s, title = "G-space")
     dev.off()
   }
 )
 
-output$export_btn_ui <- renderUI({
-
+output$export_settings_ui <- renderUI({
   active_tab <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
+  ext<- if(!is.null(input$export_filetype)) input$export_filetype else "png"
 
+  default_h <- switch(active_tab,
+                      "tab_espace" = if(!is.null(input$plot_espace_state) &&
+                                        input$plot_espace_state == "plot_2d") 800 else 1000,
+                      "tab_gspace" = 800,
+                      "tab_combined" = if(!is.null(input$plot_combined_layout) &&
+                                          input$plot_combined_layout == "row") 800 else 1400,
+                      1000
+  )
+
+  is_raster <- ext == "png"
+
+  tagList(
+
+    fluidRow(
+      column(width = 4,
+             tags$span("File type", class = "text-widget-title"),
+             radioButtons("export_filetype", label = NULL,
+                          choices= c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
+                          selected = "png",
+                          inline = TRUE))
+    ),
+
+    # Pixel dimensions for PNG
+    conditionalPanel(
+      condition = "input.export_filetype == 'png'",
+      fluidRow(
+        column(width = 4,
+               tags$span("Width (px)", class = "text-widget-title"),
+               numericInput("export_width_px", label = NULL,
+                            value = 1400, min = 400, max = 4000, step = 100)),
+        column(width = 4,
+               tags$span("Height (px)", class = "text-widget-title"),
+               numericInput("export_height_px", label = NULL,
+                            value = default_h, min = 400, max = 4000, step = 100)),
+        column(width = 4,
+               tags$span("Resolution (dpi)", class = "text-widget-title"),
+               numericInput("export_res", label = NULL,
+                            value = 150, min = 72, max = 600, step = 50))
+      )
+    ),
+
+    # Inch dimensions for PDF and SVG
+    conditionalPanel(
+      condition = "input.export_filetype == 'pdf' || input.export_filetype == 'svg'",
+      fluidRow(
+        column(width = 6,
+               tags$span("Width (inches)", class = "text-widget-title"),
+               numericInput("export_width_in", label = NULL,
+                            value = 10, min = 1, max = 30, step = 0.5)),
+        column(width = 6,
+               tags$span("Height (inches)", class = "text-widget-title"),
+               numericInput("export_height_in", label = NULL,
+                            value = round(default_h / 150, 1),
+                            min = 1, max = 30, step = 0.5))
+      ),
+      fluidRow(
+        column(width = 12,
+               p("PDF and SVG use vector graphics and do not require a resolution setting.",
+                 class = "text-instruction"))
+      )
+    )
+  )
+})
+
+observeEvent(input$open_export_modal, {
+  showModal(modalDialog(
+    title= "Export Figure",
+    size = "m",
+    uiOutput("export_settings_ui"),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_export", "Export", class = "btn-primary")
+    ),
+    easyClose = TRUE
+  ))
+})
+
+observeEvent(input$confirm_export, {
+  removeModal()
+  active_tab <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
   btn_id <- switch(active_tab,
                    "tab_espace" = "export_espace_plot",
                    "tab_gspace" = "export_gspace_plot",
                    "tab_combined" = "export_combined_plot",
                    "export_espace_plot")
-
-  downloadButton(btn_id,
-                 tags$span("Export Figure",
-                           class = "text-widget-title",
-                           title = "Download the current plot as a PNG."),
-                 class = "btn-default")
+  shinyjs::click(btn_id)
 })

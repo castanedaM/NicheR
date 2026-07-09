@@ -1246,7 +1246,7 @@ centroid_preview <- reactive({
 # Centroid mover box
 output$centroid_mover_ui <- renderUI({
 
-  req(length(session_data$ellipsoid_list) > 0, isTRUE(covariance_set()))
+  req(length(session_data$ellipsoid_list) > 0)
 
   ell <- session_data$current_ellipsoid
   req(ell)
@@ -1257,7 +1257,7 @@ output$centroid_mover_ui <- renderUI({
       box(title = tags$div("Centroid Mover", class = "text-section-header"),
           width       = 12,
           collapsible = TRUE,
-          collapsed   = FALSE,
+          collapsed   = TRUE,
           p("The base ellipsoid is view-only and cannot be edited.",
             class = "text-instruction"),
           p("Use the", icon("circle-plus"), "button next to base in the
@@ -1269,19 +1269,6 @@ output$centroid_mover_ui <- renderUI({
 
   if(isTRUE(centroid_set())){
 
-    ell <- session_data$current_ellipsoid
-    centroid <- if(!is.null(ell)) ell$centroid else NULL
-
-    centroid_rows <- if(!is.null(centroid)){
-      lapply(names(centroid), function(v){
-        fluidRow(
-          column(width = 6, tags$span(v, class = "text-widget-inner")),
-          column(width = 6, tags$span(round(centroid[v], 3),
-                                      class = "text-widget-inner"))
-        )
-      })
-    }
-
     return(
       box(title = tags$div("Centroid Mover", class = "text-section-header"),
           width = 12,
@@ -1289,17 +1276,8 @@ output$centroid_mover_ui <- renderUI({
           collapsed = TRUE,
 
           fluidRow(
-            column(width = 6,
-                   tags$span("Variable", class = "text-widget-title")),
-            column(width = 6,
-                   tags$span("Centroid", class = "text-widget-title"))
-          ),
+            p("Centroid has been set for this elliposid"),
 
-          tagList(centroid_rows),
-
-          br(),
-
-          fluidRow(
             column(width = 12, class = "btn-spaced",
                    actionLink("edit_centroid",
                               label = tagList(icon("pen"), "Edit centroid")))
@@ -1309,9 +1287,9 @@ output$centroid_mover_ui <- renderUI({
   }
 
   box(title = tags$div("Centroid Mover", class = "text-section-header"),
-      width       = 12,
+      width = 12,
       collapsible = TRUE,
-      collapsed   = FALSE,
+      collapsed = !isTRUE(covariance_set()),
       p(instructions$centroid_mover, class = "text-instruction"),
       uiOutput("centroid_sliders_ui"),
       fluidRow(
@@ -1322,7 +1300,6 @@ output$centroid_mover_ui <- renderUI({
       )
   )
 })
-
 # Centroid sliders
 output$centroid_sliders_ui <- renderUI({
 
