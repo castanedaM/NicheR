@@ -410,7 +410,6 @@ add_data <- function(data, x, y,
 
   } else {
 
-
     if(is.function(pal)){
       pal <- pal(100)
     }
@@ -419,11 +418,11 @@ add_data <- function(data, x, y,
       pal <- rev(pal)
     }
 
-    col_vals   <- data[ , col_layer]
+    col_vals <- data[ , col_layer]
     is_outside <- is.na(col_vals) | col_vals == 0
-    is_inside  <- !is_outside
+    is_inside <- !is_outside
 
-    pred_inside  <- data[is_inside, c(x, y), drop = FALSE]
+    pred_inside <- data[is_inside, c(x, y), drop = FALSE]
 
     # Subsample inside points if requested
     if (!is.null(bg_sample) && nrow(pred_inside) > bg_sample) {
@@ -432,15 +431,12 @@ add_data <- function(data, x, y,
       pts_indx_in <- seq_len(nrow(pred_inside))
     }
 
-
     col_indx <- map_to_pal(col_vals[is_inside][pts_indx_in], length(pal))
-
 
     points(pred_inside[pts_indx_in, , drop = FALSE],
            col = pal[col_indx],
            pch = pch,
            cex = cex, ...)
-
   }
 }
 

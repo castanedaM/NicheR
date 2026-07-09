@@ -6,7 +6,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/08/2026
+# Date last updated: 07/09/2026
 
 # ELLIPSOID ---------------------------------------------------------------
 
@@ -121,6 +121,25 @@ observeEvent(input$next_go_predict, {
   updateTabItems(session, "sidebarMenu", selected = "predict_tab")
 })
 
+observeEvent(input$update_ell_version, {
+
+  showNotification(paste("Ellipsoid ", session_data$current_ellipsoid$ell_name, " has been updated! Moving to working copy."),
+                   type = "message", duration = 4)
+
+  raw <- isolate(session_data$ellipsoid_list[["base"]])
+  req(raw)
+
+  working_ell <- tag_ellipsoid(raw, name = paste0("elliposid_",
+                                                  ell_id_counter()))
+  session_data$current_ellipsoid <- working_ell
+
+  covariance_set(FALSE)
+  centroid_set(FALSE)
+
+  cov_counters(list())
+
+})
+
 output$ellipsoid_library <- renderUI({
 
   req(length(session_data$ellipsoid_list) > 0)
@@ -128,6 +147,12 @@ output$ellipsoid_library <- renderUI({
   versions <- session_data$ellipsoid_list
   ids <- names(versions)
   cur_ell <- session_data$current_ellipsoid
+
+  is_existing <- !is.null(cur_ell$ell_id) &&
+    cur_ell$ell_id %in% names(session_data$ellipsoid_list)
+
+  is_base <- !is.null(cur_ell$ell_id) &&
+    identical(cur_ell$ell_name, "base")
 
   # Working ellipsoid slot
   working_row <- if(!is.null(cur_ell)){
@@ -144,10 +169,22 @@ output$ellipsoid_library <- renderUI({
              tags$span(cur_ell$ell_id,
                        style = "font-size: 11px; color: #aaa;")),
 
-      column(width = 5, class = "btn-spaced",
-               actionButton("save_ell_version",
-                            "Save Ellipsoid",
-                            class = "btn-primary"))
+      column(width = 5,
+
+             if(isFALSE(is_base)){
+               if(is_existing){
+                 actionButton("update_ell_version",
+                              "Update ellipsoid",
+                              class = "btn-default")
+               }else{
+                 actionButton("save_ell_version",
+                              "Save Ellipsoid",
+                              class = "btn-default")
+               }
+             }else{
+               p("View Only")
+             }
+      )
     )
   }
 
@@ -1255,9 +1292,9 @@ output$centroid_mover_ui <- renderUI({
   if(identical(ell$ell_name, "base")){
     return(
       box(title = tags$div("Centroid Mover", class = "text-section-header"),
-          width       = 12,
+          width = 12,
           collapsible = TRUE,
-          collapsed   = TRUE,
+          collapsed = TRUE,
           p("The base ellipsoid is view-only and cannot be edited.",
             class = "text-instruction"),
           p("Use the", icon("circle-plus"), "button next to base in the
@@ -1293,7 +1330,7 @@ output$centroid_mover_ui <- renderUI({
       p(instructions$centroid_mover, class = "text-instruction"),
       uiOutput("centroid_sliders_ui"),
       fluidRow(
-        column(width = 6, class = "btn-spaced",
+        column(width = 12,
                actionButton("set_centroid",
                             "Set Centroid",
                             class = "btn-primary"))
@@ -1319,24 +1356,18 @@ output$centroid_sliders_ui <- renderUI({
     step <- round((max_val - min_val) / 100, 2)
 
     fluidRow(
-      column(width = 10,
+      column(width = 12,
              sliderInput(inputId = paste0("centroid_", v, "_", id),
                          label = v,
                          min = min_val,
                          max = max_val,
                          value = round(centroid[v], 2),
                          step = step))
-      # column(width = 2,
-      #        actionLink(inputId = paste0("centroid_reset_", v, "_", id),
-      #                   label = tags$span(icon("rotate-left"),
-      #                                     title = instructions$centroid_reset_tooltip,
-      #                                     class = "tooltip-icon"))
-      #
       )
   })
 
   reset_all_btn <- fluidRow(
-    column(width = 12, class = "btn-spaced",
+    column(width = 12,
            actionLink(inputId = paste0("centroid_reset_all_", id),
                       label = tagList(icon("rotate-left"),
                                       "Reset all to base centroid")))
@@ -1412,33 +1443,6 @@ observeEvent(input$edit_centroid, {
   centroid_set(FALSE)
 }, ignoreInit = TRUE)
 
-# Per-variable centroid reset observer
-observeEvent({
-  ell <- session_data$current_ellipsoid
-  req(ell)
-  id <- ell$ell_id
-  lapply(ell$var_names, function(v) input[[paste0("centroid_reset_", v, "_", id)]])
-}, {
-  ell <- session_data$current_ellipsoid
-  req(ell)
-  id <- ell$ell_id
-  ell_base <- session_data$ellipsoid_list[["base"]]
-  base_c <- ell_base$centroid
-
-  clicked <- ell$var_names[vapply(ell$var_names, function(v){
-    val <- input[[paste0("centroid_reset_", v, "_", id)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-
-  lapply(clicked, function(v){
-    updateSliderInput(session,
-                      inputId = paste0("centroid_", v, "_", id),
-                      value = round(base_c[v], 4))
-  })
-
-}, ignoreInit = TRUE)
 
 # Reset all centroid observer
 observeEvent({
@@ -1451,12 +1455,11 @@ observeEvent({
   ell <- session_data$current_ellipsoid
   id <- ell$ell_id
   ell_base <- session_data$ellipsoid_list[["base"]]
-  base_c <- setNames(object = ell_base$centroid, nm = ell$var_names)
 
   lapply(ell$var_names, function(v){
     updateSliderInput(session,
                       inputId = paste0("centroid_", v, "_", id),
-                      value = round(base_c[v], 2))
+                      value = round(ell_base$centroid[[v]], 2))
   })
 
 }, ignoreNULL = TRUE, ignoreInit = TRUE)

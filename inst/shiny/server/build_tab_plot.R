@@ -147,8 +147,12 @@ compute_lims <- function(v1, v2, s){
     }
   }
 
-  xlim <- range(pts_xy[, 1], na.rm = TRUE)
-  ylim <- range(pts_xy[, 2], na.rm = TRUE)
+  xlim <- range(pts_xy[, 1], na.rm = TRUE) + c(-sd(pts_xy[, 1], na.rm = TRUE),
+                                               sd(pts_xy[, 1], na.rm = TRUE))
+
+  ylim <- range(pts_xy[, 2], na.rm = TRUE) + c(-sd(pts_xy[, 2], na.rm = TRUE),
+                                               sd(pts_xy[, 2], na.rm = TRUE))
+
   list(xlim = xlim, ylim = ylim, asp = NA)
 }
 
@@ -182,7 +186,7 @@ draw_espace_panel <- function(v1, v2, s){
   if(s$show_suitable_espace && !is.null(bg) && s$has_ell){
     pred_df <- tryCatch(
       predict(s$ell,
-              newdata= bg,
+              newdata = bg,
               include_suitability = TRUE,
               include_mahalanobis = FALSE,
               suitability_truncated = TRUE,
@@ -213,7 +217,9 @@ draw_espace_panel <- function(v1, v2, s){
   if(s$show_ell){
     idx <- match(c(v1, v2), s$ell$var_names)
     add_ellipsoid(s$ell, dim = idx,
-                  col_ell = s$ell_col, lwd = s$ell_lwd, lty = s$ell_lty)
+                  col_ell = s$ell_col,
+                  lwd = s$ell_lwd,
+                  lty = s$ell_lty)
   }
 
   if(s$show_centroid && !is.null(s$ell)){
@@ -803,122 +809,37 @@ output$ellipsoid_info <- renderUI({
   )
 })
 
-output$export_espace_plot <- downloadHandler(
-  filename = function(){
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-    paste0("espace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
-  },
-  content = function(file){
-    vars<- plot_vars()
-    req(vars)
-    s <- collect_plot_settings()
-    req(s)
-    state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-
-    open_device(file, ext)
-
-    switch(state,
-           "plot_pairs" = draw_espace_pairs(vars, s),
-           "plot_2d"= {
-             req(input$plot_2d_x, input$plot_2d_y)
-             par(mar = c(4, 4, 2, 1))
-             draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
-           }
-    )
-
-    dev.off()
-  }
-)
-
-output$export_gspace_plot <- downloadHandler(
-  filename = function(){
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-    paste0("gspace_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
-  },
-  content = function(file){
-    s <- collect_plot_settings()
-    req(s)
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-
-    open_device(file, ext)
-
-    par(mar = c(4, 4, 2, 1))
-    draw_gspace_panel(s)
-    dev.off()
-  }
-)
-
-output$export_combined_plot <- downloadHandler(
-  filename = function(){
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-    paste0("combined_plot_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
-  },
-  content = function(file){
-    req(input$plot_combined_x, input$plot_combined_y)
-    s<- collect_plot_settings()
-    req(s)
-    layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
-    mfrow<- if(layout == "col") c(2, 1) else c(1, 2)
-    ext<- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-
-    open_device(file, ext)
-
-    par(mfrow = mfrow, mar = c(4, 4, 2, 1))
-    draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
-    draw_gspace_panel(s, title = "G-space")
-    dev.off()
-  }
-)
-
 output$export_settings_ui <- renderUI({
+
   active_tab <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
-  ext<- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+  ext        <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
 
   default_h <- switch(active_tab,
-                      "tab_espace" = if(!is.null(input$plot_espace_state) &&
-                                        input$plot_espace_state == "plot_2d") 800 else 1000,
-                      "tab_gspace" = 800,
+                      "tab_espace"   = if(!is.null(input$plot_espace_state) &&
+                                          input$plot_espace_state == "plot_2d") 800 else 1000,
+                      "tab_gspace"   = 800,
                       "tab_combined" = if(!is.null(input$plot_combined_layout) &&
                                           input$plot_combined_layout == "row") 800 else 1400,
                       1000
   )
 
-  is_raster <- ext == "png"
-
-  tagList(
-
+  if(ext == "png"){
     fluidRow(
       column(width = 4,
-             tags$span("File type", class = "text-widget-title"),
-             radioButtons("export_filetype", label = NULL,
-                          choices= c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
-                          selected = "png",
-                          inline = TRUE))
-    ),
-
-    # Pixel dimensions for PNG
-    conditionalPanel(
-      condition = "input.export_filetype == 'png'",
-      fluidRow(
-        column(width = 4,
-               tags$span("Width (px)", class = "text-widget-title"),
-               numericInput("export_width_px", label = NULL,
-                            value = 1400, min = 400, max = 4000, step = 100)),
-        column(width = 4,
-               tags$span("Height (px)", class = "text-widget-title"),
-               numericInput("export_height_px", label = NULL,
-                            value = default_h, min = 400, max = 4000, step = 100)),
-        column(width = 4,
-               tags$span("Resolution (dpi)", class = "text-widget-title"),
-               numericInput("export_res", label = NULL,
-                            value = 150, min = 72, max = 600, step = 50))
-      )
-    ),
-
-    # Inch dimensions for PDF and SVG
-    conditionalPanel(
-      condition = "input.export_filetype == 'pdf' || input.export_filetype == 'svg'",
+             tags$span("Width (px)", class = "text-widget-title"),
+             numericInput("export_width_px", label = NULL,
+                          value = 1400, min = 400, max = 4000, step = 100)),
+      column(width = 4,
+             tags$span("Height (px)", class = "text-widget-title"),
+             numericInput("export_height_px", label = NULL,
+                          value = default_h, min = 400, max = 4000, step = 100)),
+      column(width = 4,
+             tags$span("Resolution (dpi)", class = "text-widget-title"),
+             numericInput("export_res", label = NULL,
+                          value = 150, min = 72, max = 600, step = 50))
+    )
+  } else {
+    tagList(
       fluidRow(
         column(width = 6,
                tags$span("Width (inches)", class = "text-widget-title"),
@@ -930,35 +851,80 @@ output$export_settings_ui <- renderUI({
                             value = round(default_h / 150, 1),
                             min = 1, max = 30, step = 0.5))
       ),
-      fluidRow(
-        column(width = 12,
-               p("PDF and SVG use vector graphics and do not require a resolution setting.",
-                 class = "text-instruction"))
-      )
+      p("PDF and SVG use vector graphics and do not require a resolution setting.",
+        class = "text-instruction")
     )
-  )
+  }
 })
 
 observeEvent(input$open_export_modal, {
   showModal(modalDialog(
-    title= "Export Figure",
-    size = "m",
+    title = "Export Figure",
+    size  = "m",
+    fluidRow(
+      column(width = 12,
+             tags$span("File type", class = "text-widget-title"),
+             radioButtons("export_filetype", label = NULL,
+                          choices  = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
+                          selected = if(!is.null(input$export_filetype)) input$export_filetype else "png",
+                          inline   = TRUE))
+    ),
     uiOutput("export_settings_ui"),
     footer = tagList(
       modalButton("Cancel"),
-      actionButton("confirm_export", "Export", class = "btn-primary")
+      downloadButton("confirm_export", "Export", class = "btn-primary")
     ),
     easyClose = TRUE
   ))
 })
 
-observeEvent(input$confirm_export, {
-  removeModal()
-  active_tab <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
-  btn_id <- switch(active_tab,
-                   "tab_espace" = "export_espace_plot",
-                   "tab_gspace" = "export_gspace_plot",
-                   "tab_combined" = "export_combined_plot",
-                   "export_espace_plot")
-  shinyjs::click(btn_id)
-})
+output$confirm_export <- downloadHandler(
+  filename = function(){
+    ext      <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+    tab      <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
+    prefix   <- switch(tab,
+                       "tab_espace"   = "espace_plot",
+                       "tab_gspace"   = "gspace_plot",
+                       "tab_combined" = "combined_plot",
+                       "espace_plot")
+    paste0(prefix, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
+  },
+  content = function(file){
+    ext    <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+    tab    <- if(!is.null(input$plot_tabs)) input$plot_tabs else "tab_espace"
+    s      <- collect_plot_settings()
+    req(s)
+
+    open_device(file, ext)
+
+    switch(tab,
+           "tab_espace" = {
+             vars  <- plot_vars()
+             req(vars)
+             state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
+             switch(state,
+                    "plot_pairs" = draw_espace_pairs(vars, s),
+                    "plot_2d"    = {
+                      req(input$plot_2d_x, input$plot_2d_y)
+                      par(mar = c(4, 4, 2, 1))
+                      draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
+                    }
+             )
+           },
+           "tab_gspace" = {
+             par(mar = c(4, 4, 2, 1))
+             draw_gspace_panel(s)
+           },
+           "tab_combined" = {
+             req(input$plot_combined_x, input$plot_combined_y)
+             layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+             mfrow  <- if(layout == "col") c(2, 1) else c(1, 2)
+             par(mfrow = mfrow, mar = c(4, 4, 2, 1))
+             draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
+             draw_gspace_panel(s, title = "G-space")
+           }
+    )
+
+    dev.off()
+  }
+)
