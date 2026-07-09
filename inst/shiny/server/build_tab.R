@@ -962,6 +962,25 @@ cov_counters <- reactiveVal(list())
 output$covariance_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  # Base is view-only
+  if(identical(ell$ell_name, "base")){
+    return(
+      box(title = tags$span("Covariance", class = "text-section-header"),
+          width       = 12,
+          collapsible = TRUE,
+          collapsed   = FALSE,
+          p("The base ellipsoid is view-only and cannot be edited.",
+            class = "text-instruction"),
+          p("Use the", icon("circle-plus"), "button next to base in the
+             ellipsoid library to create an editable copy.",
+            class = "text-instruction")
+      )
+    )
+  }
+
   if(isTRUE(covariance_set())){
     return(
       box(title = tags$span("Covariance", class = "text-section-header"),
@@ -1228,6 +1247,25 @@ centroid_preview <- reactive({
 output$centroid_mover_ui <- renderUI({
 
   req(length(session_data$ellipsoid_list) > 0, isTRUE(covariance_set()))
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  # Base is view-only
+  if(identical(ell$ell_name, "base")){
+    return(
+      box(title = tags$div("Centroid Mover", class = "text-section-header"),
+          width       = 12,
+          collapsible = TRUE,
+          collapsed   = FALSE,
+          p("The base ellipsoid is view-only and cannot be edited.",
+            class = "text-instruction"),
+          p("Use the", icon("circle-plus"), "button next to base in the
+             ellipsoid library to create an editable copy.",
+            class = "text-instruction")
+      )
+    )
+  }
 
   if(isTRUE(centroid_set())){
 
