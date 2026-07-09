@@ -468,8 +468,16 @@ output$plot_settings_ui <- renderUI({
                           min = 0.1, max = 5, step = 0.1)),
       column(width = 4,
              tags$span("Background point color", class = "text-widget-title"),
-             colourpicker::colourInput("plot_bg_col", label = NULL,
-                                       value = "#B3B3B3"))
+             tags$div(
+               style = "display: flex; align-items: center; gap: 8px;",
+               tags$input(type = "color",
+                          value = "#B3B3B3",
+                          oninput = "Shiny.setInputValue('plot_bg_col', this.value)",
+                          style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+             )
+      )
     ),
 
     # Range lines
@@ -480,12 +488,26 @@ output$plot_settings_ui <- renderUI({
                checkboxInput("show_range_lines", "Show range lines", value = TRUE)),
         column(width = 3,
                tags$span("X-line color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_xline_col", label = NULL,
-                                         value = "#E10000")),
+               tags$div(style = "display: flex; align-items: center; gap: 8px;",
+                        tags$input(type = "color",
+                                   value = "#E10000",
+                                   oninput = "Shiny.setInputValue('plot_xline_col', this.value)",
+                                   style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;"))
+        ),
         column(width = 3,
                tags$span("Y-line color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_yline_col", label = NULL,
-                                         value = "#0004D5")),
+               tags$div(
+                 style = "display: flex; align-items: center; gap: 8px;",
+                 tags$input(type = "color",
+                            value = "#0004D5",
+                            oninput = "Shiny.setInputValue('plot_yline_col', this.value)",
+                            style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+               )
+        ),
         column(width = 3,
                tags$span("Line width", class = "text-widget-title"),
                numericInput("plot_line_lwd", label = NULL, value = 2,
@@ -500,8 +522,16 @@ output$plot_settings_ui <- renderUI({
                checkboxInput("show_ellipsoid", "Show ellipsoid", value = TRUE)),
         column(width = 3,
                tags$span("Ellipsoid color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_ell_col", label = NULL,
-                                         value = "#000000")),
+               tags$div(
+                 style = "display: flex; align-items: center; gap: 8px;",
+                 tags$input(type = "color",
+                            value = "#000000",
+                            oninput = "Shiny.setInputValue('plot_ell_col', this.value)",
+                            style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+               )
+        ),
         column(width = 3,
                tags$span("Ellipsoid line width", class = "text-widget-title"),
                numericInput("plot_ell_lwd", label = NULL, value = 2,
@@ -528,8 +558,16 @@ output$plot_settings_ui <- renderUI({
                            selected = "8")),
         column(width = 3,
                tags$span("Centroid color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_centroid_col", label = NULL,
-                                         value = "#000000")),
+               tags$div(
+                 style = "display: flex; align-items: center; gap: 8px;",
+                 tags$input(type = "color",
+                            value = "#000000",
+                            oninput = "Shiny.setInputValue('plot_centroid_col', this.value)",
+                            style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+               )
+        ),
         column(width = 3,
                tags$span("Centroid size (cex)", class = "text-widget-title"),
                numericInput("plot_centroid_cex", label = NULL, value = 1.5,
@@ -545,12 +583,29 @@ output$plot_settings_ui <- renderUI({
                              "Show suitable area (G-space)", value = TRUE)),
         column(width = 3,
                tags$span("Suitable area color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_suitable_col", label = NULL,
-                                         value = "#097a21")),
+               tags$div(
+                 style = "display: flex; align-items: center; gap: 8px;",
+                 tags$input(type = "color",
+                            value = "#097a21",
+                            oninput = "Shiny.setInputValue('plot_suitable_col', this.value)",
+                            style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+               )
+
+        ),
         column(width = 3,
                tags$span("Unsuitable area color", class = "text-widget-title"),
-               colourpicker::colourInput("plot_unsuitable_col", label = NULL,
-                                         value = "#D3D3D3"))
+               tags$div(
+                 style = "display: flex; align-items: center; gap: 8px;",
+                 tags$input(type = "color",
+                            value = "#D3D3D3",
+                            oninput = "Shiny.setInputValue('plot_unsuitable_col', this.value)",
+                            style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+               )
+        )
       ),
 
       fluidRow(
@@ -575,8 +630,16 @@ output$plot_settings_ui <- renderUI({
     if(has_raster) fluidRow(
       column(width = 4,
              tags$span("Map background color", class = "text-widget-title"),
-             colourpicker::colourInput("plot_map_bg_col", label = NULL,
-                                       value = "#F0F0F0"))
+             tags$div(
+               style = "display: flex; align-items: center; gap: 8px;",
+               tags$input(type = "color",
+                          value = "#F0F0F0",
+                          oninput = "Shiny.setInputValue('plot_map_bg_col', this.value)",
+                          style = "width: 40px; height: 32px; padding: 2px;
+                        border: 1px solid #ccc; border-radius: 4px;
+                        cursor: pointer;")
+             )
+      )
     ),
 
     # Zoom

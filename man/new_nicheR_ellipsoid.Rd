@@ -5,6 +5,7 @@
 \title{nicheR_ellipsoid Class Constructor}
 \usage{
 new_nicheR_ellipsoid(
+  ranges,
   dimensions,
   var_names,
   centroid,
@@ -17,7 +18,8 @@ new_nicheR_ellipsoid(
   semi_axes_lengths,
   axes_coordinates,
   volume,
-  cov_limits
+  cov_limits,
+  cov_limits_remaining
 )
 }
 \arguments{

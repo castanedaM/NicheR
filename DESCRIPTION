@@ -52,8 +52,7 @@ Imports:
     terra, 
     shiny, 
     shinydashboard, 
-    shinyjs, 
-    colourpicker
+    shinyjs
 Suggests: 
     rgl (>= 1.3),
     knitr,

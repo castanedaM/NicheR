@@ -20,7 +20,8 @@ A list containing \code{up_mat} (updated matrix) and \code{limits}
 }
 \description{
 Updates a variance-covariance matrix with specific values and identifies
-the safe limits for all remaining zero-covariance combinations.
+the safe, globally constrained limits for all remaining zero-covariance
+combinations using simultaneous shrinkage.
 }
 \examples{
 # Setup
@@ -34,5 +35,6 @@ update_covariance(v_mat_3d[1:2, 1:2], covariance = c("temp-precip" = 3))
 update_covariance(v_mat_3d, covariance = 2.0)
 
 # 3. 3D Partial: Define two, find limits for the remaining precip-hum
-update_covariance(v_mat_3d, covariance = c("temp-precip" = -4, "temp-hum" = 5))
+update_covariance(v_mat_3d,
+                  covariance = c("temp-precip" = -4, "temp-hum" = 5))
 }
