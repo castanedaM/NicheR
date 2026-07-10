@@ -308,10 +308,11 @@ dashboardPage(
           box(title = tags$span("Predict Suitable Area", class = "text-tab-title"),
               width = 5,
 
-              uiOutput("ell_version_predict"),
+              uiOutput("pred_ell_select"),
 
               fluidRow(
-                column(width = 8, tags$span("Prediction Layers to Include", class = "text-widget-title"))
+                column(width = 8,
+                       tags$span("Prediction Layers to Include", class = "text-widget-title"))
               ),
               fluidRow(
                 column(width = 6,
@@ -343,10 +344,28 @@ dashboardPage(
                            class = "btn-default")
           ),
           tabBox(
+            id    = "pred_tabs",
             width = 7,
-            tabPanel("E-space"),
-            tabPanel("G-space"),
-            tabPanel("Combined")
+
+            tabPanel(
+              title = tags$span("E-space", class = "text-tab-title"),
+              value = "pred_espace",
+              uiOutput("pred_espace_options_ui"),
+              plotOutput("pred_espace_plot", height = "500px")
+            ),
+
+            tabPanel(
+              title = tags$span("G-space", class = "text-tab-title"),
+              value = "pred_gspace",
+              plotOutput("pred_gspace_plot", height = "450px")
+            ),
+
+            tabPanel(
+              title = tags$span("Combined", class = "text-tab-title"),
+              value = "pred_combined",
+              uiOutput("pred_combined_options_ui"),
+              plotOutput("pred_combined_plot", height = "750px")
+            )
           )
         )
       ),

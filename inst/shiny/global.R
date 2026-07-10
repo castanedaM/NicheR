@@ -1,3 +1,6 @@
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
 devtools::load_all() #delete at the end
 
 # Maximum dimensions the app uses
