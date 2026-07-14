@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/13/2026
+# Lats Updated: 07/14/2026
 
 dashboardPage(
   dashboardHeader(

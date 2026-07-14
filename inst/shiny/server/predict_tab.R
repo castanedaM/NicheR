@@ -5,7 +5,6 @@
 
 # Date Last Updated: 7/14/26
 
-
 # Outputs -----------------------------------------------------------------
 
 output$pred_ell_select <- renderUI({

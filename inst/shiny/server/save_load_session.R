@@ -32,16 +32,21 @@ observeEvent(input$load_session, {
     )
   }
 
+  if(length(session_data$ellipsoid_prediction_list) > 0){
+    session_data$ellipsoid_prediction_list <- lapply(
+      session_data$ellipsoid_prediction_list,
+      function(p){
+        if(inherits(p, "PackedSpatRaster")) terra::unwrap(p) else p
+      }
+    )
+  }
+
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
   }
 
   if(!is.null(session_data$ellipsoid_list[["base"]])){
-    raw <- session_data$ellipsoid_list[["base"]]
-    working_ell <- tag_ellipsoid(raw,
-                                 name = paste0("ellipsoid_",
-                                               ell_id_counter() + 1L))
-    session_data$current_ellipsoid <- working_ell
+    session_data$current_ellipsoid <- session_data$ellipsoid_list[["base"]]
   }
 
   # Align vars after working copy is set, using the correct object
@@ -49,15 +54,9 @@ observeEvent(input$load_session, {
     session_data$vars <- session_data$current_ellipsoid$var_names
   }
 
-  ell_id_counter(length(session_data$ellipsoid_list))
-
-  covariance_set(FALSE)
-  cov_counters(list())
-  centroid_set(FALSE)
-
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
-  if(!is.null(session_data$ellipsoid_prediction_list)){
+  if(length(session_data$ellipsoid_prediction_list) > 0){
     updateTabItems(session, "sidebarMenu", selected = "predict_tab")
   } else {
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
@@ -78,6 +77,16 @@ output$save_session_btn <- downloadHandler(
     if(!is.null(session_list$bg_raster)){
       session_list$bg_raster <- terra::wrap(session_list$bg_raster)
     }
+
+    pred_list <- session_data$ellipsoid_prediction_list
+
+    if(length(pred_list) > 0){
+      pred_list <- lapply(pred_list, function(p){
+        if(inherits(p, "SpatRaster")) terra::wrap(p) else p
+      })
+    }
+
+    session_list$ellipsoid_prediction_list <- pred_list
 
     tryCatch({
       saveRDS(session_list, file)
