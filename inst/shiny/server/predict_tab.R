@@ -5,7 +5,6 @@
 
 # Date Last Updated: 7/14/26
 
-# Outputs -----------------------------------------------------------------
 
 output$pred_ell_select <- renderUI({
 
@@ -53,10 +52,16 @@ observeEvent(input$ell_predict, {
   trunc_val <- input$adjust_trunc
   use_trunc <- !is.null(trunc_val) && is.finite(trunc_val) && trunc_val != versions$base$cl
 
+  message("include_suitability: ",   isTRUE(input$pred_include_suitability))
+  message("suitability_trunc: ",     isTRUE(input$pred_suitability_trunc))
+  message("include_mahalanobis: ",   isTRUE(input$pred_include_mahalanobis))
+  message("mahalanobis_trunc: ",     isTRUE(input$pred_mahalanobis_trunc))
+
+
   if(is_all){
 
     result <- setNames(lapply(versions, function(ell){
-      tryCatch(
+      pred <- tryCatch(
         predict(ell,
                 newdata = newdata,
                 adjust_truncation_level = if(use_trunc) trunc_val else NULL,
@@ -71,6 +76,10 @@ observeEvent(input$ell_predict, {
           return(NULL)
         }
       )
+
+      if(is.null(pred)) return(NULL)
+      else do.call(c, pred)
+
     }), names(versions))
 
     req(result)
@@ -101,11 +110,46 @@ observeEvent(input$ell_predict, {
     )
 
     req(result)
+    do.call(c, result)
 
     session_data$ellipsoid_prediction_list[[id]] <- result
     showNotification(paste0(ell$ell_name, ": prediction completed."),
                      type = "message", duration = 4)
   }
+
+  # Temporary debug print after predictions are stored
+  message("=== ellipsoid_prediction_list structure ===")
+  pred_list <- session_data$ellipsoid_prediction_list
+
+  message(print(pred_list))
+
+  message("Number of entries: ", length(pred_list))
+  message("Names: ", paste(names(pred_list), collapse = ", "))
+
+  lapply(names(pred_list), function(nm){
+    p <- pred_list[[nm]]
+    message("--- Entry: ", nm, " ---")
+    message("  class: ", paste(class(p), collapse = ", "))
+    if(inherits(p, "SpatRaster")){
+      message("  nlyr: ",  terra::nlyr(p))
+      message("  names: ", paste(names(p), collapse = ", "))
+      message("  nrow x ncol: ", terra::nrow(p), " x ", terra::ncol(p))
+      message("  crs: ", terra::crs(p, describe = TRUE)$code)
+    } else if(is.data.frame(p)){
+      message("  nrow: ", nrow(p))
+      message("  ncol: ", ncol(p))
+      message("  colnames: ", paste(colnames(p), collapse = ", "))
+      message("  head suitability: ",
+              if("suitability" %in% colnames(p))
+                paste(round(head(p$suitability, 3), 4), collapse = ", ")
+              else "not present")
+    } else {
+      message("  unexpected class: ", class(p))
+    }
+  })
+
+  message("===========================================")
+
 })
 
 
