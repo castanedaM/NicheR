@@ -147,11 +147,9 @@ compute_lims <- function(v1, v2, s){
     }
   }
 
-  xlim <- range(pts_xy[, 1], na.rm = TRUE) + c(-sd(pts_xy[, 1], na.rm = TRUE),
-                                               sd(pts_xy[, 1], na.rm = TRUE))
+  xlim <- range(pts_xy[, 1], na.rm = TRUE)
 
-  ylim <- range(pts_xy[, 2], na.rm = TRUE) + c(-sd(pts_xy[, 2], na.rm = TRUE),
-                                               sd(pts_xy[, 2], na.rm = TRUE))
+  ylim <- range(pts_xy[, 2], na.rm = TRUE)
 
   list(xlim = xlim, ylim = ylim, asp = NA)
 }
@@ -551,7 +549,7 @@ output$plot_settings_ui <- renderUI({
         column(width = 3,
                tags$span("Centroid shape (pch)", class = "text-widget-title"),
                selectInput("plot_centroid_pch", label = NULL,
-                           choices= c("Cross (X)"= "4",
+                           choices = c("Cross (X)"= "4",
                                       "Star" = "8",
                                       "Filled diamond" = "18",
                                       "Filled circle"= "16"),

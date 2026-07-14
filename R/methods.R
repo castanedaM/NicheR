@@ -255,7 +255,7 @@ predict.nicheR_ellipsoid <- function(object,
   # Subset and reorder ------------------------------------------------------
 
   if(inherits(newdata, "SpatRaster")){
-    newdata <- newdata[[var_names]]
+    newdata <- terra::subset(newdata, var_names)
   }else{
     newdata <- newdata[, c(spatial_cols, var_names), drop = FALSE]
   }
@@ -277,6 +277,7 @@ predict.nicheR_ellipsoid <- function(object,
       d <- v - mu
       as.numeric(t(d) %*% Sigma_inv %*% d)
     })
+
     names(D2) <- "Mahalanobis"
 
     out_rast <- list()
@@ -303,10 +304,11 @@ predict.nicheR_ellipsoid <- function(object,
       out_rast$suitability_trunc <- St
     }
 
+
     out_rast <- if(isTRUE(keep_data)){
-      c(newdata, terra::rast(out_rast))
-    }else{
-      terra::rast(out_rast)
+      c(newdata, do.call(c, out_rast))
+    } else {
+      do.call(c, out_rast)
     }
 
     verbose_message(verbose,

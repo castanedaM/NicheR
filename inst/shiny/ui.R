@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/06/2026
+# Lats Updated: 07/13/2026
 
 dashboardPage(
   dashboardHeader(
@@ -305,67 +305,111 @@ dashboardPage(
       tabItem(
         tabName = "predict_tab",
         fluidRow(
-          box(title = tags$span("Predict Suitable Area", class = "text-tab-title"),
-              width = 5,
+          column(width = 5,
+                 box(width = 12,
+                     title = tags$span("Predict Suitable Area",
+                                       class = "text-tab-title"),
+                     uiOutput("pred_ell_select"),
 
-              uiOutput("pred_ell_select"),
+                     fluidRow(
+                       column(width = 8,
+                              tags$span("Prediction Layers to Include",
+                                        class = "text-widget-title"))
+                     ),
 
-              fluidRow(
-                column(width = 8,
-                       tags$span("Prediction Layers to Include", class = "text-widget-title"))
-              ),
-              fluidRow(
-                column(width = 6,
-                       checkboxInput("pred_suitability",
-                                     label = tags$span("Suitability", class = "text-widget-inner"),
-                                     value = TRUE)),
-                column(width = 6,
-                       checkboxInput("pred_suitability_trunc",
-                                     label = tags$span("Suitability (truncated)", class = "text-widget-inner"),
-                                     value = FALSE))
-              ),
-              fluidRow(
-                column(width = 6,
-                       checkboxInput("pred_mahalanobis",
-                                     label = tags$span("Mahalanobis", class = "text-widget-inner"),
-                                     value = TRUE)),
-                column(width = 6,
-                       checkboxInput("pred_mahalanobis_trunc",
-                                     label = tags$span("Mahalanobis (truncated)", class = "text-widget-inner"),
-                                     value = FALSE))
-              ),
-              br(),
-              fluidRow(
-                uiOutput("advanced_settings_predict")
-              ),
+                     fluidRow(
+                       column(width = 6,
+                              checkboxInput("pred_suitability",
+                                            label = tags$span("Suitability",
+                                                              class = "text-widget-inner"),
+                                            value = TRUE)),
+                       column(width = 6,
+                              checkboxInput("pred_suitability_trunc",
+                                            label = tags$span("Suitability (truncated)",
+                                                              class = "text-widget-inner"),
+                                            value = FALSE))
+                     ),
 
-              actionButton(inputId = "ell_predict",
-                           label = tags$span("Predict", class = "text-widget-title"),
-                           class = "btn-default")
+                     fluidRow(
+                       column(width = 6,
+                              checkboxInput("pred_mahalanobis",
+                                            label = tags$span("Mahalanobis",
+                                                              class = "text-widget-inner"),
+                                            value = TRUE)),
+                       column(width = 6,
+                              checkboxInput("pred_mahalanobis_trunc",
+                                            label = tags$span("Mahalanobis (truncated)", class = "text-widget-inner"),
+                                            value = FALSE))
+
+                     ),
+
+                     br(),
+
+                     fluidRow(
+                       box(title = tags$span("Advanced Prediciton Settings",
+                                             class = "text-tab-title"),
+                           width = 12,
+                           collapsible = TRUE,
+                           collapsed = TRUE,
+                           fluidRow(
+                             column(width = 8,
+                                    tagList(tags$span("Truncation Level Adjustment",
+                                                      class = "text-widget-title"),
+                                            tags$span(icon("circle-info"),
+                                                      title = "Adjust the level of truncation within the current elliposid, this will this will truncate prediction inwards",
+                                                      class = "tooltip-icon"))),
+                             column(width = 4,
+                                    numericInput(inputId = "adjust_trunc",
+                                                 label = NULL,
+                                                 value = 0.95,
+                                                 min = 0.0001, max = 0.99999, step = 0.05)
+                             )
+                           )
+                       )
+                     ),
+
+                     fluidRow(
+                       column(width = 12,
+                              actionButton(inputId = "ell_predict",
+                                           label = tags$span("Predict",
+                                                             class = "text-widget-title"),
+                                           class = "btn-default")
+                       )
+                     ),
+
+                     br(),  br(),
+
+                     fluidRow(
+                       uiOutput("ellipsoid_library_pred")
+                     )
+                 )
           ),
-          tabBox(
-            id    = "pred_tabs",
-            width = 7,
 
-            tabPanel(
-              title = tags$span("E-space", class = "text-tab-title"),
-              value = "pred_espace",
-              uiOutput("pred_espace_options_ui"),
-              plotOutput("pred_espace_plot", height = "500px")
-            ),
+          column(width = 7,
+                 tabBox(
+                   id = "pred_plot_tabs",
+                   width = 12,
 
-            tabPanel(
-              title = tags$span("G-space", class = "text-tab-title"),
-              value = "pred_gspace",
-              plotOutput("pred_gspace_plot", height = "450px")
-            ),
+                   tabPanel(
+                     title = tags$span("E-space", class = "text-tab-title"),
+                     value = "pred_espace",
+                     uiOutput("pred_espace_options_ui"),
+                     plotOutput("pred_espace_plot", height = "500px")
+                   ),
 
-            tabPanel(
-              title = tags$span("Combined", class = "text-tab-title"),
-              value = "pred_combined",
-              uiOutput("pred_combined_options_ui"),
-              plotOutput("pred_combined_plot", height = "750px")
-            )
+                   tabPanel(
+                     title = tags$span("G-space", class = "text-tab-title"),
+                     value = "pred_gspace",
+                     plotOutput("pred_gspace_plot", height = "450px")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Combined", class = "text-tab-title"),
+                     value = "pred_combined",
+                     uiOutput("pred_combined_options_ui"),
+                     plotOutput("pred_combined_plot", height = "750px")
+                   )
+                 )
           )
         )
       ),

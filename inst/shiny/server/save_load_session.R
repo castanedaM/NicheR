@@ -1,6 +1,6 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 07/06/2026
+# Date last updated: 07/14/2026
 
 
 # Load previous session
@@ -32,12 +32,9 @@ observeEvent(input$load_session, {
     )
   }
 
-
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
   }
-
-
 
   if(!is.null(session_data$ellipsoid_list[["base"]])){
     raw <- session_data$ellipsoid_list[["base"]]
@@ -50,20 +47,22 @@ observeEvent(input$load_session, {
   # Align vars after working copy is set, using the correct object
   if(!is.null(session_data$current_ellipsoid)){
     session_data$vars <- session_data$current_ellipsoid$var_names
-    message("vars aligned to: ", paste(session_data$vars, collapse = ", "))
   }
-
 
   ell_id_counter(length(session_data$ellipsoid_list))
 
   covariance_set(FALSE)
   cov_counters(list())
-
   centroid_set(FALSE)
 
-
   showNotification("Session loaded successfully.", type = "message", duration = 4)
-  updateTabsetPanel(session, "tabpanel-build", selected = "range")
+
+  if(!is.null(session_data$ellipsoid_prediction_list)){
+    updateTabItems(session, "sidebarMenu", selected = "predict_tab")
+  } else {
+    updateTabsetPanel(session, "tabpanel-build", selected = "range")
+  }
+
 })
 
 output$save_session_btn <- downloadHandler(
