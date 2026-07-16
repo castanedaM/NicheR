@@ -1,11 +1,10 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 07/14/2026
+# Date last updated: 07/16/2026
 
 
 # Load previous session
 observeEvent(input$load_session, {
-
   req(input$session_file)
   req(is.data.frame(input$session_file))
   req(file.exists(input$session_file$datapath))
@@ -32,13 +31,15 @@ observeEvent(input$load_session, {
     )
   }
 
-  if(length(session_data$ellipsoid_prediction_list) > 0){
-    session_data$ellipsoid_prediction_list <- lapply(
-      session_data$ellipsoid_prediction_list,
-      function(p){
-        if(inherits(p, "PackedSpatRaster")) terra::unwrap(p) else p
-      }
+  # Unwrap predictions BEFORE restore loop, on session_list not session_data
+  if(length(session_list$ellipsoid_prediction_list) > 0){
+    session_list$ellipsoid_prediction_list <- lapply(
+      session_list$ellipsoid_prediction_list,
+      function(p) tryCatch(terra::unwrap(p), error = function(e) p)
     )
+    message("after unwrap: ",
+            paste(sapply(session_list$ellipsoid_prediction_list,
+                         function(p) class(p)[1]), collapse = ", "))
   }
 
   for(nm in names(session_list)){
@@ -49,7 +50,6 @@ observeEvent(input$load_session, {
     session_data$current_ellipsoid <- session_data$ellipsoid_list[["base"]]
   }
 
-  # Align vars after working copy is set, using the correct object
   if(!is.null(session_data$current_ellipsoid)){
     session_data$vars <- session_data$current_ellipsoid$var_names
   }
@@ -57,13 +57,11 @@ observeEvent(input$load_session, {
   showNotification("Session loaded successfully.", type = "message", duration = 4)
 
   if(length(session_data$ellipsoid_prediction_list) > 0){
-    updateTabItems(session, "sidebarMenu", selected = "predict_tab")
+    updateTabItems(session, "sidebarMenu", selected = "bias_tab")
   } else {
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
-
 })
-
 output$save_session_btn <- downloadHandler(
   filename = function(){
     paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")

@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/09/2026
+# Date last updated: 07/17/2026
 
 # Functions -----------------------------------------------------------------
 

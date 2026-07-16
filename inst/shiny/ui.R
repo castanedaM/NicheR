@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/14/2026
+# Lats Updated: 07/17/2026
 
 dashboardPage(
   dashboardHeader(
@@ -386,30 +386,35 @@ dashboardPage(
           ),
 
           column(width = 7,
+
                  tabBox(
-                   id = "pred_plot_tabs",
+                   id    = "pred_tabs",
                    width = 12,
 
                    tabPanel(
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "pred_espace",
                      uiOutput("pred_espace_options_ui"),
-                     plotOutput("pred_espace_plot", height = "500px")
+                     plotOutput("pred_espace_plot")
                    ),
 
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "pred_gspace",
-                     plotOutput("pred_gspace_plot", height = "450px")
+                     plotOutput("pred_gspace_plot")
                    ),
 
                    tabPanel(
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "pred_combined",
                      uiOutput("pred_combined_options_ui"),
-                     plotOutput("pred_combined_plot", height = "750px")
+                     plotOutput("pred_combined_plot")
                    )
-                 )
+                 ),
+
+                 br(),
+
+                 uiOutput("pred_plot_settings_ui")
           )
         )
       ),

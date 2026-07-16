@@ -1,6 +1,6 @@
 # Title: Server for shiny nicheR
 # Description: The server of the app
-# Lats Updated: 7/9 /2026
+# Lats Updated: 7/16/2026
 
 
 function(input, output, session){
@@ -31,6 +31,7 @@ function(input, output, session){
   source("server/build_tab_plot.R", local = TRUE)
   source("server/build_tab.R", local = TRUE)
   source("server/predict_tab.R", local = TRUE)
+  source("server/predict_tab_plot.R", local = TRUE)
   source("server/bias_tab.R", local = TRUE)
   source("server/generate_tab.R", local = TRUE)
 }
