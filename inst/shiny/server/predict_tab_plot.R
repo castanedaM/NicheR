@@ -14,10 +14,7 @@ pred_viz_ell <- function(){
 pred_viz_result <- function(){
   ell <- session_data$current_ellipsoid
   if(is.null(ell) || is.null(ell$ell_id)) return(NULL)
-  message("pred_viz_result looking up id: ", ell$ell_id)
-  message("prediction list keys: ", paste(names(session_data$ellipsoid_prediction_list), collapse = ", "))
-  result <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
-  message("result class: ", class(result))
+
   result
 }
 
