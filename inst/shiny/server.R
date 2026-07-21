@@ -22,7 +22,10 @@ function(input, output, session){
 
     ellipsoid_prediction_list = list(),
 
-    bias = NULL
+    bias_raster = NULL,
+    prepared_bias = NULL,
+    ellipsoid_prediction_list_biased = list()
+
   )
 
   source("server/helpers.R", local = TRUE)

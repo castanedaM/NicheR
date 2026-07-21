@@ -2,7 +2,7 @@
 # Description: E-space, G-space, and Combined prediction plots.
 # get_input(), update_axis_selectors(), compute_lims(),
 # open_device() are defined in build_tab_plot.R which loads first.
-# Date Last Updated: 07/17/2026
+# Date Last Updated: 07/20/2026
 
 
 # Helpers -------------------------------------------------------------------
@@ -14,7 +14,7 @@ pred_viz_ell <- function(){
 pred_viz_result <- function(){
   ell <- session_data$current_ellipsoid
   if(is.null(ell) || is.null(ell$ell_id)) return(NULL)
-
+  result <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
   result
 }
 

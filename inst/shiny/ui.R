@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/17/2026
+# Lats Updated: 07/21/2026
 
 dashboardPage(
   dashboardHeader(
@@ -204,7 +204,7 @@ dashboardPage(
                  actionButton(inputId = "start_session",
                               icon = icon("play"),
                               label = "START", class = "btn-warning", width = "150px")
-                 ),
+          ),
           column(width = 5)
         ),
 
@@ -268,7 +268,7 @@ dashboardPage(
 
           column(width = 7,
                  tabBox(
-                   id = "plot_tabs",
+                   id = "plot_build",
                    width = 12,
 
                    tabPanel(
@@ -299,15 +299,15 @@ dashboardPage(
                  uiOutput("ellipsoid_info"),
                  uiOutput("plot_settings_ui")
 
-                 )
           )
+        )
       ),
       tabItem(
         tabName = "predict_tab",
         fluidRow(
           column(width = 5,
                  box(width = 12,
-                     title = tags$span("Predict Suitable Area",
+                     title = tags$span("Predictions",
                                        class = "text-tab-title"),
                      uiOutput("pred_ell_select"),
 
@@ -388,7 +388,7 @@ dashboardPage(
           column(width = 7,
 
                  tabBox(
-                   id    = "pred_tabs",
+                   id    = "plot_pred",
                    width = 12,
 
                    tabPanel(
@@ -423,28 +423,59 @@ dashboardPage(
         tabName = "bias_tab",
         fluidRow(
           column(width = 5,
-                 box(title = tagList(tags$span("Optional Bias Raster",
+                 box(title = tagList(tags$span("3. Bias",
                                                class = "text-tab-title"),
                                      tags$span(icon("circle-info"),
-                                               title = "Optional bias layers, intended to represent sampling bias.\nAccepted: .tif, .rds",
+                                               title = "Optional bias, intended to represent sampling bias.\nNeeds a raster file and accepts: .tif, .rds",
                                                class = "tooltip-icon")),
-                     width = 9,
-                     collapsible = TRUE,
-                     collapsed = TRUE,
-                     fileInput(inputId = "bias_raster_file",
-                               label = tags$span("Sampling Bias Layer/s (Raster)", class = "text-widget-title"),
-                               multiple = FALSE,
-                               accept = c("tif", "tiff", "rds"))
+                     width = 12,
+
+                     fluidRow(
+                       column(width = 12,
+                              actionButton(inputId = "skip_bias",
+                                           label = "Skip bias",
+                                           icon = icon("forward-step")),
+
+                              actionButton(inputId = "continue_bias",
+                                           label = "Continue with bias",
+                                           icon = icon("arrow-right"))
+                       )
+                     ),
+
+                     br(), br(),
+
+                     uiOutput("upload_bias_ui"),
+                     uiOutput("prepare_bias_ui"),
+                     uiOutput("apply_bias_ui")
+
                  )
           ),
 
           column(width = 7,
-                 verbatimTextOutput("bias_raster_print")
-          ),
-          tabBox(
-            width = 7,
-            tabPanel("E-space"),
-            tabPanel("G-space"),
+
+                 tabPanel(
+                   title = tags$span("E-space", class = "text-tab-title"),
+                   value = "bias_espace",
+                   uiOutput("bias_espace_options_ui"),
+                   plotOutput("bias_espace_plot")
+                 ),
+
+                 tabPanel(
+                   title = tags$span("G-space", class = "text-tab-title"),
+                   value = "bias_gspace",
+                   plotOutput("bias_gspace_plot")
+                 ),
+
+                 tabPanel(
+                   title = tags$span("Combined", class = "text-tab-title"),
+                   value = "bias_combined",
+                   uiOutput("bias_combined_options_ui"),
+                   plotOutput("bias_combined_plot")
+                 ),
+
+                 br(),
+
+                 uiOutput("bias_plot_settings_ui")
           )
         )
       ),
@@ -453,13 +484,44 @@ dashboardPage(
       tabItem(
         tabName = "generate_tab",
         fluidRow(
-          box(title = "Generate Occurrence", width = 6,
-              solidHeader = TRUE, status = "primary",
-              "Generate occurrence function details"),
-          tabBox(
-            width = 6,
-            tabPanel("E-space"),
-            tabPanel("G-space"),
+          column(width = 5,
+
+                 box(width = 12,
+                     title = tags$span("Generate Occurences",
+                                       class = "text-tab-title"),
+                     uiOutput("generate_ell_select")
+                 )
+          ),
+          column(width = 7,
+
+                 tabBox(
+                   id    = "plot_gen",
+                   width = 12,
+
+                   tabPanel(
+                     title = tags$span("E-space", class = "text-tab-title"),
+                     value = "gen_espace",
+                     uiOutput("gen_espace_options_ui"),
+                     plotOutput("gen_espace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("G-space", class = "text-tab-title"),
+                     value = "gen_gspace",
+                     plotOutput("gen_gspace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Combined", class = "text-tab-title"),
+                     value = "gen_combined",
+                     uiOutput("gen_combined_options_ui"),
+                     plotOutput("gen_combined_plot")
+                   )
+                 ),
+
+                 br(),
+
+                 uiOutput("gen_plot_settings_ui")
           )
         )
       )

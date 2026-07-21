@@ -1,11 +1,518 @@
+# Title: Bias Tab server
+# Description: Server for the bias tab
+# Date Last Updated: 7/21/26
+
+continue_bias <- reactiveVal(FALSE)
+
+observeEvent(input$skip_bias, {
+  updateTabItems(session, "sidebarMenu", selected = "generate_tab")
+})
+
+observeEvent(input$continue_bias, {
+  continue_bias(TRUE)
+  updateTabItems(session, "sidebarMenu", selected = "bias_tab")
+})
+
+observeEvent(input$bias_upload, {
+
+  req(input$bias_raster_file)
+
+  ext <- tolower(tools::file_ext(input$bias_raster_file$name))
+  rast <- tryCatch(
+    load_raster_file(input$bias_raster_file$datapath, ext),
+    error = function(e){
+      showNotification(paste("Could not load bias raster:", e$message),
+                       type = "error", duration = 4)
+      NULL
+    }
+  )
+
+  req(rast)
+  session_data$bias_raster <- rast
+  session_data$prepared_bias <- NULL
+
+  showNotification("Bias raster loaded successfully.", type = "message", duration = 4)
+})
+
+observeEvent(input$continue_bias_example, {
+  rast <- tryCatch(
+    terra::rast(system.file("extdata", "ma_biases.tif", package = "nicheR")),
+    error = function(e){
+      showNotification(paste("Could not load example bias:", e$message),
+                       type = "error", duration = 4)
+      NULL
+    }
+  )
+  req(rast)
+  session_data$bias_raster <- rast
+  session_data$prepared_bias <- NULL
+  showNotification("Example bias raster loaded.", type = "message", duration = 4)
+})
+
+observeEvent(input$prepare_bias, {
+  req(session_data$bias_raster)
+
+  lyrs <- names(session_data$bias_raster)
+
+  effect_direction <- vapply(lyrs, function(nm){
+    val <- input[[paste0("bias_dir_", nm)]]
+    if(is.null(val)) "direct" else val
+  }, character(1))
+
+  result <- tryCatch(
+    prepare_bias(bias_surface = session_data$bias_raster,
+                 effect_direction = effect_direction,
+                 include_composite = TRUE,
+                 include_processed_layers = TRUE,
+                 mask_na = isTRUE(input$bias_mask_na == "TRUE"),
+                 verbose = FALSE),
+    error = function(e){
+      showNotification(paste("Bias preparation failed:", e$message),
+                       type = "error", duration = 4)
+      NULL
+    }
+  )
+
+  req(result)
+  session_data$prepared_bias <- result
+  showNotification("Bias prepared successfully.", type = "message", duration = 4)
+})
+
+observeEvent(input$edit_bias_upload, {
+  showModal(modalDialog(
+    title = "Edit bias raster?",
+    p("This will remove the current bias raster and all downstream preparation.
+ You will need to re-upload and re-prepare."),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_bias_upload",
+                   "Yes, edit",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$confirm_edit_bias_upload, {
+  removeModal()
+  session_data$bias_raster <- NULL
+  session_data$prepared_bias <- NULL
+  continue_bias(TRUE)
+  showNotification("Bias raster cleared. Upload a new file.",
+                   type = "message", duration = 3)
+})
+
+observeEvent(input$edit_bias_prepare, {
+  showModal(modalDialog(
+    title = "Edit bias preparation?",
+    p("This will remove the current prepared bias surface.
+ The uploaded raster will be kept."),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_bias_prepare",
+                   "Yes, edit",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$confirm_edit_bias_prepare, {
+  removeModal()
+  session_data$prepared_bias <- NULL
+  showNotification("Bias preparation cleared. Adjust settings and re-prepare.",
+                   type = "message", duration = 3)
+})
+
 output$bias_raster_print <- renderPrint({
   req(input$bias_raster_file)
   ext <- tolower(tools::file_ext(input$bias_raster_file$name))
-  result <- tryCatch(
+  rast <- tryCatch(
     load_raster_file(input$bias_raster_file$datapath, ext),
-    error = function(e) stop(safeError(e))
+    error = function(e){
+      cat("Could not read file:", e$message)
+      NULL
+    }
+  )
+  req(rast)
+  print(rast)
+})
+
+output$upload_bias_ui <- renderUI({
+
+  has_bias <- !is.null(session_data$bias_raster)
+
+  if(has_bias){
+    return(
+      box(title = tags$span("Bias Inputs", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          verbatimTextOutput("bias_raster_print"),
+          fluidRow(
+            column(width = 12, class = "btn-spaced",
+                   actionLink("edit_bias_upload",
+                              label = tagList(icon("pen"), "Edit bias raster")))
+          )
+      )
+    )
+  }
+
+  if(isFALSE(continue_bias())) return(NULL)
+
+  box(title = tags$span("Bias Inputs", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p(instructions$bias_input, class = "text-instruction"),
+
+      fluidRow(
+        column(width = 8,
+               fileInput(inputId = "bias_raster_file",
+                         label = tags$span("Sampling bias layer/s (raster)",
+                                           class = "text-widget-title"),
+                         multiple = FALSE,
+                         accept = c("tif", "tiff", "rds")))
+      ),
+
+      conditionalPanel(
+        condition = "output.bias_raster_print != ''",
+        verbatimTextOutput("bias_raster_print")
+      ),
+
+      fluidRow(
+        column(width = 6, class = "btn-spaced",
+               actionButton("bias_upload",
+                            "Upload Bias",
+                            class = "btn-primary")),
+        column(width = 6, class = "btn-spaced",
+               actionButton("continue_bias_example",
+                            tagList(icon("flask"), "Use example data"),
+                            class = "btn-default"))
+      )
+  )
+})
+
+output$prepare_bias_ui <- renderUI({
+
+  req(session_data$bias_raster)
+
+  has_prepared <- !is.null(session_data$prepared_bias)
+
+  if(has_prepared){
+    result <- session_data$prepared_bias
+    return(
+      box(title = tags$span("Prepare Bias Raster", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          p(paste0("Formula: ", result$combination_formula),
+            class = "text-instruction"),
+          fluidRow(
+            column(width = 12, class = "btn-spaced",
+                   actionLink("edit_bias_prepare",
+                              label = tagList(icon("pen"), "Edit bias preparation")))
+          )
+      )
+    )
+  }
+
+  box(title = tags$span("Prepare Bias Raster", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p("Assign direction of effect for each bias layer and configure how
+ overlapping NAs are handled before preparing the composite surface.",
+        class = "text-instruction"),
+
+      uiOutput("bias_effect_directions"),
+
+      fluidRow(
+        column(width = 12,
+               tags$span("NA overlap handling", class = "text-widget-title"),
+               radioButtons(inputId = "bias_mask_na",
+                            label = NULL,
+                            choiceNames = list(
+                              tagList("Union",
+                                      tags$span(icon("circle-info"),
+                                                title = "Keep any pixel with at least one valid value across layers. NAs in other layers are ignored.",
+                                                class = "tooltip-icon")),
+                              tagList("Intersection",
+                                      tags$span(icon("circle-info"),
+                                                title = "Keep only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
+                                                class = "tooltip-icon"))
+                            ),
+                            choiceValues = c("FALSE", "TRUE"),
+                            selected= "FALSE",
+                            inline = TRUE))
+      ),
+
+      fluidRow(
+        column(width = 6, class = "btn-spaced",
+               actionButton("prepare_bias",
+                            "Prepare Bias",
+                            class = "btn-primary"))
+      )
+  )
+})
+
+output$bias_effect_directions <- renderUI({
+
+  req(session_data$bias_raster)
+
+  rast <- session_data$bias_raster
+  lyrs <- names(rast)
+
+  stats <- lapply(lyrs, function(nm){
+    vals <- terra::values(rast[[nm]], na.rm = TRUE)
+    list(mean = round(mean(vals, na.rm = TRUE), 3),
+         sd = round(sd(vals, na.rm = TRUE), 3))
+  })
+
+  header <- fluidRow(
+    column(width = 4,
+           tags$span("Layer", class = "text-widget-title")),
+    column(width = 3,
+           tags$div(class = "tooltip-label-row",
+                    tags$span("Mean (SD)", class = "text-widget-title"),
+                    tags$span(icon("circle-info"),
+                              title = "Mean and standard deviation of non-NA raster values.",
+                              class = "tooltip-icon"))),
+    column(width = 5,
+           tags$div(class = "tooltip-label-row",
+                    tags$span("Effect direction", class = "text-widget-title"),
+                    tags$span(icon("circle-info"),
+                              title = "Direct: higher values increase sampling probability. Inverse: higher values decrease sampling probability.",
+                              class = "tooltip-icon")))
   )
 
-  removeNotification("bias_raster_preview_msg")
-  print(result)
+  rows <- lapply(seq_along(lyrs), function(i){
+    nm <- lyrs[i]
+    fluidRow(
+      column(width = 4, class = "var-label",
+             tags$span(nm, class = "text-widget-inner")),
+      column(width = 3,
+             tags$span(paste0(stats[[i]]$mean, " (", stats[[i]]$sd, ")"),
+                       class = "text-widget-inner")),
+      column(width = 5,
+             radioButtons(inputId = paste0("bias_dir_", nm),
+                          label = NULL,
+                          choiceNames = list(
+                            tagList("Direct",
+                                    tags$span(icon("circle-info"),
+                                              title = "Higher values increase sampling probability.",
+                                              class = "tooltip-icon")),
+                            tagList("Inverse",
+                                    tags$span(icon("circle-info"),
+                                              title = "Higher values decrease sampling probability.",
+                                              class = "tooltip-icon"))
+                          ),
+                          choiceValues = c("direct", "inverse"),
+                          selected = "direct",
+                          inline = FALSE))
+    )
+  })
+
+  tagList(header, tagList(rows))
 })
+
+output$apply_bias_ui <- renderUI({
+
+  req(session_data$prepared_bias)
+  req(length(session_data$ellipsoid_prediction_list) > 0)
+
+  has_applied <- length(session_data$ellipsoid_prediction_list_biased) > 0
+
+  if(has_applied){
+    return(
+      box(title = tags$span("Apply Bias", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          p(paste0("Bias applied to ", length(session_data$ellipsoid_prediction_list_biased),
+                   " ellipsoid prediction(s)."),
+            class = "text-instruction"),
+          fluidRow(
+            column(width = 12, class = "btn-spaced",
+                   actionLink("edit_apply_bias",
+                              label = tagList(icon("pen"), "Edit bias application")))
+          )
+      )
+    )
+  }
+
+  # Available layers from first prediction entry
+  pred_ids <- names(session_data$ellipsoid_prediction_list)
+  first_pred <- session_data$ellipsoid_prediction_list[[pred_ids[1]]]
+  layers <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
+
+  box(title = tags$span("Apply Bias", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p("Apply the composite bias surface to a prediction.",
+        class = "text-instruction"),
+
+      # Version selector
+      uiOutput("bias_ell_select"),
+
+      # Prediction layer selector
+      if(length(layers) > 0){
+        fluidRow(
+          column(width = 12,
+                 tags$span("Prediction layer", class = "text-widget-title"),
+                 tags$span(icon("circle-info"),
+                           title = "Layer must be a surface with values in [0, 1].",
+                           class = "tooltip-icon"),
+                 selectInput("bias_prediction_layer",
+                             label = NULL,
+                             choices = layers,
+                             selected = if("suitability_trunc" %in% layers) "suitability_trunc"
+                             else if("suitability" %in% layers) "suitability"
+                             else layers[1]))
+        )
+      },
+
+      # Effect direction
+      fluidRow(
+        column(width = 12,
+               tags$span("Effect direction", class = "text-widget-title"),
+
+               radioButtons("bias_effect_direction",
+                            label = NULL,
+                            choiceNames = list(
+                              tagList("Direct",
+                                      tags$span(icon("circle-info"),
+                                                title = "prediction x bias.",
+                                                class = "tooltip-icon")),
+                              tagList("Inverse",
+                                      tags$span(icon("circle-info"),
+                                                title = "prediction x (1 - bias).",
+                                                class = "tooltip-icon"))
+                            ),
+                            choiceValues = c("direct", "inverse"),
+                            selected = "direct",
+                            inline = TRUE))
+      ),
+
+      fluidRow(
+        column(width = 6, class = "btn-spaced",
+               actionButton("apply_bias_btn",
+                            label = "Apply Bias",
+                            class = "btn-primary")
+        )
+      )
+  )
+})
+
+output$bias_ell_select <- renderUI({
+
+  req(length(session_data$ellipsoid_prediction_list) > 0)
+
+  versions <- session_data$ellipsoid_list
+  pred_ids <- names(session_data$ellipsoid_prediction_list)
+
+  ell_choices <- c(
+    "All versions" = "all",
+    setNames(pred_ids,
+             vapply(pred_ids, function(id){
+               ell <- versions[[id]]
+               if(!is.null(ell)) ell$ell_name else id
+             }, character(1)))
+  )
+
+  selectInput(inputId = "bias_ell_selected",
+              label = tagList(
+                tags$span("Ellipsoid version", class = "text-widget-title"),
+                tags$span(icon("circle-info"),
+                          title = "Select which ellipsoid version to apply bias to.",
+                          class = "tooltip-icon")
+              ),
+              choices = ell_choices,
+              selected = "all")
+})
+
+observeEvent(input$apply_bias_btn, {
+
+  req(session_data$prepared_bias)
+  req(length(session_data$ellipsoid_prediction_list) > 0)
+  req(input$bias_prediction_layer)
+  req(input$bias_ell_selected)
+
+  pred_list <- session_data$ellipsoid_prediction_list
+  is_all <- input$bias_ell_selected == "all"
+
+  selected_ids <- if(is_all) names(pred_list) else input$bias_ell_selected
+
+  layer <- input$bias_prediction_layer
+  direction <- if(!is.null(input$bias_effect_direction)) input$bias_effect_direction else "direct"
+
+  results <- setNames(
+    lapply(selected_ids, function(id){
+
+      pred <- pred_list[[id]]
+
+      if(is.null(pred)){
+        showNotification(paste0("No prediction found for ", id, ". Skipping."),
+                         type = "warning", duration = 4)
+        return(NULL)
+      }
+
+      if(!layer %in% names(pred)){
+        showNotification(paste0("Layer '", layer, "' not found in prediction for ", id, ". Skipping."),
+                         type = "warning", duration = 4)
+        return(NULL)
+      }
+
+      tryCatch(
+        apply_bias(prepared_bias = session_data$prepared_bias,
+                   prediction = pred,
+                   prediction_layer = layer,
+                   effect_direction = direction,
+                   verbose = FALSE),
+        error = function(e){
+          showNotification(paste0("Apply bias failed for ", id, ": ", e$message),
+                           type = "error", duration = 4)
+          NULL
+        }
+      )
+    }),
+    selected_ids
+  )
+
+  n_success <- sum(vapply(results, Negate(is.null), logical(1)))
+
+  if(n_success == 0){
+    showNotification("Bias application failed for all selected versions.",
+                     type = "error", duration = 4)
+    return()
+  }
+
+  session_data$ellipsoid_prediction_list_biased <- results
+
+  showNotification(paste0("Bias applied to ", n_success, " ellipsoid(s)."),
+                   type = "message", duration = 4)
+})
+
+observeEvent(input$edit_apply_bias, {
+  showModal(modalDialog(
+    title = "Edit bias application?",
+    p("This will remove the current biased surfaces.
+ Prepared bias and predictions are kept."),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_edit_apply_bias",
+                   "Yes, edit",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$confirm_edit_apply_bias, {
+  removeModal()
+  session_data$ellipsoid_prediction_list_biased <- NULL
+  showNotification("Biased surfaces cleared.",
+                   type = "message", duration = 3)
+})
+
