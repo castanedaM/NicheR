@@ -2,16 +2,14 @@
 # Description: Centralized instructional copy shown above inputs (p() blocks)
 #              and tooltip text shown via icon("circle-info"). Organized by
 #              the tab/section each instruction belongs to.
-# Date last updated: 06/16/2026
+# Date last updated: 07/22/2026
 
 instructions <- list(
 
   # TAB 1: INPUTS
 
   data_input_type = HTML("Choose how to provide your background environmental
-data: upload your own layers, resume a previous session, work entirely in
-environmental space with no geography (Virtual Mode), or use the example
-dataset bundled with nicheR."),
+data"),
 
   data_upload = HTML("Background data: your study area's environmental
 conditions.<br>

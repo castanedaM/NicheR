@@ -160,14 +160,14 @@ output$upload_bias_ui <- renderUI({
 
   if(isFALSE(continue_bias())) return(NULL)
 
-  box(title = tags$span("Bias Inputs", class = "text-section-header"),
+  box(title = tags$span("Bias input layers", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
       p(instructions$bias_input, class = "text-instruction"),
 
       fluidRow(
-        column(width = 8,
+        column(width = 12,
                fileInput(inputId = "bias_raster_file",
                          label = tags$span("Sampling bias layer/s (raster)",
                                            class = "text-widget-title"),
@@ -181,14 +181,16 @@ output$upload_bias_ui <- renderUI({
       ),
 
       fluidRow(
-        column(width = 6, class = "btn-spaced",
-               actionButton("bias_upload",
-                            "Upload Bias",
-                            class = "btn-primary")),
-        column(width = 6, class = "btn-spaced",
-               actionButton("continue_bias_example",
-                            tagList(icon("flask"), "Use example data"),
-                            class = "btn-default"))
+        column(width = 12,
+               div(class = "action-btn-row",
+                 actionButton("bias_upload",
+                              "Upload bias",
+                              class = "btn-continue"),
+                 actionButton("continue_bias_example",
+                              "Example bias",
+                              class = "btn-back")
+               )
+        )
       )
   )
 })
@@ -202,7 +204,7 @@ output$prepare_bias_ui <- renderUI({
   if(has_prepared){
     result <- session_data$prepared_bias
     return(
-      box(title = tags$span("Prepare Bias Raster", class = "text-section-header"),
+      box(title = tags$span("Prepare bias raster", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
@@ -248,10 +250,10 @@ output$prepare_bias_ui <- renderUI({
       ),
 
       fluidRow(
-        column(width = 6, class = "btn-spaced",
+        column(width = 12, class = "action-btn-row",
                actionButton("prepare_bias",
                             "Prepare Bias",
-                            class = "btn-primary"))
+                            class = "btn-continue"))
       )
   )
 })
@@ -396,10 +398,10 @@ output$apply_bias_ui <- renderUI({
       ),
 
       fluidRow(
-        column(width = 6, class = "btn-spaced",
+        column(width = 12, class = "action-btn-row",
                actionButton("apply_bias_btn",
                             label = "Apply Bias",
-                            class = "btn-primary")
+                            class = "btn-continue")
         )
       )
   )
@@ -515,4 +517,199 @@ observeEvent(input$confirm_edit_apply_bias, {
   showNotification("Biased surfaces cleared.",
                    type = "message", duration = 3)
 })
+
+output$ellipsoid_library_bias <- renderUI({
+  req(isTRUE(continue_bias()))
+  req(length(session_data$ellipsoid_list) > 0)
+
+  versions <- session_data$ellipsoid_list
+  ids <- names(versions)
+  cur_ell <- session_data$current_ellipsoid
+
+  if(!cur_ell$ell_id %in% names(session_data$ellipsoid_list)){
+    cur_ell <- session_data$ellipsoid_list[["base"]]
+  }
+
+  is_base <- !is.null(cur_ell$ell_id) &&
+    identical(cur_ell$ell_name, "base")
+
+  # Working ellipsoid slot
+  working_row <- if(!is.null(cur_ell)){
+    fluidRow(
+      style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
+      column(width = 4,
+             tags$span(icon("eye"),
+                       tags$span(paste0(" ", cur_ell$ell_name),
+                                 class  = "text-widget-inner",
+                                 style  = "color: #097a21; font-weight: 500;"),
+                       tags$span("(current)",
+                                 style  = "font-size: 11px; color: #aaa;"))),
+      column(width = 3,
+             tags$span(cur_ell$ell_id,
+                       style = "font-size: 11px; color: #aaa;")),
+
+      column(width = 5,
+             p("view only")
+      )
+    )
+  }
+
+  rows <- lapply(ids, function(id){
+
+    ell <- versions[[id]]
+    is_base <- id == "base"
+
+    fluidRow(
+      style = "padding: 2px 0;",
+      column(width = 5,
+             tags$span(ell$ell_name, class = "text-widget-inner")),
+      column(width = 4,
+             tags$span(id, style = "font-size: 11px; color: #aaa;")),
+      column(width = 3,
+             tags$div(
+               style = "display: flex; gap: 8px;",
+
+               tagList(
+                 actionLink(
+                   inputId = paste0("ell_view_bias_", id),
+                   label = tags$span(icon("eye"),
+                                     title = paste0("View ", ell$ell_name),
+                                     class = "tooltip-icon")
+                 ),
+
+                 if(isFALSE(is_base)){
+                   actionLink(
+                     inputId = paste0("ell_delete_bias_", id),
+                     label = tags$span(icon("trash"),
+                                       title = paste0("Delete ", ell$ell_name),
+                                       class = "tooltip-icon",
+                                       style = "color: #e74c3c;")
+                   )
+                 }
+               )
+             ))
+    )
+  })
+
+  box(title = tags$span("Ellipsoid library", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+
+      if(!is.null(cur_ell)){
+        tagList(
+          working_row,
+          tags$hr(style = "margin: 8px 0;")
+        )
+      },
+
+      fluidRow(
+        column(width = 5, tags$span("Name", class = "text-widget-title")),
+        column(width = 4, tags$span("ID", class = "text-widget-title")),
+        column(width = 3, tags$span("Actions", class = "text-widget-title"))
+      ),
+
+      tagList(rows)
+  )
+})
+
+# Load a saved ellipsoid for viewing bias
+observeEvent({
+  ids <- names(session_data$ellipsoid_list)
+  lapply(ids, function(id) input[[paste0("ell_view_bias_", id)]])
+}, {
+  ids <- names(session_data$ellipsoid_list)
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("ell_view_bias_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  ell <- session_data$ellipsoid_list[[id]]
+
+  session_data$current_ellipsoid <- ell
+
+  showNotification(paste0(ell$ell_name, " loaded for prediction viewing"),
+                   type = "message", duration = 3)
+
+}, ignoreInit = TRUE)
+
+
+# Delete a saved ellipsoid
+observeEvent({
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(ids, function(id) input[[paste0("ell_delete_bias_", id)]])
+}, {
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("ell_delete_bias_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  nm <- session_data$ellipsoid_list[[id]]$ell_name
+
+  showModal(modalDialog(
+    title = paste0("Delete ", nm, "?"),
+    p(paste0("This will permanently remove ", nm,
+             " and any prediction results associated with it.")),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton(paste0("confirm_ell_delete_bias_", id),
+                   "Yes, delete",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
+
+}, ignoreInit = TRUE)
+
+# Confirmed delete
+observeEvent({
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  lapply(ids, function(id) input[[paste0("confirm_ell_delete_bias_", id)]])
+}, {
+  ids <- setdiff(names(session_data$ellipsoid_list), "base")
+  req(length(ids) > 0)
+
+  clicked <- ids[vapply(ids, function(id){
+    val <- input[[paste0("confirm_ell_delete_bias_", id)]]
+    !is.null(val) && val > 0
+  }, logical(1))]
+
+  req(length(clicked) > 0)
+  id <- clicked[1]
+  nm <- session_data$ellipsoid_list[[id]]$ell_name
+
+  removeModal()
+
+  session_data$ellipsoid_list[[id]] <- NULL
+
+  if(!is.null(session_data$ellipsoid_prediction_list[[id]])){
+    session_data$ellipsoid_prediction_list[[id]] <- NULL
+  }
+
+  if(!is.null(session_data$ellipsoid_prediction_list_biased[[id]])){
+    session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
+  }
+
+  # If the deleted version was the current working ellipsoid, move back to base
+  if(identical(session_data$current_ellipsoid$ell_id, id)){
+    session_data$current_ellipsoid <- session_data$ellipsoid_list[["base"]]
+
+    showNotification(paste0(nm, " deleted. Moved to viewing base"),
+                     type = "message", duration = 3)
+  } else {
+    showNotification(paste0(nm, " deleted."),
+                     type = "message", duration = 3)
+  }
+
+}, ignoreInit = TRUE)
+
 

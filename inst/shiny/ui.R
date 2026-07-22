@@ -21,19 +21,19 @@ dashboardPage(
       id = "sidebarMenu",
       menuItem("About",
                tabName = "about",
-               icon = icon("circle-info")),
-      menuItem("1. Build Ellipsoid",
+               icon = icon("circle-info", style = "margin-right: 4px")),
+      menuItem("1. Build ellipsoid",
                tabName = "build_tab",
-               icon = icon("gear")),
+               icon = icon("gear", style = "margin-right: 4px")),
       menuItem("2. Prediction",
                tabName = "predict_tab",
-               icon = icon("angles-right")),
+               icon = icon("angles-right", style = "margin-right: 4px")),
       menuItem("3. Bias",
                tabName = "bias_tab",
-               icon = icon("table")),
-      menuItem("4. Generate Occurrences",
+               icon = icon("table", style = "margin-right: 4px")),
+      menuItem("4. Generate occurrences",
                tabName = "generate_tab",
-               icon = icon("eye-dropper"))
+               icon = icon("eye-dropper", style = "margin-right: 4px"))
     ),
 
     tags$div(
@@ -104,7 +104,7 @@ dashboardPage(
 
           column(width = 4,
                  box(title = tagList(icon("angles-right"),
-                                     tags$span("2. Predict suitable area",
+                                     tags$span("2. Prediction",
                                                class = "text-widget-title")),
                      width = 12,
                      collapsible = TRUE,
@@ -134,7 +134,7 @@ dashboardPage(
 
           column(width = 4,
                  box(title = tagList(icon("table"),
-                                     tags$span("3. Bias correction",
+                                     tags$span("3. Bias",
                                                class = "text-widget-title")),
                      width = 12,
                      collapsible = TRUE,
@@ -191,7 +191,8 @@ dashboardPage(
                         icon("user-group"), "If you use nicheR in your research, please cite:"),
                  br(),
                  tags$code("Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026).
-                          nicheR: Ellipsoid-based ecological niche modeling. R package version 0.1.0. https://github.com/castanedaM/nicheR",
+                          nicheR: Ellipsoid-based ecological niche modeling.
+                           R package version 0.1.0. 10.32614/CRAN.package.nicheR",
                            style="color: grey;"),
                  br(), br()
 
@@ -238,12 +239,12 @@ dashboardPage(
                        column(width = 12,
                               p(instructions$data_input_type, class = "text-instruction"),
                               radioButtons("data_input_type_choice",
-                                           label = tags$span("Select Input Type:", class = "text-widget-title"),
-                                           choices = c("Background Layers" = "bg_layers",
-                                                       "Previous Session" = "prev_session",
-                                                       "Virtual Mode" = "virtual_mode",
-                                                       "Example Data" = "example_data"),
-                                           selected = character(0), inline = TRUE),
+                                           label = tags$span("Select input type:", class = "text-widget-title"),
+                                           choices = c("Background layers" = "bg_layers",
+                                                       "Previous session" = "prev_session",
+                                                       "Virtual mode" = "virtual_mode",
+                                                       "Example data" = "example_data"),
+                                           selected = character(0), inline = FALSE),
                               uiOutput("data_input_type")
                        )
                      )
@@ -254,13 +255,19 @@ dashboardPage(
                      width = 12,
                      value = "range",
                      fluidRow(
-                       column(width = 12,
-                              uiOutput("variable_selectors_ui"),
-                              uiOutput("range_method_choice_ui"),
-                              uiOutput("covariance_ui"),
-                              uiOutput("centroid_mover_ui"),
-                              uiOutput("ellipsoid_library")
-                       )
+                       uiOutput("variable_selectors_ui")
+                     ),
+                     fluidRow(
+                       uiOutput("range_method_choice_ui")
+                     ),
+                     fluidRow(
+                       uiOutput("covariance_ui")
+                     ),
+                     fluidRow(
+                       uiOutput("centroid_mover_ui")
+                     ),
+                     fluidRow(
+                       uiOutput("ellipsoid_library")
                      )
                    )
                  )
@@ -313,7 +320,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 8,
-                              tags$span("Prediction Layers to Include",
+                              tags$span("Prediction layers to include",
                                         class = "text-widget-title"))
                      ),
 
@@ -353,7 +360,7 @@ dashboardPage(
                            collapsed = TRUE,
                            fluidRow(
                              column(width = 8,
-                                    tagList(tags$span("Truncation Level Adjustment",
+                                    tagList(tags$span("Truncation level adjustment",
                                                       class = "text-widget-title"),
                                             tags$span(icon("circle-info"),
                                                       title = "Adjust the level of truncation within the current elliposid, this will this will truncate prediction inwards",
@@ -370,10 +377,11 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                              actionButton(inputId = "ell_predict",
-                                           label = tags$span("Predict",
-                                                             class = "text-widget-title"),
-                                           class = "btn-default")
+                              div(class = "action-btn-row",
+                                  actionButton(inputId = "ell_predict",
+                                           label = "Predict",
+                                           class = "btn-continue")
+                                  )
                        )
                      ),
 
@@ -381,6 +389,12 @@ dashboardPage(
 
                      fluidRow(
                        uiOutput("ellipsoid_library_pred")
+                     ),
+
+                     fluidRow(
+                       column(width = 12,
+                             uiOutput("save_ell_pred")
+                       )
                      )
                  )
           ),
@@ -432,45 +446,70 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                              actionButton(inputId = "skip_bias",
-                                           label = "Skip bias",
-                                           icon = icon("forward-step")),
-
-                              actionButton(inputId = "continue_bias",
+                              div(class = "action-btn-row-ct",
+                                  actionButton(inputId = "skip_bias",
+                                               label = "Skip bias",
+                                               icon = icon("forward-step"),
+                                               class = "btn-back"),
+                                  actionButton(inputId = "continue_bias",
                                            label = "Continue with bias",
-                                           icon = icon("arrow-right"))
+                                           icon = icon("arrow-right"),
+                                           class = "btn-continue")
+                                  )
                        )
                      ),
 
                      br(), br(),
 
-                     uiOutput("upload_bias_ui"),
-                     uiOutput("prepare_bias_ui"),
-                     uiOutput("apply_bias_ui")
+                     fluidRow(
+                       uiOutput("upload_bias_ui")
+                     ),
 
+                     fluidRow(
+                       uiOutput("prepare_bias_ui")
+                     ),
+
+                     fluidRow(
+                       uiOutput("apply_bias_ui")
+                     ),
+
+                     fluidRow(
+                       uiOutput("ellipsoid_library_bias")
+                     ),
+
+                     fluidRow(
+                       column(width = 12,
+                              uiOutput("save_ell_bias")
+                       )
+                     )
                  )
           ),
 
           column(width = 7,
 
-                 tabPanel(
-                   title = tags$span("E-space", class = "text-tab-title"),
-                   value = "bias_espace",
-                   uiOutput("bias_espace_options_ui"),
-                   plotOutput("bias_espace_plot")
-                 ),
+                 tabBox(
+                   id    = "plot_bias",
+                   width = 12,
 
-                 tabPanel(
-                   title = tags$span("G-space", class = "text-tab-title"),
-                   value = "bias_gspace",
-                   plotOutput("bias_gspace_plot")
-                 ),
+                   tabPanel(
+                     title = tags$span("E-space", class = "text-tab-title"),
+                     value = "bias_espace",
+                     uiOutput("bias_espace_options_ui"),
+                     plotOutput("bias_espace_plot")
+                   ),
 
-                 tabPanel(
-                   title = tags$span("Combined", class = "text-tab-title"),
-                   value = "bias_combined",
-                   uiOutput("bias_combined_options_ui"),
-                   plotOutput("bias_combined_plot")
+                   tabPanel(
+                     title = tags$span("G-space", class = "text-tab-title"),
+                     value = "bias_gspace",
+                     plotOutput("bias_gspace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Combined", class = "text-tab-title"),
+                     value = "bias_combined",
+                     uiOutput("bias_combined_options_ui"),
+                     plotOutput("bias_combined_plot")
+                   )
                  ),
 
                  br(),

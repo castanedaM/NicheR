@@ -6,7 +6,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/09/2026
+# Date last updated: 07/22/2026
 
 # ELLIPSOID ---------------------------------------------------------------
 
@@ -41,7 +41,7 @@ observeEvent(input$save_ell_version, {
   default_name <- paste0("ellipsoid_", ell_id_counter())
 
   showModal(modalDialog(
-    title = "Save Ellipsoid Version",
+    title = "Save ellipsoid version",
     p("Give this ellipsoid a name. Use letters, numbers, and spaces only.
        Spaces will be replaced with underscores."),
     textInput("ell_save_name",
@@ -88,7 +88,7 @@ observeEvent(input$confirm_save_ell_version, {
                    tagList(icon("circle-plus"), "Build another ellipsoid"),
                    class = "btn-default"),
       actionButton("next_go_predict",
-                   tagList(icon("arrow-right"), "Continue to Predict"),
+                   tagList(icon("arrow-right"), "Continue to predict"),
                    class = "btn-primary")
     ),
     easyClose = FALSE
@@ -178,11 +178,11 @@ output$ellipsoid_library <- renderUI({
                               class = "btn-default")
                }else{
                  actionButton("save_ell_version",
-                              "Save Ellipsoid",
+                              "Save ellipsoid",
                               class = "btn-default")
                }
              }else{
-               p("View Only")
+               p("View only")
              }
       )
     )
@@ -246,7 +246,6 @@ output$ellipsoid_library <- renderUI({
 
       if(!is.null(cur_ell)){
         tagList(
-          # tags$span("Working", class = "text-widget-title"),
           working_row,
           tags$hr(style = "margin: 8px 0;")
         )
@@ -623,9 +622,9 @@ output$range_method_ui <- renderUI({
              column(width = 4,
                     tags$span("Variable", class = "text-widget-title text-center")),
              column(width = 4,
-                    tags$span("Observed Min", class = "text-widget-title text-center")),
+                    tags$span("Observed min", class = "text-widget-title text-center")),
              column(width = 4,
-                    tags$span("Observed Max", class = "text-widget-title text-center"))
+                    tags$span("Observed max", class = "text-widget-title text-center"))
              )
 
            header2 <- fluidRow(
@@ -633,13 +632,13 @@ output$range_method_ui <- renderUI({
                     tags$span("Variable", class = "text-widget-title text-center")),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand Min (%)", class = "text-widget-title text-center"),
+                             tags$span("Expand min (%)", class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon"))),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand Max (%)", class = "text-widget-title text-center"),
+                             tags$span("Expand max (%)", class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon")))
@@ -714,7 +713,7 @@ output$range_method_ui <- renderUI({
              ),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand Min (%)",
+                             tags$span("Expand min (%)",
                                        class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
@@ -722,7 +721,7 @@ output$range_method_ui <- renderUI({
              ),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand Max (%)",
+                             tags$span("Expand max (%)",
                                        class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,

@@ -3,8 +3,20 @@
 # Description: Server for the predict tab, it take theelliposid of more
 # ellipsoid to predict over
 
-# Date Last Updated: 7/17/26
+# Date Last Updated: 7/22/26
 
+output$save_ell_pred <- renderUI({
+  req(length(session_data$ellipsoid_prediction_list) > 0)
+
+  actionButton(inputId = "ell_predict_save",
+               label = tags$span("Save predictionS",
+                                 class = "text-widget-title"),
+               class = "btn-default")
+
+  updateTabItems(session, "sidebarMenu", selected = "predict_tab")
+
+
+})
 
 output$pred_ell_select <- renderUI({
 

@@ -1,20 +1,20 @@
 /* App title. This is largest text in the app, used in the header */
 .text-app-title {
-  font-size: 26px;
-  font-weight: 500;
+  font-size: 25px;
+  font-weight: 600;
   margin-bottom: 0;
 }
 
 /* Tab/panel titles — section labels inside tabBoxes or boxes */
 .text-tab-title {
-  font-size: 17px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
 /* Widget inside text — small labels or values inside a widget */
 .text-widget-inner {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   color: #383838;  /* slightly muted, not full black */
   line-height: 1.4;
@@ -22,8 +22,8 @@
 
 /* Section headers — labels that divide content within a panel */
 .text-section-header {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 575;
   margin-bottom: 8px;
   margin-top: 4px;
 }
@@ -31,15 +31,15 @@
 /* Widget titles — titles on individual input widgets or cards */
 /* font-size matches widget icon size so they sit evenly */
 .text-widget-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 550;
   margin-bottom: 4px;
 }
 
 /* Widget icons — controls icon rendering size inline */
 /* Tabler icons inherit font-size from parent, so set it here */
 .text-widget-title .ti {
-  font-size: 14px;
+  font-size: 12px;
   margin-left: 5px;
   cursor: help;
 }
@@ -47,7 +47,7 @@
 /* Body / instruction text — helper text explaining what to do */
 /* Used with p(instructions$x, class = "text-instruction") */
 .text-instruction {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 400;
   margin-bottom: 12px;
   line-height: 1.5;        /* adds breathing room between lines */
@@ -68,7 +68,7 @@
 /* Muted small text — hints, fine print, secondary labels */
 /* color uses CSS var so it works in both light and dark mode */
 .text-muted-small {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 400;
   color: #707070;   /* lightest readable gray */
   line-height: 1.4;
@@ -80,5 +80,63 @@
 .text-center {
   display: block;
   text-align: center;
+}
+
+/* Button shape and base style, flat fill, slightly rounded */
+.btn-save, .btn-continue, .btn-cancel, .btn-back {
+  border-radius: 6px;
+  border:1px solid #6c757d;
+  font-size: 12px;
+  font-weight: 400;
+  color: #fff;
+  transition: opacity 0.15s ease;
+}
+
+.btn-save:hover {
+  background-color: #516334;
+}
+
+.btn-continue:hover {
+  background-color: #BBDAF7;
+}
+
+.btn-cancel:hover{
+ background-color: #ad3a28;
+}
+
+.btn-back:hover {
+  background-color: #BBDAF7;
+}
+
+/* Semantic colors */
+.btn-save {
+  background-color: #a8bd63;
+}
+
+.btn-continue {
+  background-color: #378ee5;
+}
+
+.btn-cancel {
+  background-color: #db4b11;
+}
+
+.btn-back {
+  background-color: #6c757d;
+}
+
+/* Positioning wrapper, goes at the bottom of any box/panel */
+.action-btn-row {
+  display: flex;
+  justify-content: flex-end; /* pushes the whole group to the right corner */
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-btn-row-ct {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
 }
 

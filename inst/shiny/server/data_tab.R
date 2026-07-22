@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 07/06/2026
+# Date last updated: 07/22/2026
 
 # Start session button in about
 observeEvent(input$start_session, {
@@ -287,7 +287,7 @@ output$data_input_type <- renderUI({
                            width = 12,
                            fileInput(inputId = "raster_file",
                                      label = tagList(
-                                       tags$span("Background Layers (Raster)", class = "text-widget-title"),
+                                       tags$span("Background layers (raster)", class = "text-widget-title"),
                                        tags$span(icon("circle-info"),
                                                  title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds", class = "text-widget-title")),
                                      multiple = TRUE,
@@ -295,7 +295,7 @@ output$data_input_type <- renderUI({
 
                            fileInput(inputId = "df_file",
                                      label = tagList(
-                                       tags$span("Background Layers (CSV)", class = "text-widget-title"),
+                                       tags$span("Background layers (CSV)", class = "text-widget-title"),
                                        tags$span(icon("circle-info"),
                                                  title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds", class = "text-widget-title"))
                                      ,
@@ -329,7 +329,7 @@ output$data_input_type <- renderUI({
                        width = 12,
                        p(instructions$prev_session, class = "text-instruction"),
                        fileInput(inputId = "session_file",
-                                 label = tags$span("Session File (.rds)", class = "text-widget-title"),
+                                 label = tags$span("Session file (.rds)", class = "text-widget-title"),
                                  multiple = FALSE,
                                  accept = c(".rds")),
                        fluidRow(
@@ -480,11 +480,11 @@ output$variable_selectors_ui <- renderUI({
 
   var_slots <- lapply(seq_len(n_slots), function(i){
     fluidRow(
-      column(width = 1, class = "checkbox-align",
+      column(width = 2, class = "checkbox-align",
              checkboxInput(paste0("var_active_", i),
                            label = NULL,
                            value = TRUE)),
-      column(width = 11,
+      column(width = 10,
              conditionalPanel(paste0("input.var_active_", i, " == true"),
                               selectInput(paste0("var_select_", i),
                                           paste("Variable", i),

@@ -1,6 +1,6 @@
 # Title: Save and Load Session Logic
 # Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 07/16/2026
+# Date last updated: 07/21/2026
 
 
 # Load previous session
@@ -31,15 +31,41 @@ observeEvent(input$load_session, {
     )
   }
 
-  # Unwrap predictions BEFORE restore loop, on session_list not session_data
+  # Unwrap predictions
   if(length(session_list$ellipsoid_prediction_list) > 0){
     session_list$ellipsoid_prediction_list <- lapply(
       session_list$ellipsoid_prediction_list,
       function(p) tryCatch(terra::unwrap(p), error = function(e) p)
     )
-    message("after unwrap: ",
-            paste(sapply(session_list$ellipsoid_prediction_list,
-                         function(p) class(p)[1]), collapse = ", "))
+  }
+
+  # Unwrap prepared_bias
+  if(!is.null(session_list$prepared_bias)){
+    session_list$prepared_bias <- list(
+      combination_formula = session_list$prepared_bias$combination_formula,
+      composite_surface   = tryCatch(
+        terra::unwrap(session_list$prepared_bias$composite_surface),
+        error = function(e) NULL),
+      processed_layers    = tryCatch(
+        terra::unwrap(session_list$prepared_bias$processed_layers),
+        error = function(e) NULL)
+    )
+  }
+
+  # Unwrap ellipsoid_prediction_list_biased
+  if(length(session_list$ellipsoid_prediction_list_biased) > 0){
+    session_list$ellipsoid_prediction_list_biased <- lapply(
+      session_list$ellipsoid_prediction_list_biased,
+      function(entry){
+        if(is.null(entry)) return(NULL)
+        result <- lapply(entry, function(p){
+          if(inherits(p, "PackedSpatRaster"))
+            tryCatch(terra::unwrap(p), error = function(e) p) else p
+        })
+        class(result) <- "nicheR_biased_surface"
+        result
+      }
+    )
   }
 
   for(nm in names(session_list)){
@@ -62,6 +88,8 @@ observeEvent(input$load_session, {
     updateTabsetPanel(session, "tabpanel-build", selected = "range")
   }
 })
+
+
 output$save_session_btn <- downloadHandler(
   filename = function(){
     paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
@@ -92,5 +120,29 @@ output$save_session_btn <- downloadHandler(
       showNotification(paste("Failed to save session:", e$message),
                        type = "error", duration = 4)
     })
+
+    # Wrap prepared_bias
+    if(!is.null(session_list$prepared_bias)){
+      session_list$prepared_bias <- list(
+        combination_formula = session_list$prepared_bias$combination_formula,
+        composite_surface = terra::wrap(session_list$prepared_bias$composite_surface),
+        processed_layers = terra::wrap(session_list$prepared_bias$processed_layers)
+      )
+    }
+
+    # Wrap ellipsoid_prediction_list_biased
+    if(length(session_list$ellipsoid_prediction_list_biased) > 0){
+      session_list$ellipsoid_prediction_list_biased <- lapply(
+        session_list$ellipsoid_prediction_list_biased,
+        function(entry){
+          if(is.null(entry)) return(NULL)
+          result <- lapply(entry, function(p){
+            if(inherits(p, "SpatRaster")) terra::wrap(p) else p
+          })
+          class(result) <- "nicheR_biased_surface"
+          result
+        }
+      )
+    }
   }
 )
