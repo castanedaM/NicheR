@@ -319,3 +319,20 @@ observeEvent({
   }
 
 }, ignoreInit = TRUE)
+
+
+
+output$save_ell_pred_btn <- renderUI({
+  req(length(session_data$ellipsoid_prediction_list) > 0)
+
+  div(class = "action-btn-row",
+      actionButton("save_pred_list",
+                   label = "Save prediction",
+                   class = "btn-save")
+  )
+
+})
+
+observeEvent(input$save_pred_list, {
+  updateTabItems(session, "sidebarMenu", selected = "generate_tab")
+})

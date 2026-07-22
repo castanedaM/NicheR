@@ -89,52 +89,63 @@ output$bias_gspace_plot <- renderPlot({
   ell <- session_data$current_ellipsoid
   req(ell)
 
-  id          <- ell$ell_id
+  id <- ell$ell_id
   pred_result <- session_data$ellipsoid_prediction_list[[id]]
   bias_result <- session_data$ellipsoid_prediction_list_biased[[id]]
 
   has_pred_ell <- !is.null(pred_result) && inherits(pred_result, "SpatRaster")
-  has_bias_ell <- !is.null(bias_result) && inherits(bias_result, "SpatRaster")
+  has_bias_ell <- !is.null(bias_result)
 
   req(has_pred_ell)
 
   pred_layers <- names(pred_result)
-  bias_layers <- if(has_bias_ell) names(bias_result) else character(0)
-  map_bg_col  <- "#F0F0F0"
 
-  # For each pred layer find all matching biased versions
-  rows <- lapply(pred_layers, function(layer){
-    matched <- bias_layers[startsWith(bias_layers, paste0(layer, "_biased_"))]
-    list(pred   = layer,
-         biased = matched)
+  bias_layers <- if(has_bias_ell){
+    names(bias_result)
+  } else {
+    character(0)
+  }
+
+  # Build matched pairs by name
+  pairs <- lapply(pred_layers, function(layer){
+    matched_bias <- if(has_bias_ell){
+      bias_layers[bias_layers == paste0(layer, "_biased") |
+                    startsWith(bias_layers, paste0(layer, "_biased_"))]
+    } else {
+      character(0)
+    }
+
+    list(pred = layer,
+         bias = if(length(matched_bias) > 0) matched_bias[1] else NULL)
   })
 
-  # Total columns: 1 pred + max number of biased matches in any single row
-  max_bias <- max(vapply(rows, function(r) length(r$biased), integer(1)), 0L)
-  n_cols   <- 1L + max_bias
-  n_rows   <- length(rows)
+  n_rows <- length(pairs)
+  n_cols <- if(has_bias_ell) 2L else 1L
+  map_bg_col <- "#F0F0F0"
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
   par(mfrow = c(n_rows, n_cols), mar = c(3, 3, 2, 4))
 
-  for(row in rows){
+  for(pair in pairs){
 
-    # Column 1: original prediction
-    terra::plot(pred_result[[row$pred]],
-                main  = row$pred,
-                axes  = TRUE,
+    # Left column: original prediction
+    terra::plot(pred_result[[pair$pred]],
+                main = pair$pred,
+                axes = TRUE,
                 colNA = map_bg_col)
 
-    # Columns 2+: all matched biased versions
-    for(j in seq_len(max_bias)){
-      if(j <= length(row$biased)){
-        terra::plot(bias_result[[row$biased[j]]],
-                    main  = row$biased[j],
-                    axes  = TRUE,
+    # Right column: matched biased layer
+    if(has_bias_ell){
+      if(!is.null(pair$bias)){
+        terra::plot(bias_result[[pair$bias]],
+                    main = pair$bias,
+                    axes = TRUE,
                     colNA = map_bg_col)
       } else {
         plot.new()
+        title(main = paste0(pair$pred, " (no bias applied)"),
+              col.main = "#aaa")
       }
     }
   }

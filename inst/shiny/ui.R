@@ -393,7 +393,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                             uiOutput("save_ell_pred")
+                             uiOutput("save_ell_pred_btn")
                        )
                      )
                  )

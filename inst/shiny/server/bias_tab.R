@@ -184,7 +184,7 @@ observeEvent(input$prepare_bias, {
 observeEvent(input$edit_bias_prepare, {
   showModal(modalDialog(
     title = "Edit bias preparation?",
-    p("This will remove the current prepared bias surface.
+    p("This will remove the current prepared bias surface and any applied bias.
  The uploaded raster will be kept."),
     footer = tagList(
       modalButton("Cancel"),
@@ -199,6 +199,8 @@ observeEvent(input$edit_bias_prepare, {
 observeEvent(input$confirm_edit_bias_prepare, {
   removeModal()
   session_data$prepared_bias <- NULL
+  session_data$ellipsoid_prediction_list_biased <- list()
+
   showNotification("Bias preparation cleared. Adjust settings and re-prepare.",
                    type = "message", duration = 3)
 })
