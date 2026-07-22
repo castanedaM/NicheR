@@ -488,9 +488,25 @@ dashboardPage(
           column(width = 7,
 
                  tabBox(
-                   id    = "plot_bias",
+                   id    = "bias_plot_tabs",
                    width = 12,
 
+                   tabPanel(
+                     title = tags$span("Bias Layers", class = "text-tab-title"),
+                     value = "bias_layers",
+                     plotOutput("bias_layers_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Composite", class = "text-tab-title"),
+                     value = "bias_composite",
+                     plotOutput("bias_composite_plot")
+                   )
+                 ),
+
+                 tabBox(
+                   id = "plot_bias",
+                   width = 12,
                    tabPanel(
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "bias_espace",

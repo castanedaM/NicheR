@@ -36,5 +36,6 @@ function(input, output, session){
   source("server/predict_tab.R", local = TRUE)
   source("server/predict_tab_plot.R", local = TRUE)
   source("server/bias_tab.R", local = TRUE)
+  source("server/bias_tab_plot.R", local = TRUE)
   source("server/generate_tab.R", local = TRUE)
 }

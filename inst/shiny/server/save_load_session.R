@@ -53,20 +53,10 @@ observeEvent(input$load_session, {
   }
 
   # Unwrap ellipsoid_prediction_list_biased
-  if(length(session_list$ellipsoid_prediction_list_biased) > 0){
-    session_list$ellipsoid_prediction_list_biased <- lapply(
-      session_list$ellipsoid_prediction_list_biased,
-      function(entry){
-        if(is.null(entry)) return(NULL)
-        result <- lapply(entry, function(p){
-          if(inherits(p, "PackedSpatRaster"))
-            tryCatch(terra::unwrap(p), error = function(e) p) else p
-        })
-        class(result) <- "nicheR_biased_surface"
-        result
-      }
-    )
-  }
+  session_list$ellipsoid_prediction_list_biased <- lapply(
+    session_list$ellipsoid_prediction_list_biased,
+    function(p) tryCatch(terra::unwrap(p), error = function(e) p)
+  )
 
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
@@ -131,18 +121,10 @@ output$save_session_btn <- downloadHandler(
     }
 
     # Wrap ellipsoid_prediction_list_biased
-    if(length(session_list$ellipsoid_prediction_list_biased) > 0){
-      session_list$ellipsoid_prediction_list_biased <- lapply(
-        session_list$ellipsoid_prediction_list_biased,
-        function(entry){
-          if(is.null(entry)) return(NULL)
-          result <- lapply(entry, function(p){
-            if(inherits(p, "SpatRaster")) terra::wrap(p) else p
-          })
-          class(result) <- "nicheR_biased_surface"
-          result
-        }
-      )
-    }
+    session_list$ellipsoid_prediction_list_biased <- lapply(
+      session_list$ellipsoid_prediction_list_biased,
+      function(rast) if(inherits(rast, "SpatRaster")) terra::wrap(rast) else rast
+    )
+
   }
 )
