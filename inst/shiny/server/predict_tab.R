@@ -3,19 +3,48 @@
 # Description: Server for the predict tab, it take theelliposid of more
 # ellipsoid to predict over
 
-# Date Last Updated: 7/22/26
+# Date Last Updated: 7/23/26
 
-output$save_ell_pred <- renderUI({
+output$save_ell_pred_ui <- renderUI({
   req(length(session_data$ellipsoid_prediction_list) > 0)
 
-  actionButton(inputId = "ell_predict_save",
-               label = tags$span("Save predictionS",
-                                 class = "text-widget-title"),
-               class = "btn-default")
+  div(class = "action-btn-row",
+      actionButton(inputId = "save_ell_pred_btn",
+                   label = tags$span("Confirm predictions",
+                                     class = "text-widget-title"),
+                   class = "btn-save")
+  )
 
-  updateTabItems(session, "sidebarMenu", selected = "predict_tab")
+})
 
+observeEvent(input$save_ell_pred_btn, {
+  req(length(session_data$ellipsoid_prediction_list) > 0)
 
+  showModal(modalDialog(
+    title = "Predictions complete",
+    p("Would you like to apply a sampling bias surface to your predictions,
+       or continue directly to occurrence generation?",
+      class = "text-instruction"),
+    footer = tagList(
+      actionButton("skip_bias",
+                   tagList(icon("forward-step"), "Skip bias"),
+                   class = "btn-default"),
+      actionButton("continue_bias",
+                   tagList(icon("arrow-right"), "Continue with bias"),
+                   class = "btn-primary")
+    ),
+    easyClose = FALSE
+  ))
+}, ignoreInit = TRUE)
+
+observeEvent(input$skip_bias, {
+  removeModal()
+  updateTabItems(session, "sidebarMenu", selected = "generate_tab")
+})
+
+observeEvent(input$continue_bias, {
+  removeModal()
+  updateTabItems(session, "sidebarMenu", selected = "bias_tab")
 })
 
 output$pred_ell_select <- renderUI({

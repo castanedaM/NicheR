@@ -1,6 +1,6 @@
 # Title: Bias Tab Plot server
 # Description: Server for the bias tab plots
-# Date Last Updated: 7/22/26
+# Date Last Updated: 7/23/26
 
 
 # Prepare bias plot outputs ---------------------------------------------------------
@@ -57,7 +57,6 @@ output$bias_layers_plot <- renderPlot({
 
 })
 
-
 # Tab 2: Composite surface only
 output$bias_composite_plot <- renderPlot({
 
@@ -77,14 +76,28 @@ output$bias_composite_plot <- renderPlot({
 
 })
 
-
-
 # Apply bias --------------------------------------------------------------
+
+output$bias_gspace_layer_select <- renderUI({
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  pred_result <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
+  req(!is.null(pred_result) && inherits(pred_result, "SpatRaster"))
+
+  selectInput("bias_gspace_layer",
+              label = tags$span("Prediction layer", class = "text-widget-title"),
+              choices = names(pred_result),
+              selected = if("suitability_trunc" %in% names(pred_result)) "suitability_trunc"
+              else names(pred_result)[1])
+})
 
 output$bias_gspace_plot <- renderPlot({
 
   has_raster <- !is.null(session_data$bg_raster)
   req(has_raster)
+  req(input$bias_gspace_layer)
 
   ell <- session_data$current_ellipsoid
   req(ell)
@@ -94,60 +107,48 @@ output$bias_gspace_plot <- renderPlot({
   bias_result <- session_data$ellipsoid_prediction_list_biased[[id]]
 
   has_pred_ell <- !is.null(pred_result) && inherits(pred_result, "SpatRaster")
-  has_bias_ell <- !is.null(bias_result)
+  has_bias_ell <- !is.null(bias_result) && inherits(bias_result, "SpatRaster")
 
   req(has_pred_ell)
 
-  pred_layers <- names(pred_result)
+  layer <- input$bias_gspace_layer
+  map_bg_col <- "#F0F0F0"
 
-  bias_layers <- if(has_bias_ell){
-    names(bias_result)
+  matched_bias <- if(has_bias_ell){
+    names(bias_result)[startsWith(names(bias_result), paste0(layer, "_biased_"))]
   } else {
     character(0)
   }
 
-  # Build matched pairs by name
-  pairs <- lapply(pred_layers, function(layer){
-    matched_bias <- if(has_bias_ell){
-      bias_layers[bias_layers == paste0(layer, "_biased") |
-                    startsWith(bias_layers, paste0(layer, "_biased_"))]
-    } else {
-      character(0)
-    }
+  # All panels: original first then biased
+  all_panels <- c(list(list(type = "pred", name = layer)),
+                  lapply(matched_bias, function(nm) list(type = "bias", name = nm)))
 
-    list(pred = layer,
-         bias = if(length(matched_bias) > 0) matched_bias[1] else NULL)
-  })
-
-  n_rows <- length(pairs)
-  n_cols <- if(has_bias_ell) 2L else 1L
-  map_bg_col <- "#F0F0F0"
+  n_total <- length(all_panels)
+  n_cols <- 2L
+  n_rows <- ceiling(n_total / n_cols)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
   par(mfrow = c(n_rows, n_cols), mar = c(3, 3, 2, 4))
 
-  for(pair in pairs){
-
-    # Left column: original prediction
-    terra::plot(pred_result[[pair$pred]],
-                main = pair$pred,
-                axes = TRUE,
-                colNA = map_bg_col)
-
-    # Right column: matched biased layer
-    if(has_bias_ell){
-      if(!is.null(pair$bias)){
-        terra::plot(bias_result[[pair$bias]],
-                    main = pair$bias,
-                    axes = TRUE,
-                    colNA = map_bg_col)
-      } else {
-        plot.new()
-        title(main = paste0(pair$pred, " (no bias applied)"),
-              col.main = "#aaa")
-      }
+  for(panel in all_panels){
+    if(panel$type == "pred"){
+      terra::plot(pred_result[[panel$name]],
+                  main = panel$name,
+                  axes = TRUE,
+                  colNA = map_bg_col)
+    } else {
+      terra::plot(bias_result[[panel$name]],
+                  main = panel$name,
+                  axes = TRUE,
+                  colNA = map_bg_col)
     }
   }
+
+  # # Fill last cell if odd number of panels
+  # if(n_total %% 2 != 0){
+  #   plot.new()
+  # }
 
 })

@@ -24,7 +24,11 @@ function(input, output, session){
 
     bias_raster = NULL,
     prepared_bias = NULL,
-    ellipsoid_prediction_list_biased = list()
+    ellipsoid_prediction_list_biased = list(),
+
+
+    sampling_mask = NULL,
+    ellipsoid_occurrence_list = list()
 
   )
 
@@ -38,4 +42,6 @@ function(input, output, session){
   source("server/bias_tab.R", local = TRUE)
   source("server/bias_tab_plot.R", local = TRUE)
   source("server/generate_tab.R", local = TRUE)
+  source("server/generate_tab_plot.R", local = TRUE)
+
 }

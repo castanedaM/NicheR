@@ -12,14 +12,6 @@
   margin-bottom: 8px;
 }
 
-/* Widget inside text — small labels or values inside a widget */
-.text-widget-inner {
-  font-size: 13px;
-  font-weight: 400;
-  color: #383838;  /* slightly muted, not full black */
-  line-height: 1.4;
-}
-
 /* Section headers — labels that divide content within a panel */
 .text-section-header {
   font-size: 14px;
@@ -31,11 +23,18 @@
 /* Widget titles — titles on individual input widgets or cards */
 /* font-size matches widget icon size so they sit evenly */
 .text-widget-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
   margin-bottom: 4px;
 }
 
+/* Widget inside text — small labels or values inside a widget */
+.text-widget-inner {
+  font-size: 12px;
+  font-weight: 400;
+  color: #383838;
+  line-height: 1.4;
+}
 /* Widget icons — controls icon rendering size inline */
 /* Tabler icons inherit font-size from parent, so set it here */
 .text-widget-title .ti {
@@ -87,7 +86,7 @@
   border-radius: 6px;
   border:1px solid #6c757d;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 350;
   color: #fff;
   transition: opacity 0.15s ease;
 }

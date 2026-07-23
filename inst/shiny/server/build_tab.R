@@ -6,7 +6,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/22/2026
+# Date last updated: 07/23/2026
 
 # ELLIPSOID ---------------------------------------------------------------
 
@@ -111,7 +111,7 @@ observeEvent(input$next_build_another, {
 
   cov_counters(list())
 
-  showNotification("Covariance reset. Adjust and save a new version.",
+  showNotification("Covariances reseted. Adjust and save a new version.",
                    type = "message", duration = 3)
 })
 
@@ -426,6 +426,26 @@ observeEvent({
 
 }, ignoreInit = TRUE)
 
+
+output$save_ell_ui <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  div(class = "action-btn-row",
+      actionButton(inputId = "save_ell_btn",
+                   label = tags$span("Comfirm ellipsoids",
+                                     class = "text-widget-title"),
+                   class = "btn-save")
+  )
+
+})
+
+observeEvent(input$save_ell_btn, {
+
+  updateTabItems(session, "sidebarMenu", selected = "predict_tab")
+
+})
+
+
 # RANGES ------------------------------------------------------------------
 
 output$range_method_choice_ui <- renderUI({
@@ -436,7 +456,7 @@ output$range_method_choice_ui <- renderUI({
 
   if(is_built){
     return(
-      box(title = tags$span("Range", class = "text-section-header"),
+      box(title = tags$span("Ranges", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
@@ -451,7 +471,7 @@ output$range_method_choice_ui <- renderUI({
     )
   }
 
-  box(title = tags$span("Range", class = "text-section-header"),
+  box(title = tags$span("Ranges", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
@@ -1004,14 +1024,15 @@ output$covariance_ui <- renderUI({
   # Base is view-only
   if(identical(ell$ell_name, "base")){
     return(
-      box(title = tags$span("Covariance", class = "text-section-header"),
+      box(title = tags$span("Covariances", class = "text-section-header"),
           width       = 12,
           collapsible = TRUE,
           collapsed   = FALSE,
           p("The base ellipsoid is view-only and cannot be edited.",
             class = "text-instruction"),
           p("Use the", icon("circle-plus"), "button next to base in the
-             ellipsoid library to create an editable copy.",
+             ellipsoid library to create an editable copy,
+            or go back to ranges to initiate a new base",
             class = "text-instruction")
       )
     )
@@ -1019,22 +1040,22 @@ output$covariance_ui <- renderUI({
 
   if(isTRUE(covariance_set())){
     return(
-      box(title = tags$span("Covariance", class = "text-section-header"),
+      box(title = tags$span("Covariances", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
-          p("Covariance has been set for this ellipsoid.",
+          p("Covariances have been set for this ellipsoid.",
             class = "text-instruction"),
           fluidRow(
             column(12, class = "btn-spaced",
                    actionLink("edit_covariance",
-                              label = tagList(icon("pen"), "Edit covariance")))
+                              label = tagList(icon("pen"), "Edit covariances")))
           )
       )
     )
   }
 
-  box(title = tags$span("Covariance", class = "text-section-header"),
+  box(title = tags$span("Covariances", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
@@ -1045,7 +1066,7 @@ output$covariance_ui <- renderUI({
         column(width = 6,
                class = "btn-spaced",
                actionButton("set_cov",
-                            "Set Covariance",
+                            "Set Covariances",
                             class = "btn-primary"))
       )
   )

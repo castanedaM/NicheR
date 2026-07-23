@@ -1,19 +1,24 @@
 # Title: Bias Tab server
 # Description: Server for the bias tab
-# Date Last Updated: 7/21/26
+# Date Last Updated: 7/23/26
 
+output$save_ell_bias_ui <- renderUI({
+  req(length(session_data$ellipsoid_prediction_list_biased) > 0)
 
-observeEvent(input$skip_bias, {
+  div(class = "action-btn-row",
+      actionButton(inputId = "save_ell_bias_btn",
+                   label = tags$span("Comfirm bias",
+                                     class = "text-widget-title"),
+                   class = "btn-save")
+  )
+
+})
+
+observeEvent(input$save_ell_bias_btn, {
+
   updateTabItems(session, "sidebarMenu", selected = "generate_tab")
+
 })
-
-observeEvent(input$continue_bias, {
-  continue_bias(TRUE)
-  updateTabItems(session, "sidebarMenu", selected = "bias_tab")
-})
-
-
-
 
 # Input Bias Layers -------------------------------------------------------
 
@@ -74,14 +79,25 @@ observeEvent(input$confirm_edit_bias_upload, {
   removeModal()
   session_data$bias_raster <- NULL
   session_data$prepared_bias <- NULL
-  continue_bias(TRUE)
   showNotification("Bias raster cleared. Upload a new file.",
                    type = "message", duration = 3)
 })
 
 output$upload_bias_ui <- renderUI({
 
+  has_pred <- length(session_data$ellipsoid_prediction_list) > 0
   has_bias <- !is.null(session_data$bias_raster)
+
+  if(!has_pred){
+    return(
+      box(title = tags$span("Bias Inputs", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          p("Run predictions in the Predict tab before preparing and applying bias.",
+            class = "text-instruction"))
+    )
+  }
 
   if(has_bias){
     return(
@@ -98,8 +114,6 @@ output$upload_bias_ui <- renderUI({
       )
     )
   }
-
-  if(isFALSE(continue_bias())) return(NULL)
 
   box(title = tags$span("Bias input layers", class = "text-section-header"),
       width = 12,
@@ -602,7 +616,7 @@ observeEvent(input$confirm_edit_apply_bias, {
 # Ellipsoid Library -------------------------------------------------------
 
 output$ellipsoid_library_bias <- renderUI({
-  req(isTRUE(continue_bias()))
+  req(session_data$bias_raster)
   req(length(session_data$ellipsoid_list) > 0)
 
   versions <- session_data$ellipsoid_list

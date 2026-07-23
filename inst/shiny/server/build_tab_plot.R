@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/17/2026
+# Date last updated: 07/23/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -395,7 +395,7 @@ observeEvent({
 
 # Outputs -----------------------------------------------------------------
 
-output$plot_espace_options_ui <- renderUI({
+output$plot_espace_top_options_ui <- renderUI({
 
   vars <- plot_vars()
   req(vars)
@@ -419,6 +419,27 @@ output$plot_espace_options_ui <- renderUI({
     )
   )
 })
+
+output$plot_espace_bottom_options_ui <- renderUI({
+ req(length(session_data$ellipsoid_list) > 0)
+
+  # Zoom
+  fluidRow(
+    column(width = 4,
+           radioButtons("plot_zoom_mode",
+                        label = NULL,
+                        choiceNames = list(
+                          tags$span("auto", class = "text-widget-inner"),
+                          tags$span("zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE))
+  )
+
+})
+
+
 
 output$plot_combined_options_ui <- renderUI({
 
@@ -638,16 +659,6 @@ output$plot_settings_ui <- renderUI({
                         cursor: pointer;")
              )
       )
-    ),
-
-    # Zoom
-    fluidRow(
-      column(width = 4,
-             tags$span("Zoom", class = "text-widget-title"),
-             radioButtons("plot_zoom_mode", label = NULL,
-                          choices= c("Auto"= "auto",
-                                     "Zoom to ellipsoid" = "ellipsoid"),
-                          selected = "auto"))
     ),
 
     # Export button and settings sit below the tabBox, outside all panels

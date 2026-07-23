@@ -2,7 +2,7 @@
 # Description: E-space, G-space, and Combined prediction plots.
 # get_input(), update_axis_selectors(), compute_lims(),
 # open_device() are defined in build_tab_plot.R which loads first.
-# Date Last Updated: 07/20/2026
+# Date Last Updated: 07/23/2026
 
 
 # Helpers -------------------------------------------------------------------
@@ -326,18 +326,19 @@ output$pred_espace_options_ui <- renderUI({
   layers <- pred_layer_names()
 
   fluidRow(
-    column(width = 12,
+    column(width = 5,
            radioButtons("pred_espace_state",
                         label    = tags$span("Plot type:", class = "text-widget-title"),
                         choices  = c("All pairs" = "plot_pairs", "2D" = "plot_2d"),
                         selected = "plot_pairs",
-                        inline   = TRUE),
+                        inline   = TRUE)),
+    column(width = 7,
 
            # Layer selector only for pairs mode
            conditionalPanel(
              "input.pred_espace_state == 'plot_pairs'",
              if(length(layers) > 0){
-               column(width = 4,
+               column(width = 12,
                       selectInput("pred_pairs_layer", label = NULL,
                                   choices  = layers,
                                   selected = layers[1]))

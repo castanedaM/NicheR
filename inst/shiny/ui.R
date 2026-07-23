@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/21/2026
+# Lats Updated: 07/23/2026
 
 dashboardPage(
   dashboardHeader(
@@ -239,12 +239,21 @@ dashboardPage(
                        column(width = 12,
                               p(instructions$data_input_type, class = "text-instruction"),
                               radioButtons("data_input_type_choice",
-                                           label = tags$span("Select input type:", class = "text-widget-title"),
-                                           choices = c("Background layers" = "bg_layers",
-                                                       "Previous session" = "prev_session",
-                                                       "Virtual mode" = "virtual_mode",
-                                                       "Example data" = "example_data"),
-                                           selected = character(0), inline = FALSE),
+                                           label = tags$span("Select input type:",
+                                                             class = "text-widget-title"),
+                                           choiceNames = list(
+                                             tags$span("Background layers",
+                                                       class = "text-widget-inner"),
+                                             tags$span("Previous session",
+                                                       class = "text-widget-inner"),
+                                             tags$span("Virtual mode",
+                                                       class = "text-widget-inner"),
+                                             tags$span("Example data",
+                                                       class = "text-widget-inner")
+                                           ),
+                                           choiceValues = c("bg_layers", "prev_session", "virtual_mode", "example_data"),
+                                           selected = character(0),
+                                           inline = FALSE),
                               uiOutput("data_input_type")
                        )
                      )
@@ -268,6 +277,11 @@ dashboardPage(
                      ),
                      fluidRow(
                        uiOutput("ellipsoid_library")
+                     ),
+                     fluidRow(
+                       column(width = 12,
+                              uiOutput("save_ell_ui")
+                       )
                      )
                    )
                  )
@@ -282,8 +296,9 @@ dashboardPage(
                      width = 12,
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "tab_espace",
-                     uiOutput("plot_espace_options_ui"),
-                     plotOutput("build_espace_plot")
+                     uiOutput("plot_espace_top_options_ui"),
+                     plotOutput("build_espace_plot"),
+                     uiOutput("plot_espace_bottom_options_ui")
                    ),
 
                    tabPanel(
@@ -299,6 +314,7 @@ dashboardPage(
                      value = "tab_combined",
                      uiOutput("plot_combined_options_ui"),
                      plotOutput("build_combined_plot")
+                     # uiOutput("plot_espace_bottom_options_ui")
                    )
 
                  ),
@@ -353,8 +369,8 @@ dashboardPage(
                      br(),
 
                      fluidRow(
-                       box(title = tags$span("Advanced Prediciton Settings",
-                                             class = "text-tab-title"),
+                       box(title = tags$span("Advanced prediciton settings",
+                                             class = "text-section-header"),
                            width = 12,
                            collapsible = TRUE,
                            collapsed = TRUE,
@@ -393,7 +409,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                             uiOutput("save_ell_pred_btn")
+                             uiOutput("save_ell_pred_ui")
                        )
                      )
                  )
@@ -445,23 +461,6 @@ dashboardPage(
                      width = 12,
 
                      fluidRow(
-                       column(width = 12,
-                              div(class = "action-btn-row-ct",
-                                  actionButton(inputId = "skip_bias",
-                                               label = "Skip bias",
-                                               icon = icon("forward-step"),
-                                               class = "btn-back"),
-                                  actionButton(inputId = "continue_bias",
-                                           label = "Continue with bias",
-                                           icon = icon("arrow-right"),
-                                           class = "btn-continue")
-                                  )
-                       )
-                     ),
-
-                     br(), br(),
-
-                     fluidRow(
                        uiOutput("upload_bias_ui")
                      ),
 
@@ -479,7 +478,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                              uiOutput("save_ell_bias")
+                              uiOutput("save_ell_bias_ui")
                        )
                      )
                  )
@@ -488,7 +487,7 @@ dashboardPage(
           column(width = 7,
 
                  tabBox(
-                   id    = "bias_plot_tabs",
+                   id = "bias_plot_tabs",
                    width = 12,
 
                    tabPanel(
@@ -501,31 +500,15 @@ dashboardPage(
                      title = tags$span("Composite", class = "text-tab-title"),
                      value = "bias_composite",
                      plotOutput("bias_composite_plot")
-                   )
-                 ),
-
-                 tabBox(
-                   id = "plot_bias",
-                   width = 12,
-                   tabPanel(
-                     title = tags$span("E-space", class = "text-tab-title"),
-                     value = "bias_espace",
-                     uiOutput("bias_espace_options_ui"),
-                     plotOutput("bias_espace_plot")
                    ),
 
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "bias_gspace",
+                     uiOutput("bias_gspace_layer_select"),
                      plotOutput("bias_gspace_plot")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Combined", class = "text-tab-title"),
-                     value = "bias_combined",
-                     uiOutput("bias_combined_options_ui"),
-                     plotOutput("bias_combined_plot")
                    )
+
                  ),
 
                  br(),
@@ -540,43 +523,30 @@ dashboardPage(
         tabName = "generate_tab",
         fluidRow(
           column(width = 5,
-
-                 box(width = 12,
-                     title = tags$span("Generate Occurences",
-                                       class = "text-tab-title"),
-                     uiOutput("generate_ell_select")
+                 fluidRow(
+                  uiOutput("generate_ui")
                  )
           ),
+
           column(width = 7,
 
                  tabBox(
-                   id    = "plot_gen",
+                   id    = "generate_tabs",
                    width = 12,
 
                    tabPanel(
                      title = tags$span("E-space", class = "text-tab-title"),
-                     value = "gen_espace",
-                     uiOutput("gen_espace_options_ui"),
-                     plotOutput("gen_espace_plot")
+                     value = "generate_espace",
+                     uiOutput("generate_espace_options_ui"),
+                     plotOutput("generate_espace_plot")
                    ),
 
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
-                     value = "gen_gspace",
-                     plotOutput("gen_gspace_plot")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Combined", class = "text-tab-title"),
-                     value = "gen_combined",
-                     uiOutput("gen_combined_options_ui"),
-                     plotOutput("gen_combined_plot")
+                     value = "generate_gspace",
+                     plotOutput("generate_gspace_plot")
                    )
-                 ),
-
-                 br(),
-
-                 uiOutput("gen_plot_settings_ui")
+                 )
           )
         )
       )
