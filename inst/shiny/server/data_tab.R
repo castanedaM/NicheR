@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 07/22/2026
+# Date last updated: 07/27/2026
 
 # Start session button in about
 observeEvent(input$start_session, {
@@ -10,14 +10,21 @@ observeEvent(input$start_session, {
 # Observer Events ---------------------------------------------------------
 
 observeEvent(input$raster_file, {
-  showNotification("Raster file selected, preview loading...",
+  req(input$raster_file)
+
+  if(nrow(input$raster_file) > 10){
+    showNotification("Maximum 10 raster files allowed.",
+                     type = "warning", duration = 4)
+    return()
+  }
+
+  showNotification("Raster file(s) selected, preview loading...",
                    id = "raster_preview_msg",
                    type = "message",
-                   duration = NULL)  # NULL keeps it until manually removed
+                   duration = NULL)
 
   shinyjs::hide("df_file")
 })
-
 observeEvent(input$df_file, {
   showNotification("CSV file selected, preview loading...",
                    id = "df_preview_msg",
@@ -32,12 +39,56 @@ observeEvent(input$data_upload, {
   session_data$input_mode <- "bg_layers"
 
   if(!is.null(input$raster_file)){
-    ext <- tolower(tools::file_ext(input$raster_file$name))
-    session_data$bg_raster <- tryCatch(
-      load_raster_file(input$raster_file$datapath, ext),
-      error = function(e) stop(safeError(e))
-    )
-    uploaded <- TRUE
+
+    if(nrow(input$raster_file) > 10){
+      showNotification("Maximum 10 raster files allowed.",
+                       type = "warning", duration = 4)
+      return()
+    }
+
+    files <- input$raster_file
+
+    rasters <- lapply(seq_len(nrow(files)), function(i){
+      ext <- tolower(tools::file_ext(files$name[i]))
+      tryCatch(
+        load_raster_file(files$datapath[i], ext),
+        error = function(e){
+          showNotification(paste0("Could not load ", files$name[i],
+                                  ": ", e$message),
+                           type = "error", duration = 4)
+          NULL
+        }
+      )
+    })
+
+    rasters <- Filter(Negate(is.null), rasters)
+
+    if(length(rasters) == 0){
+      showNotification("No raster files could be loaded.",
+                       type = "error", duration = 4)
+      return()
+    }
+
+    if(length(rasters) == 1){
+      session_data$bg_raster <- rasters[[1]]
+      uploaded <- TRUE
+    } else {
+      stacked <- tryCatch(
+        do.call(c, rasters),
+        error = function(e){
+          showNotification(paste0("Could not stack rasters: ", e$message,
+                                  " Check that all files have matching resolution, ",
+                                  "extent, and CRS."),
+                           type  = "error",
+                           duration = 6)
+          NULL
+        }
+      )
+      if(!is.null(stacked)){
+        session_data$bg_raster <- stacked
+        uploaded <- TRUE
+      }
+    }
   }
 
   if(!is.null(input$df_file)){
@@ -250,22 +301,48 @@ observeEvent(input$confirm_edit_variables, {
   removeModal()
 
   session_data$vars <- NULL
+
+  session_data$session_range <- NULL
+  session_data$range_df <- NULL
+
   session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_id <- NULL
+
+  session_data$ellipsoid_prediction_list <-list()
+
+  session_data$bias_raster <- NULL
+  session_data$prepared_bias <- NULL
+  session_data$ellipsoid_prediction_list_biased <- list()
+
+
+  session_data$sampling_mask <- NULL
+  session_data$ellipsoid_occurrence_list <- list()
 
 })
 
-# Reset logic for input data
+# Reset logic if user changes from one input to the other of the input data
 observeEvent(input$data_input_type_choice, {
 
   session_data$input_mode <- NULL
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
   session_data$vars <- NULL
-  session_data$ellipsoid_list <- list()
+
+  session_data$session_range <- NULL
+  session_data$range_df <- NULL
+
+  session_data$ellipsoid_list <-list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_id <- NULL
+
+  session_data$ellipsoid_prediction_list <-list()
+
+  session_data$bias_raster <- NULL
+  session_data$prepared_bias <- NULL
+  session_data$ellipsoid_prediction_list_biased <- list()
+
+
+  session_data$sampling_mask <- NULL
+  session_data$ellipsoid_occurrence_list <- list()
 
   updateRadioButtons(session, "range_method_choice", selected = character(0))
 
@@ -387,14 +464,38 @@ output$data_input_type <- renderUI({
 
 output$raster_print <- renderPrint({
   req(input$raster_file)
-  ext <- tolower(tools::file_ext(input$raster_file$name))
-  result <- tryCatch(
-    load_raster_file(input$raster_file$datapath, ext),
-    error = function(e) stop(safeError(e))
-  )
+  req(nrow(input$raster_file) <= 10)
 
-  removeNotification("raster_preview_msg")
-  print(result)
+  files <- input$raster_file
+
+  rasters <- lapply(seq_len(nrow(files)), function(i){
+    ext <- tolower(tools::file_ext(files$name[i]))
+    tryCatch(
+      load_raster_file(files$datapath[i], ext),
+      error = function(e){
+        cat("Could not load", files$name[i], ":", e$message, "\n")
+        NULL
+      }
+    )
+  })
+
+  rasters <- Filter(Negate(is.null), rasters)
+  req(length(rasters) > 0)
+
+  if(length(rasters) == 1){
+    print(rasters[[1]])
+  } else {
+    stacked <- tryCatch(
+      do.call(c, rasters),
+      error = function(e){
+        cat("Could not stack rasters:", e$message, "\n")
+        NULL
+      }
+    )
+    if(!is.null(stacked)){
+      print(stacked)
+    }
+  }
 })
 
 output$df_header <- renderTable({

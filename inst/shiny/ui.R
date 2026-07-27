@@ -525,6 +525,10 @@ dashboardPage(
           column(width = 5,
                  fluidRow(
                   uiOutput("generate_ui")
+                 ),
+
+                 fluidRow(
+                   uiOutput("ellipsoid_library_gen")
                  )
           ),
 
@@ -535,14 +539,16 @@ dashboardPage(
                    width = 12,
 
                    tabPanel(
-                     title = tags$span("E-space", class = "text-tab-title"),
+                     title = tags$span("E-space",
+                                       class = "text-tab-title"),
                      value = "generate_espace",
                      uiOutput("generate_espace_options_ui"),
                      plotOutput("generate_espace_plot")
                    ),
 
                    tabPanel(
-                     title = tags$span("G-space", class = "text-tab-title"),
+                     title = tags$span("G-space",
+                                        class = "text-tab-title"),
                      value = "generate_gspace",
                      plotOutput("generate_gspace_plot")
                    )
