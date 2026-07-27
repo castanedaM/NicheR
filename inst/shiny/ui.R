@@ -305,6 +305,7 @@ dashboardPage(
                      value = "tab_espace",
                      uiOutput("plot_espace_top_options_ui"),
                      plotOutput("build_espace_plot"),
+                     br(),
                      uiOutput("plot_espace_bottom_options_ui")
                    ),
 
@@ -320,8 +321,9 @@ dashboardPage(
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "tab_combined",
                      uiOutput("plot_combined_options_ui"),
-                     plotOutput("build_combined_plot")
-                     # uiOutput("plot_espace_bottom_options_ui")
+                     plotOutput("build_combined_plot"),
+                     br(),
+                     uiOutput("plot_espace_bottom_options_ui_combined")
                    )
 
                  ),

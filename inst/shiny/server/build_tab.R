@@ -431,15 +431,16 @@ output$save_ell_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
   div(class = "action-btn-row",
-      actionButton(inputId = "save_ell_btn",
-                   label = tags$span("Comfirm ellipsoids",
-                                     class = "text-widget-title"),
-                   class = "btn-save")
+      actionButton(inputId = "continue_build_btn",
+                   label   = tagList(tags$span("Continue",
+                                               class = "text-widget-title"),
+                                     icon("chevron-right")),
+                   class   = "btn-save")
   )
 
 })
 
-observeEvent(input$save_ell_btn, {
+observeEvent(input$continue_build_btn, {
 
   updateTabItems(session, "sidebarMenu", selected = "predict_tab")
 
