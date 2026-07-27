@@ -1,6 +1,6 @@
 # Title: Bias Tab server
 # Description: Server for the bias tab
-# Date Last Updated: 7/23/26
+# Date Last Updated: 7/27/26
 
 output$save_ell_bias_ui <- renderUI({
   req(length(session_data$ellipsoid_prediction_list_biased) > 0)
@@ -28,21 +28,58 @@ observeEvent(input$bias_upload, {
 
   req(input$bias_raster_file)
 
-  ext <- tolower(tools::file_ext(input$bias_raster_file$name))
-  rast <- tryCatch(
-    load_raster_file(input$bias_raster_file$datapath, ext),
-    error = function(e){
-      showNotification(paste("Could not load bias raster:", e$message),
-                       type = "error", duration = 4)
-      NULL
-    }
-  )
+  files <- input$bias_raster_file
+
+  if(nrow(files) > 10){
+    showNotification("Maximum 10 raster files allowed.",
+                     type = "warning", duration = 4)
+    return()
+  }
+
+  rasters <- lapply(seq_len(nrow(files)), function(i){
+    ext <- tolower(tools::file_ext(files$name[i]))
+    tryCatch(
+      load_raster_file(files$datapath[i], ext),
+      error = function(e){
+        showNotification(paste0("Could not load ", files$name[i],
+                                ": ", e$message),
+                         type = "error", duration = 4)
+        NULL
+      }
+    )
+  })
+
+  rasters <- Filter(Negate(is.null), rasters)
+
+  if(length(rasters) == 0){
+    showNotification("No raster files could be loaded.",
+                     type = "error", duration = 4)
+    return()
+  }
+
+  rast <- if(length(rasters) == 1){
+    rasters[[1]]
+  } else {
+    tryCatch(
+      do.call(c, rasters),
+      error = function(e){
+        showNotification(paste0("Could not stack bias rasters: ", e$message,
+                                " Check that all files have matching resolution, ",
+                                "extent, and CRS."),
+                         type = "error",
+                         duration = 6)
+        NULL
+      }
+    )
+  }
 
   req(rast)
+
   session_data$bias_raster <- rast
   session_data$prepared_bias <- NULL
 
-  showNotification("Bias raster loaded successfully.", type = "message", duration = 4)
+  showNotification(paste0(terra::nlyr(rast), " bias layer(s) loaded successfully."),
+                   type = "message", duration = 4)
 })
 
 observeEvent(input$continue_bias_example, {
@@ -126,7 +163,7 @@ output$upload_bias_ui <- renderUI({
                fileInput(inputId = "bias_raster_file",
                          label = tags$span("Sampling bias layer/s (raster)",
                                            class = "text-widget-title"),
-                         multiple = FALSE,
+                         multiple = TRUE,
                          accept = c("tif", "tiff", "rds")))
       ),
 
@@ -152,16 +189,38 @@ output$upload_bias_ui <- renderUI({
 
 output$bias_raster_print <- renderPrint({
   req(input$bias_raster_file)
-  ext <- tolower(tools::file_ext(input$bias_raster_file$name))
-  rast <- tryCatch(
-    load_raster_file(input$bias_raster_file$datapath, ext),
-    error = function(e){
-      cat("Could not read file:", e$message)
-      NULL
+  req(nrow(input$bias_raster_file) <= 10)
+
+  files <- input$bias_raster_file
+
+  rasters <- lapply(seq_len(nrow(files)), function(i){
+    ext <- tolower(tools::file_ext(files$name[i]))
+    tryCatch(
+      load_bias_raster_file(files$datapath[i], ext),
+      error = function(e){
+        cat("Could not load", files$name[i], ":", e$message, "\n")
+        NULL
+      }
+    )
+  })
+
+  rasters <- Filter(Negate(is.null), rasters)
+  req(length(rasters) > 0)
+
+  if(length(rasters) == 1){
+    print(rasters[[1]])
+  } else {
+    stacked <- tryCatch(
+      do.call(c, rasters),
+      error = function(e){
+        cat("Could not stack bias rasters:", e$message, "\n")
+        NULL
+      }
+    )
+    if(!is.null(stacked)){
+      print(stacked)
     }
-  )
-  req(rast)
-  print(rast)
+  }
 })
 
 # Prepare Bias ------------------------------------------------------------

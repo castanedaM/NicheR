@@ -12,6 +12,13 @@ dashboardPage(
                      label = "Save",
                      icon = icon("floppy-disk"), class = "btn-primary",
                      title = "Save current session as .rds file")
+    ),
+    tags$li(
+      class = "dropdown",
+      downloadButton("create_report",
+                     label = "report",
+                     icon = icon("file-lines"), class = "btn-primary",
+                     title = "Save current session as html report")
     )
   ),
 
