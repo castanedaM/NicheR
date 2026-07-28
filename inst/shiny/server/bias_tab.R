@@ -315,18 +315,11 @@ output$prepare_bias_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$span("NA overlap handling", class = "text-widget-title"),
-               radioButtons(inputId = "bias_mask_na",
+               tags$span(icon("circle-info"),
+                         title = "Union keeps any pixel with at least one valid value across layers. NAs in other layers are ignored. Intersection keeps only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
+                         class = "tooltip-icon"),               radioButtons(inputId = "bias_mask_na",
                             label = NULL,
-                            choiceNames = list(
-                              tagList("Union",
-                                      tags$span(icon("circle-info"),
-                                                title = "Keep any pixel with at least one valid value across layers. NAs in other layers are ignored.",
-                                                class = "tooltip-icon")),
-                              tagList("Intersection",
-                                      tags$span(icon("circle-info"),
-                                                title = "Keep only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
-                                                class = "tooltip-icon"))
-                            ),
+                            choiceNames = list("Union", "Intersection"),
                             choiceValues = c("FALSE", "TRUE"),
                             selected= "FALSE",
                             inline = TRUE))

@@ -261,11 +261,47 @@ draw_espace_panel <- function(v1, v2, s){
 draw_gspace_panel <- function(s, title = "G-space"){
 
   rast <- session_data$bg_raster
-  pred <- if(s$show_suitable_gspace) tryCatch(pred_raster_vis(), error = function(e) NULL) else NULL
-  suitable_col <- s$suitable_col
-  unsuitable_col <- s$unsuitable_col
   map_bg_col <- s$map_bg_col
   cex_val <- if(!is.null(s$export_cex)) s$export_cex else 1
+  is_virtual <- identical(session_data$input_mode, "virtual_mode")
+
+  # Virtual mode: no raster available
+  if(is_virtual){
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "", main = title)
+    text(0.5, 0.5, "Virtual mode on\nG-space unavailable.",
+         cex = cex_val, col = "grey50", adj = c(0.5, 0.5))
+    return(invisible(NULL))
+  }
+
+  # No raster at all
+  if(is.null(rast)){
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "", main = title)
+    text(0.5, 0.5, "No raster data available.",
+         cex = cex_val, col = "grey50")
+    return(invisible(NULL))
+  }
+
+  # No ellipsoid yet: just plot first raster layer
+  if(!s$has_ell || !s$show_suitable_gspace){
+    terra::plot(rast[[1]],
+                main = title,
+                colNA = map_bg_col,
+                cex.main = cex_val * 1.1,
+                axes = FALSE,
+                xlab = "",
+                ylab = "")
+    axis(1, cex.axis = cex_val)
+    axis(2, cex.axis = cex_val)
+    mtext("Longitude", side = 1, line = 3, cex = cex_val)
+    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
+    box()
+    return(invisible(NULL))
+  }
+
+  # Ellipsoid exists: show suitable area prediction
+  pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
 
   if(!is.null(pred)){
 
@@ -276,28 +312,11 @@ draw_gspace_panel <- function(s, title = "G-space"){
                               include.lowest = TRUE)
 
     terra::plot(binary,
-                col = c(unsuitable_col, suitable_col),
+                col  = c(s$unsuitable_col, s$suitable_col),
                 legend = FALSE,
-                axes = TRUE,
-                main = title,
-                cex.main = cex_val * 1.1,
-                cex.axis = cex_val,
-                xlab = "Longitude",
-                ylab = "Latitude",
-                colNA = map_bg_col)
-
-    terra::add_legend(x = "topright",
-                      legend = c("Suitable", "Unsuitable"),
-                      fill = c(suitable_col, unsuitable_col),
-                      bty = "n",
-                      cex = cex_val * 0.8)
-
-  } else if(!is.null(rast)){
-    terra::plot(rast[[1]],
-                main = title,
-                colNA = map_bg_col,
-                cex.main = cex_val * 1.1,
                 axes = FALSE,
+                main = title,
+                cex.main = cex_val * 1.1,
                 xlab = "",
                 ylab = "",
                 colNA = map_bg_col)
@@ -305,16 +324,29 @@ draw_gspace_panel <- function(s, title = "G-space"){
     axis(1, cex.axis = cex_val)
     axis(2, cex.axis = cex_val)
     mtext("Longitude", side = 1, line = 3, cex = cex_val)
-    mtext("Latitude", side = 2, line = 3, cex = cex_val)
+    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
     box()
 
+    terra::add_legend(x  = "topright",
+                      legend = c("Suitable", "Unsuitable"),
+                      fill = c(s$suitable_col, s$unsuitable_col),
+                      bty = "n",
+                      cex = cex_val * 0.8)
   } else {
-    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1),
-         xlab = "Longitude", ylab = "Latitude", main = title)
-    text(0.5, 0.5, "No raster data available.", cex = cex_val, col = "grey50")
+    terra::plot(rast[[1]],
+                main = title,
+                colNA = map_bg_col,
+                cex.main = cex_val * 1.1,
+                axes = FALSE,
+                xlab = "",
+                ylab = "")
+    axis(1, cex.axis = cex_val)
+    axis(2, cex.axis = cex_val)
+    mtext("Longitude", side = 1, line = 3, cex = cex_val)
+    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
+    box()
   }
 }
-
 draw_espace_pairs <- function(vars, s){
   pairs <- t(combn(seq_along(vars), 2))
   n_pairs <- nrow(pairs)
