@@ -321,44 +321,6 @@ collect_plot_settings <- function(){
   )
 }
 
-open_device <- function(file, ext){
-
-  unit <- if(!is.null(input$export_unit)) input$export_unit else "mm"
-  w_val <- if(!is.null(input$export_width_val)) input$export_width_val else 166
-  h_val <- if(!is.null(input$export_height_val)) input$export_height_val else 166
-  res <- if(!is.null(input$export_res)) input$export_res else 300
-  cex_val <- if(!is.null(input$export_cex)) input$export_cex else 1
-
-  # Convert to px for png, inches for pdf/svg
-  to_inches <- function(val){
-    switch(unit,
-           "mm" = val / 25.4,
-           "in" = val,
-           "px" = val / res)
-  }
-
-  to_px <- function(val){
-    switch(unit,
-           "mm" = round(val / 25.4 * res),
-           "in" = round(val * res),
-           "px" = round(val))
-  }
-
-  if(ext == "png"){
-    png(file, width = to_px(w_val), height = to_px(h_val), res = res)
-  } else if(ext == "pdf"){
-    pdf(file, width = to_inches(w_val), height = to_inches(h_val))
-  } else if(ext == "svg"){
-    svg(file, width = to_inches(w_val), height = to_inches(h_val))
-  }
-
-  # Set all cex parameters so they are not overridden by individual plot calls
-  par(cex = cex_val,
-      cex.axis = cex_val,
-      cex.lab = cex_val,
-      cex.main = cex_val * 1.1,
-      cex.sub = cex_val * 0.9)
-}
 
 # Reactives ---------------------------------------------------------------
 
@@ -426,8 +388,10 @@ plot_vars <- reactive({
 })
 
 
-# Observers ---------------------------------------------------------------
+# Selector observers ------------------------------------------------------
 
+# Selects the x and y based on the avialbel variables, prevent form selection a
+# 1:1
 observeEvent({
   input$plot_espace_state
   input$plot_2d_x
@@ -453,64 +417,6 @@ observeEvent({
 
 
 # Outputs -----------------------------------------------------------------
-
-output$plot_espace_bottom_options_ui <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
-
-  fluidRow(
-    column(width = 1,
-           tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_zoom_mode", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Zoom in", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "ellipsoid"),
-                        selected = "auto",
-                        inline = TRUE)),
-    column(width = 3,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Fixed", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "fixed"),
-                        selected = "auto",
-                        inline = TRUE))
-  )
-})
-
-output$plot_espace_bottom_options_ui_combined <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
-
-  fluidRow(
-    column(width = 1,
-           tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 5,
-           radioButtons("plot_zoom_mode", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Zoom in", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "ellipsoid"),
-                        selected = "auto",
-                        inline = TRUE)),
-    column(width = 2,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Fixed", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "fixed"),
-                        selected = "auto",
-                        inline = TRUE))
-  )
-})
 
 output$plot_combined_options_ui <- renderUI({
 
@@ -848,6 +754,65 @@ output$plot_combined_options_ui <- renderUI({
   )
 })
 
+output$plot_espace_bottom_options_ui <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  fluidRow(
+    column(width = 1,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
+    column(width = 3,
+           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_asp_espace", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Fixed", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "fixed"),
+                        selected = "auto",
+                        inline = TRUE))
+  )
+})
+
+output$plot_espace_bottom_options_ui_combined <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  fluidRow(
+    column(width = 1,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 5,
+           radioButtons("plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
+    column(width = 2,
+           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_asp_espace", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Fixed", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "fixed"),
+                        selected = "auto",
+                        inline = TRUE))
+  )
+})
+
+# Ellipsoid library, this shows all version of the base elliposid created
 output$ellipsoid_info <- renderUI({
 
   req(session_data$current_ellipsoid)
@@ -976,6 +941,49 @@ output$ellipsoid_info <- renderUI({
   )
 })
 
+
+
+# Export Logic ------------------------------------------------------------
+
+open_device <- function(file, ext){
+
+  unit <- if(!is.null(input$export_unit)) input$export_unit else "mm"
+  w_val <- if(!is.null(input$export_width_val)) input$export_width_val else 166
+  h_val <- if(!is.null(input$export_height_val)) input$export_height_val else 166
+  res <- if(!is.null(input$export_res)) input$export_res else 300
+  cex_val <- if(!is.null(input$export_cex)) input$export_cex else 1
+
+  # Convert to px for png, inches for pdf/svg
+  to_inches <- function(val){
+    switch(unit,
+           "mm" = val / 25.4,
+           "in" = val,
+           "px" = val / res)
+  }
+
+  to_px <- function(val){
+    switch(unit,
+           "mm" = round(val / 25.4 * res),
+           "in" = round(val * res),
+           "px" = round(val))
+  }
+
+  if(ext == "png"){
+    png(file, width = to_px(w_val), height = to_px(h_val), res = res)
+  } else if(ext == "pdf"){
+    pdf(file, width = to_inches(w_val), height = to_inches(h_val))
+  } else if(ext == "svg"){
+    svg(file, width = to_inches(w_val), height = to_inches(h_val))
+  }
+
+  # Set all cex parameters so they are not overridden by individual plot calls
+  par(cex = cex_val,
+      cex.axis = cex_val,
+      cex.lab = cex_val,
+      cex.main = cex_val * 1.1,
+      cex.sub = cex_val * 0.9)
+}
+
 output$export_settings_ui <- renderUI({
 
   ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
@@ -1092,7 +1100,6 @@ observeEvent(input$open_export_modal, {
 })
 
 output$confirm_export <- downloadHandler(
-
 
   filename = function(){
     ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
