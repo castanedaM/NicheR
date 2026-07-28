@@ -23,7 +23,7 @@ observeEvent(input$save_ell_pred_btn, {
   showModal(modalDialog(
     title = "Predictions complete",
     p("Would you like to apply a sampling bias surface to your predictions,
-       or continue directly to occurrence generation?",
+   or continue directly to occurrence generation?",
       class = "text-instruction"),
     footer = tagList(
       actionButton("skip_bias",
@@ -122,7 +122,7 @@ observeEvent(input$ell_predict, {
     req(result_stacked)
 
     session_data$ellipsoid_prediction_list <- result_stacked
-     showNotification("Batch prediction completed.", type = "message", duration = 4)
+    showNotification("Batch prediction completed.", type = "message", duration = 4)
 
   } else {
 
@@ -158,6 +158,13 @@ observeEvent(input$ell_predict, {
                      type = "message", duration = 4)
   }
 
+  # Check if base was predicted and change to base instead of id
+  base_id <- session_data$ellipsoid_list[["base"]]$ell_id
+  idx <- which(names(session_data$ellipsoid_prediction_list) == base_id)
+  if(length(idx) > 0){
+    names(session_data$ellipsoid_prediction_list)[idx] <- "base"
+  }
+
 })
 
 output$ellipsoid_library_pred <- renderUI({
@@ -191,7 +198,7 @@ output$ellipsoid_library_pred <- renderUI({
                        style = "font-size: 11px; color: #aaa;")),
 
       column(width = 5,
-              p("View Only")
+             p("View Only")
       )
     )
   }

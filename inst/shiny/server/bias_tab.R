@@ -175,12 +175,12 @@ output$upload_bias_ui <- renderUI({
       fluidRow(
         column(width = 12,
                div(class = "action-btn-row",
-                 actionButton("bias_upload",
-                              "Upload bias",
-                              class = "btn-continue"),
-                 actionButton("continue_bias_example",
-                              "Example bias",
-                              class = "btn-back")
+                   actionButton("bias_upload",
+                                "Upload bias",
+                                class = "btn-continue"),
+                   actionButton("continue_bias_example",
+                                "Example bias",
+                                class = "btn-back")
                )
         )
       )
@@ -317,12 +317,12 @@ output$prepare_bias_ui <- renderUI({
                tags$span("NA overlap handling", class = "text-widget-title"),
                tags$span(icon("circle-info"),
                          title = "Union keeps any pixel with at least one valid value across layers. NAs in other layers are ignored. Intersection keeps only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
-                         class = "tooltip-icon"),               radioButtons(inputId = "bias_mask_na",
-                            label = NULL,
-                            choiceNames = list("Union", "Intersection"),
-                            choiceValues = c("FALSE", "TRUE"),
-                            selected= "FALSE",
-                            inline = TRUE))
+                         class = "tooltip-icon"),  radioButtons(inputId = "bias_mask_na",
+                                                                label = NULL,
+                                                                choiceNames = list("Union", "Intersection"),
+                                                                choiceValues = c("FALSE", "TRUE"),
+                                                                selected= "FALSE",
+                                                                inline = TRUE))
       ),
 
       fluidRow(
@@ -406,11 +406,11 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
                                layer, prepared_bias, direction = "direct"){
 
   result <- tryCatch(
-    apply_bias(prepared_bias    = prepared_bias,
-               prediction       = pred_rast,
+    apply_bias(prepared_bias = prepared_bias,
+               prediction = pred_rast,
                prediction_layer = layer,
                effect_direction = direction,
-               verbose          = FALSE),
+               verbose = FALSE),
     error = function(e) NULL
   )
 
@@ -423,7 +423,7 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
   if(!ell_id %in% names(biased_list)){
     biased_list[[ell_id]] <- new_rast
   } else {
-    existing   <- biased_list[[ell_id]]
+    existing <- biased_list[[ell_id]]
     new_lyr_nm <- names(new_rast)
 
     if(new_lyr_nm %in% names(existing)){
@@ -442,7 +442,7 @@ output$apply_bias_ui <- renderUI({
   req(length(session_data$ellipsoid_prediction_list) > 0)
 
   has_applied <- length(session_data$ellipsoid_prediction_list_biased) > 0
-  show_form   <- isTRUE(show_apply_bias_form())
+  show_form <- isTRUE(show_apply_bias_form())
 
   if(has_applied && !show_form){
 
@@ -453,9 +453,9 @@ output$apply_bias_ui <- renderUI({
 
     return(
       box(title = tags$span("Apply bias", class = "text-section-header"),
-          width       = 12,
+          width = 12,
           collapsible = TRUE,
-          collapsed   = TRUE,
+          collapsed = TRUE,
           p(paste0(n_layers, " biased layer(s) across ",
                    length(session_data$ellipsoid_prediction_list_biased),
                    " ellipsoid(s)."),
@@ -469,16 +469,16 @@ output$apply_bias_ui <- renderUI({
     )
   }
 
-  pred_ids   <- names(session_data$ellipsoid_prediction_list)
+  pred_ids <- names(session_data$ellipsoid_prediction_list)
   first_pred <- session_data$ellipsoid_prediction_list[[pred_ids[1]]]
-  layers     <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
+  layers <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
 
   box(title = tags$span("Apply bias", class = "text-section-header"),
-      width       = 12,
+      width = 12,
       collapsible = TRUE,
-      collapsed   = FALSE,
+      collapsed = FALSE,
       p("Apply the composite bias surface to a prediction. Previously applied
-         combinations are skipped automatically.",
+ combinations are skipped automatically.",
         class = "text-instruction"),
 
       uiOutput("bias_ell_select"),
@@ -490,8 +490,8 @@ output$apply_bias_ui <- renderUI({
                          title = "Layer must be a suitability surface with values in [0, 1].",
                          class = "tooltip-icon"),
                selectInput("bias_prediction_layer",
-                           label    = NULL,
-                           choices  = c("All prediction layers" = "all_pred", layers),
+                           label = NULL,
+                           choices = c("All prediction layers" = "all_pred", layers),
                            selected = if("suitability_trunc" %in% layers) "suitability_trunc"
                            else if("suitability" %in% layers) "suitability"
                            else layers[1]))
@@ -501,8 +501,8 @@ output$apply_bias_ui <- renderUI({
         column(width = 12,
                tags$span("Effect direction", class = "text-widget-title"),
                radioButtons("bias_effect_direction",
-                            label        = NULL,
-                            choiceNames  = list(
+                            label = NULL,
+                            choiceNames = list(
                               tagList("Direct",
                                       tags$span(icon("circle-info"),
                                                 title = "prediction x bias.",
@@ -513,8 +513,8 @@ output$apply_bias_ui <- renderUI({
                                                 class = "tooltip-icon"))
                             ),
                             choiceValues = c("direct", "inverse"),
-                            selected     = "direct",
-                            inline       = TRUE))
+                            selected = "direct",
+                            inline = TRUE))
       ),
 
       fluidRow(
@@ -530,28 +530,30 @@ output$bias_ell_select <- renderUI({
 
   req(length(session_data$ellipsoid_prediction_list) > 0)
 
-  versions <- session_data$ellipsoid_list
   pred_ids <- names(session_data$ellipsoid_prediction_list)
+  versions <- session_data$ellipsoid_list
+
 
   ell_choices <- c(
     "All versions" = "all",
     setNames(pred_ids,
              vapply(pred_ids, function(id){
                ell <- versions[[id]]
-               if(!is.null(ell)) ell$ell_name else id
+               if(!is.null(ell) && !is.null(ell$ell_name)) ell$ell_name else id
              }, character(1)))
   )
 
   selectInput(inputId = "bias_ell_selected",
-              label   = tagList(
+              label = tagList(
                 tags$span("Ellipsoid version", class = "text-widget-title"),
                 tags$span(icon("circle-info"),
                           title = "Select which ellipsoid version to apply bias to.",
                           class = "tooltip-icon")
               ),
-              choices  = ell_choices,
+              choices = ell_choices,
               selected = "all")
 })
+
 
 observeEvent(input$apply_bias_btn, {
 
@@ -560,14 +562,14 @@ observeEvent(input$apply_bias_btn, {
   req(input$bias_prediction_layer)
   req(input$bias_ell_selected)
 
-  pred_list    <- session_data$ellipsoid_prediction_list
-  is_all       <- input$bias_ell_selected == "all"
-  is_all_pred  <- input$bias_prediction_layer == "all_pred"
+  pred_list <- session_data$ellipsoid_prediction_list
+  is_all <- input$bias_ell_selected == "all"
+  is_all_pred <- input$bias_prediction_layer == "all_pred"
   selected_ids <- if(is_all) names(pred_list) else input$bias_ell_selected
-  direction    <- if(!is.null(input$bias_effect_direction)) input$bias_effect_direction else "direct"
+  direction <- if(!is.null(input$bias_effect_direction)) input$bias_effect_direction else "direct"
 
-  first_pred    <- pred_list[[selected_ids[1]]]
-  all_layers    <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
+  first_pred <- pred_list[[selected_ids[1]]]
+  all_layers <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
   target_layers <- if(is_all_pred) all_layers else input$bias_prediction_layer
 
   if(length(target_layers) == 0){
@@ -611,16 +613,16 @@ observeEvent(input$apply_bias_btn, {
         next
       }
 
-      prev_n      <- length(current_biased)
+      prev_n <- length(current_biased)
       prev_layers <- if(id %in% names(current_biased)) terra::nlyr(current_biased[[id]]) else 0L
 
       current_biased <- apply_bias_to_list(
-        biased_list   = current_biased,
-        ell_id        = id,
-        pred_rast     = pred,
-        layer         = layer,
+        biased_list = current_biased,
+        ell_id = id,
+        pred_rast = pred,
+        layer = layer,
         prepared_bias = session_data$prepared_bias,
-        direction     = direction
+        direction = direction
       )
 
       new_layers <- if(id %in% names(current_biased)) terra::nlyr(current_biased[[id]]) else 0L
@@ -689,10 +691,10 @@ output$ellipsoid_library_bias <- renderUI({
       column(width = 4,
              tags$span(icon("eye"),
                        tags$span(paste0(" ", cur_ell$ell_name),
-                                 class  = "text-widget-inner",
-                                 style  = "color: #097a21; font-weight: 500;"),
+                                 class = "text-widget-inner",
+                                 style = "color: #097a21; font-weight: 500;"),
                        tags$span("(current)",
-                                 style  = "font-size: 11px; color: #aaa;"))),
+                                 style = "font-size: 11px; color: #aaa;"))),
       column(width = 3,
              tags$span(cur_ell$ell_id,
                        style = "font-size: 11px; color: #aaa;")),

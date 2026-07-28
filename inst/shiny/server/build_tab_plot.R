@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/27/2026
+# Date last updated: 07/28/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -12,91 +12,6 @@ get_input <- function(id, default){
   } else {
     default
   }
-}
-
-# Called at the top of every draw function.
-# Returns a plain list so drawing functions are pure and testable.
-collect_plot_settings <- function(){
-  ranges <- tryCatch(
-    withCallingHandlers(
-      range_preview(),
-      shiny.silent.error = function(e) invokeRestart("muffleWarning")
-    ),
-    error = function(e) NULL
-  )
-
-  if(is.null(ranges)){
-    # Prefer base ellipsoid ranges for range lines since they represent
-    # the original niche definition and should not move with the centroid
-    base_ell <- session_data$ellipsoid_list[["base"]]
-    ref_ell<- if(!is.null(base_ell)) base_ell else session_data$current_ellipsoid
-
-    if(!is.null(ref_ell) &&
-       !is.null(ref_ell$ranges) &&
-       !is.null(colnames(ref_ell$ranges)) &&
-       length(colnames(ref_ell$ranges)) > 0){
-      ranges <- list(mins = as.list(ref_ell$ranges[1, ]),
-                     maxs = as.list(ref_ell$ranges[2, ]))
-    }
-  }
-
-  has_ell <- !is.null(session_data$current_ellipsoid)
-
-  list(
-    has_ell = has_ell,
-    ell = if(has_ell) session_data$current_ellipsoid else NULL,
-
-    show_ell = has_ell && get_input("show_ellipsoid",TRUE),
-    show_centroid = has_ell && get_input("show_centroid", TRUE),
-    show_suitable_espace = has_ell && get_input("show_suitable_espace", TRUE),
-    show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
-
-    pch_val = {
-      v <- get_input("plot_pch", ".")
-      if(v == ".") "." else as.numeric(v)
-    },
-    cex_val = get_input("plot_cex", 0.3),
-    bg_col = get_input("plot_bg_col", "#B3B3B3"),
-
-    suitable_pch = as.numeric(get_input("plot_suitable_pch", "16")),
-    suitable_cex = get_input("plot_suitable_cex", 0.3),
-    suitable_col = get_input("plot_suitable_col", "#097a21"),
-    unsuitable_col = get_input("plot_unsuitable_col", "#D3D3D3"),
-    map_bg_col = get_input("plot_map_bg_col", "#F0F0F0"),
-
-    show_lines = {
-      show <- get_input("show_range_lines", TRUE)
-      list(active = show && !is.null(ranges), ranges = ranges)
-    },
-
-    xline_col = get_input("plot_xline_col","#E10000"),
-    yline_col = get_input("plot_yline_col","#0004D5"),
-    line_lwd = get_input("plot_line_lwd", 2),
-
-    ell_col = get_input("plot_ell_col", "#000000"),
-    ell_lwd = get_input("plot_ell_lwd", 2),
-    ell_lty = as.numeric(get_input("plot_ell_lty", "1")),
-
-    centroid_pch = as.numeric(get_input("plot_centroid_pch", "8")),
-    centroid_col = get_input("plot_centroid_col", "#000000"),
-    centroid_cex = get_input("plot_centroid_cex", 1.5),
-
-    zoom_mode = get_input("plot_zoom_mode","auto"),
-
-    cex_espace = get_input("plot_cex_espace", 0.3),
-    cex_combined = get_input("plot_cex_combined", 0.3),
-    asp_espace = get_input("plot_asp_espace", "auto"),
-    asp_combined = get_input("plot_asp_combined", "auto"),
-    export_cex = get_input("export_cex", 1),
-
-    centroid_preview_val = tryCatch(
-      withCallingHandlers(
-        centroid_preview(),
-        shiny.silent.error = function(e) invokeRestart("muffleWarning")
-      ),
-      error = function(e) NULL
-    )
-  )
 }
 
 # Helper to avoid repeating the mutual-exclusion update logic in varibales.
@@ -260,93 +175,57 @@ draw_espace_panel <- function(v1, v2, s){
 
 draw_gspace_panel <- function(s, title = "G-space"){
 
-  rast <- session_data$bg_raster
+  rast       <- session_data$bg_raster
   map_bg_col <- s$map_bg_col
-  cex_val <- if(!is.null(s$export_cex)) s$export_cex else 1
+  cex_val    <- if(!is.null(s$export_cex)) s$export_cex else 1
   is_virtual <- identical(session_data$input_mode, "virtual_mode")
 
-  # Virtual mode: no raster available
   if(is_virtual){
     plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
          xlab = "", ylab = "", main = title)
     text(0.5, 0.5, "Virtual mode on\nG-space unavailable.",
-         cex = cex_val, col = "grey50", adj = c(0.5, 0.5))
-    return(invisible(NULL))
-  }
-
-  # No raster at all
-  if(is.null(rast)){
-    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
-         xlab = "", ylab = "", main = title)
-    text(0.5, 0.5, "No raster data available.",
          cex = cex_val, col = "grey50")
     return(invisible(NULL))
   }
 
-  # No ellipsoid yet: just plot first raster layer
-  if(!s$has_ell || !s$show_suitable_gspace){
-    terra::plot(rast[[1]],
-                main = title,
-                colNA = map_bg_col,
-                cex.main = cex_val * 1.1,
-                axes = FALSE,
-                xlab = "",
-                ylab = "")
-    axis(1, cex.axis = cex_val)
-    axis(2, cex.axis = cex_val)
-    mtext("Longitude", side = 1, line = 3, cex = cex_val)
-    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
-    box()
+  if(is.null(rast)){
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "", main = title)
+    text(0.5, 0.5, "No raster data available.", cex = cex_val, col = "grey50")
     return(invisible(NULL))
   }
 
-  # Ellipsoid exists: show suitable area prediction
+  plot_rast <- function(r, ttl){
+    par(cex.axis = cex_val,
+        cex.lab  = cex_val,
+        cex.main = cex_val * 1.1)
+    terra::plot(r,
+                main  = ttl,
+                colNA = map_bg_col,
+                axes  = TRUE,
+                xlab  = "Longitude",
+                ylab  = "Latitude")
+  }
+
+  if(!s$has_ell || !s$show_suitable_gspace){
+    plot_rast(rast[[1]], title)
+    return(invisible(NULL))
+  }
+
   pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
 
   if(!is.null(pred)){
-
     binary <- terra::classify(pred[["suitability_trunc"]],
                               rcl = matrix(c(-Inf, 0, 0,
                                              0, Inf, 1),
                                            ncol = 3, byrow = TRUE),
                               include.lowest = TRUE)
-
-    terra::plot(binary,
-                col  = c(s$unsuitable_col, s$suitable_col),
-                legend = FALSE,
-                axes = FALSE,
-                main = title,
-                cex.main = cex_val * 1.1,
-                xlab = "",
-                ylab = "",
-                colNA = map_bg_col)
-
-    axis(1, cex.axis = cex_val)
-    axis(2, cex.axis = cex_val)
-    mtext("Longitude", side = 1, line = 3, cex = cex_val)
-    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
-    box()
-
-    terra::add_legend(x  = "topright",
-                      legend = c("Suitable", "Unsuitable"),
-                      fill = c(s$suitable_col, s$unsuitable_col),
-                      bty = "n",
-                      cex = cex_val * 0.8)
+    plot_rast(binary, title)
   } else {
-    terra::plot(rast[[1]],
-                main = title,
-                colNA = map_bg_col,
-                cex.main = cex_val * 1.1,
-                axes = FALSE,
-                xlab = "",
-                ylab = "")
-    axis(1, cex.axis = cex_val)
-    axis(2, cex.axis = cex_val)
-    mtext("Longitude", side = 1, line = 3, cex = cex_val)
-    mtext("Latitude",  side = 2, line = 3, cex = cex_val)
-    box()
+    plot_rast(rast[[1]], title)
   }
 }
+
 draw_espace_pairs <- function(vars, s){
   pairs <- t(combn(seq_along(vars), 2))
   n_pairs <- nrow(pairs)
@@ -354,6 +233,92 @@ draw_espace_pairs <- function(vars, s){
   n_rows <- ceiling(n_pairs / n_cols)
   par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
   for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
+}
+
+
+# Called at the top of every draw function.
+# Returns a plain list so drawing functions are pure and testable.
+collect_plot_settings <- function(){
+  ranges <- tryCatch(
+    withCallingHandlers(
+      range_preview(),
+      shiny.silent.error = function(e) invokeRestart("muffleWarning")
+    ),
+    error = function(e) NULL
+  )
+
+  if(is.null(ranges)){
+    # Prefer base ellipsoid ranges for range lines since they represent
+    # the original niche definition and should not move with the centroid
+    base_ell <- session_data$ellipsoid_list[["base"]]
+    ref_ell<- if(!is.null(base_ell)) base_ell else session_data$current_ellipsoid
+
+    if(!is.null(ref_ell) &&
+       !is.null(ref_ell$ranges) &&
+       !is.null(colnames(ref_ell$ranges)) &&
+       length(colnames(ref_ell$ranges)) > 0){
+      ranges <- list(mins = as.list(ref_ell$ranges[1, ]),
+                     maxs = as.list(ref_ell$ranges[2, ]))
+    }
+  }
+
+  has_ell <- !is.null(session_data$current_ellipsoid)
+
+  list(
+    has_ell = has_ell,
+    ell = if(has_ell) session_data$current_ellipsoid else NULL,
+
+    show_ell = has_ell && get_input("show_ellipsoid",TRUE),
+    show_centroid = has_ell && get_input("show_centroid", TRUE),
+    show_suitable_espace = has_ell && get_input("show_suitable_espace", TRUE),
+    show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
+
+    pch_val = {
+      v <- get_input("plot_pch", ".")
+      if(v == ".") "." else as.numeric(v)
+    },
+    cex_val = get_input("plot_cex", 0.3),
+    bg_col = get_input("plot_bg_col", "#B3B3B3"),
+
+    suitable_pch = as.numeric(get_input("plot_suitable_pch", "16")),
+    suitable_cex = get_input("plot_suitable_cex", 0.3),
+    suitable_col = get_input("plot_suitable_col", "#097a21"),
+    unsuitable_col = get_input("plot_unsuitable_col", "#D3D3D3"),
+    map_bg_col = get_input("plot_map_bg_col", "#F0F0F0"),
+
+    show_lines = {
+      show <- get_input("show_range_lines", TRUE)
+      list(active = show && !is.null(ranges), ranges = ranges)
+    },
+
+    xline_col = get_input("plot_xline_col","#E10000"),
+    yline_col = get_input("plot_yline_col","#0004D5"),
+    line_lwd = get_input("plot_line_lwd", 2),
+
+    ell_col = get_input("plot_ell_col", "#000000"),
+    ell_lwd = get_input("plot_ell_lwd", 2),
+    ell_lty = as.numeric(get_input("plot_ell_lty", "1")),
+
+    centroid_pch = as.numeric(get_input("plot_centroid_pch", "8")),
+    centroid_col = get_input("plot_centroid_col", "#000000"),
+    centroid_cex = get_input("plot_centroid_cex", 1.5),
+
+    zoom_mode = get_input("plot_zoom_mode","auto"),
+
+    cex_espace = get_input("plot_cex_espace", 0.3),
+    cex_combined = get_input("plot_cex_combined", 0.3),
+    asp_espace = get_input("plot_asp_espace", "auto"),
+    asp_combined = get_input("plot_asp_combined", "auto"),
+    export_cex = get_input("export_cex", 1),
+
+    centroid_preview_val = tryCatch(
+      withCallingHandlers(
+        centroid_preview(),
+        shiny.silent.error = function(e) invokeRestart("muffleWarning")
+      ),
+      error = function(e) NULL
+    )
+  )
 }
 
 open_device <- function(file, ext){

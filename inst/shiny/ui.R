@@ -434,7 +434,9 @@ dashboardPage(
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "pred_espace",
                      uiOutput("pred_espace_options_ui"),
-                     plotOutput("pred_espace_plot")
+                     plotOutput("pred_espace_plot"),
+                     br(),
+                     uiOutput("plot_espace_bottom_options_ui_pred")
                    ),
 
                    tabPanel(
@@ -447,7 +449,9 @@ dashboardPage(
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "pred_combined",
                      uiOutput("pred_combined_options_ui"),
-                     plotOutput("pred_combined_plot")
+                     plotOutput("pred_combined_plot"),
+                     br(),
+                     uiOutput("plot_espace_bottom_options_ui_pred_combined")
                    )
                  ),
 

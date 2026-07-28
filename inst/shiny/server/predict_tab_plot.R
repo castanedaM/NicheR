@@ -2,7 +2,7 @@
 # Description: E-space, G-space, and Combined prediction plots.
 # get_input(), update_axis_selectors(), compute_lims(),
 # open_device() are defined in build_tab_plot.R which loads first.
-# Date Last Updated: 07/23/2026
+# Date Last Updated: 07/28/2026
 
 
 # Helpers -------------------------------------------------------------------
@@ -167,7 +167,7 @@ draw_pred_espace_pairs <- function(vars, layer, s){
 
 draw_pred_espace_2d_all <- function(v1, v2, s){
 
-  bg     <- session_data$bg_df
+  bg  <- session_data$bg_df
   result <- s$result
   layers <- if(!is.null(result) && inherits(result, "SpatRaster")) names(result) else character(0)
 
@@ -321,17 +321,17 @@ observeEvent({
 
 output$pred_espace_options_ui <- renderUI({
 
-  vars   <- session_data$vars
+  vars <- session_data$vars
   req(vars)
   layers <- pred_layer_names()
 
   fluidRow(
     column(width = 5,
            radioButtons("pred_espace_state",
-                        label    = tags$span("Plot type:", class = "text-widget-title"),
-                        choices  = c("All pairs" = "plot_pairs", "2D" = "plot_2d"),
+                        label = tags$span("Plot type:", class = "text-widget-title"),
+                        choices = c("All pairs" = "plot_pairs", "2D" = "plot_2d"),
                         selected = "plot_pairs",
-                        inline   = TRUE)),
+                        inline = TRUE)),
     column(width = 7,
 
            # Layer selector only for pairs mode
@@ -340,7 +340,7 @@ output$pred_espace_options_ui <- renderUI({
              if(length(layers) > 0){
                column(width = 12,
                       selectInput("pred_pairs_layer", label = NULL,
-                                  choices  = layers,
+                                  choices = layers,
                                   selected = layers[1]))
              }
            ),
@@ -454,12 +454,12 @@ cursor: pointer;")))
       column(width = 6,
              tags$span("Continuous palette", class = "text-widget-title"),
              selectInput("pred_palette", label = NULL,
-                         choices  = c("Viridis" = "viridis",
-                                      "Heat" = "heat",
-                                      "Terrain" = "terrain",
-                                      "Topo" = "topo",
-                                      "Rainbow" = "rainbow",
-                                      "Grayscale" = "grayscale"),
+                         choices = c("Viridis" = "viridis",
+                                     "Heat" = "heat",
+                                     "Terrain" = "terrain",
+                                     "Topo" = "topo",
+                                     "Rainbow" = "rainbow",
+                                     "Grayscale" = "grayscale"),
                          selected = "viridis")),
       column(width = 6,
              br(),
@@ -533,8 +533,8 @@ output$pred_espace_plot <- renderPlot({
   req(session_data$vars)
   req(session_data$current_ellipsoid)
 
-  vars  <- session_data$vars
-  s     <- collect_pred_settings()
+  vars <- session_data$vars
+  s  <- collect_pred_settings()
   state <- if(!is.null(input$pred_espace_state)) input$pred_espace_state else "plot_pairs"
 
   old_par <- par(no.readonly = TRUE)
@@ -694,7 +694,7 @@ output$confirm_pred_export <- downloadHandler(
 
     switch(tab,
            "pred_espace" = {
-             vars  <- session_data$vars
+             vars <- session_data$vars
              req(vars)
              state <- if(!is.null(input$pred_espace_state)) input$pred_espace_state else "plot_pairs"
              switch(state,
