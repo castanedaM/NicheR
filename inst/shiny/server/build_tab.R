@@ -431,16 +431,16 @@ output$save_ell_ui <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
   div(class = "action-btn-row",
-      actionButton(inputId = "continue_build_btn",
+      actionButton(inputId = "continue__from_build_btn",
                    label   = tagList(tags$span("Continue",
                                                class = "text-widget-title"),
-                                     icon("chevron-right")),
+                                     icon("arrow-right")),
                    class   = "btn-save")
   )
 
 })
 
-observeEvent(input$continue_build_btn, {
+observeEvent(input$continue_from_build_btn, {
 
   updateTabItems(session, "sidebarMenu", selected = "predict_tab")
 
@@ -562,16 +562,26 @@ output$range_method_ui <- renderUI({
   switch(input$range_method_choice,
          "man" = {
            header <- fluidRow(
-             column(width = 12, p(instructions$range_manual, class = "text-instruction")),
-             column(width = 4, tags$span("Variable", class = "text-widget-title text-center")),
-             column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
-             column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
+             column(width = 12,
+                    p(instructions$range_manual,
+                      class = "text-instruction")),
+             column(width = 4,
+                    tags$span("Variable",
+                              class = "text-widget-title text-center")),
+             column(width = 4,
+                    tags$span("Min",
+                              class = "text-widget-title text-center")),
+             column(width = 4,
+                    tags$span("Max",
+                              class = "text-widget-title text-center"))
            )
 
            var_rows <- lapply(vars, function(v){
 
              fluidRow(
-               column(width = 4, class = "var-label", tags$span(v, class = "text-widget-inner")),
+               column(width = 4,
+                      class = "var-label",
+                      tags$span(v, class = "text-widget-inner")),
                column(width = 4,
                       numericInput(inputId = paste0("min_", v),
                                    label = NULL,
@@ -653,13 +663,15 @@ output$range_method_ui <- renderUI({
                     tags$span("Variable", class = "text-widget-title text-center")),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand min (%)", class = "text-widget-title text-center"),
+                             tags$span("Expand min (%)",
+                                       class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon"))),
              column(width = 4,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Expand max (%)", class = "text-widget-title text-center"),
+                             tags$span("Expand max (%)",
+                                       class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$expand_range_tooltip,
                                        class = "tooltip-icon")))

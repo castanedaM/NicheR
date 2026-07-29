@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Lats Updated: 07/23/2026
+# Lats Updated: 07/29/2026
 
 dashboardPage(
   dashboardHeader(
@@ -70,12 +70,14 @@ dashboardPage(
 
         fluidRow(
           column(width = 12,
-                 tags$div(tags$span("About nicheR", class = "text-app-title"), br(),
-                          p("An R package for ellipsoid-based ecological niche modeling.
-                       Build niche models from environmental ranges, predict suitable
-                       areas, account for sampling bias, and generate virtual
-                       occurrences, all in a single reproducible workflow.",
-                            class = "text-instruction")
+                 tags$div(tags$span("About nicheR", class = "text-app-title"),
+                          br(),
+                          tags$span("An R package for ellipsoid-based ecological
+                          niche modeling.Build niche models from environmental
+                          ranges, predict suitable areas, account for sampling
+                          bias, and generate virtual occurrences, all in a
+                          single reproducible workflow.",
+                                    class = "text-instruction")
                  ),
                  br()
           )
@@ -119,9 +121,9 @@ dashboardPage(
                      solidHeader = TRUE,
                      status = "primary",
 
-                     p("Project the ellipsoid onto raster layers or a data frame to
+                     tags$span("Project the ellipsoid onto raster layers or a data frame to
                   produce continuous or binary suitability surfaces.",
-                       class = "text-instruction"),
+                               class = "text-instruction"),
                      tags$ul(
                        tags$li("Output: suitability, Mahalanobis distance, and truncated versions", class = "text-instruction"),
                        tags$li("Binarization uses the ellipsoid's own confidence level", class = "text-instruction"),
@@ -136,6 +138,7 @@ dashboardPage(
 
           column(width = 2)
         ),
+
         fluidRow(
           column(width = 2),
 
@@ -153,10 +156,14 @@ dashboardPage(
                   toward areas with specific detection effort",
                        class = "text-instruction"),
                      tags$ul(
-                       tags$li("Optional but important for data-limited species", class = "text-instruction"),
-                       tags$li("Accepts any raster matching the background extent", class = "text-instruction"),
-                       tags$li("Higher cell values increase occurrence probability", class = "text-instruction"),
-                       tags$li("Exmples, urabinaztion, distance to water, road density, collector coverage, any detection proxy", class = "text-instruction")
+                       tags$li("Optional but important for data-limited species",
+                               class = "text-instruction"),
+                       tags$li("Accepts any raster matching the background extent",
+                               class = "text-instruction"),
+                       tags$li("Higher cell values increase occurrence probability",
+                               class = "text-instruction"),
+                       tags$li("Exmples, urabinaztion, distance to water, road density, collector coverage, any detection proxy",
+                               class = "text-instruction")
                      ),
                      tags$a(href   = "https://castanedaM.github.io/nicheR/articles/bias.html",
                             target = "_blank",
@@ -194,7 +201,8 @@ dashboardPage(
         fluidRow(
           column(width = 12,
                  tags$a(href   = "https://castanedaM.github.io/nicheR/authors.html",
-                        target = "_blank", class = "text-instruction",
+                        target = "_blank",
+                        class = "text-instruction",
                         icon("user-group"), "If you use nicheR in your research, please cite:"),
                  br(),
                  tags$code("Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026).
@@ -268,7 +276,6 @@ dashboardPage(
 
                    tabPanel(
                      title = tags$span("Build", class = "text-tab-title"),
-                     width = 12,
                      value = "range",
                      fluidRow(
                        uiOutput("variable_selectors_ui")
@@ -300,7 +307,6 @@ dashboardPage(
                    width = 12,
 
                    tabPanel(
-                     width = 12,
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "tab_espace",
                      uiOutput("plot_espace_top_options_ui"),
@@ -310,14 +316,12 @@ dashboardPage(
                    ),
 
                    tabPanel(
-                     width = 12,
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "tab_gspace",
                      plotOutput("build_gspace_plot")
                    ),
 
                    tabPanel(
-                     width = 12,
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "tab_combined",
                      uiOutput("plot_combined_options_ui"),
@@ -334,6 +338,7 @@ dashboardPage(
           )
         )
       ),
+
       tabItem(
         tabName = "predict_tab",
         fluidRow(
@@ -404,9 +409,9 @@ dashboardPage(
                        column(width = 12,
                               div(class = "action-btn-row",
                                   actionButton(inputId = "ell_predict",
-                                           label = "Predict",
-                                           class = "btn-continue")
-                                  )
+                                               label = "Predict",
+                                               class = "btn-continue")
+                              )
                        )
                      ),
 
@@ -418,7 +423,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                             uiOutput("save_ell_pred_ui")
+                              uiOutput("save_ell_pred_ui")
                        )
                      )
                  )
@@ -466,33 +471,16 @@ dashboardPage(
         tabName = "bias_tab",
         fluidRow(
           column(width = 5,
-                 box(title = tagList(tags$span("3. Bias",
-                                               class = "text-tab-title"),
-                                     tags$span(icon("circle-info"),
-                                               title = "Optional bias, intended to represent sampling bias.\nNeeds a raster file and accepts: .tif, .rds",
-                                               class = "tooltip-icon")),
+                 box(title = tagList(tags$span("Bias", class = "text-tab-title")),
                      width = 12,
+                     p(instructions$bias, class = "text-instruction"),
 
+                     fluidRow(uiOutput("upload_bias_ui")),
+                     fluidRow(uiOutput("prepare_bias_ui")),
+                     fluidRow(uiOutput("apply_bias_ui")),
+                     fluidRow(uiOutput("ellipsoid_library_bias")),
                      fluidRow(
-                       uiOutput("upload_bias_ui")
-                     ),
-
-                     fluidRow(
-                       uiOutput("prepare_bias_ui")
-                     ),
-
-                     fluidRow(
-                       uiOutput("apply_bias_ui")
-                     ),
-
-                     fluidRow(
-                       uiOutput("ellipsoid_library_bias")
-                     ),
-
-                     fluidRow(
-                       column(width = 12,
-                              uiOutput("save_ell_bias_ui")
-                       )
+                       column(width = 12, uiOutput("save_ell_bias_ui"))
                      )
                  )
           ),
@@ -504,21 +492,27 @@ dashboardPage(
                    width = 12,
 
                    tabPanel(
-                     title = tags$span("Bias Layers", class = "text-tab-title"),
+                     title = tags$span("Bias Layers",
+                                       class = "text-tab-title"),
                      value = "bias_layers",
                      plotOutput("bias_layers_plot")
                    ),
 
                    tabPanel(
-                     title = tags$span("Composite", class = "text-tab-title"),
+                     title = tags$span("Bias Composite",
+                                       class = "text-tab-title"),
                      value = "bias_composite",
                      plotOutput("bias_composite_plot")
                    ),
 
                    tabPanel(
-                     title = tags$span("G-space", class = "text-tab-title"),
+                     title = tags$span("Pred and Biased G-space",
+                                       class = "text-tab-title"),
                      value = "bias_gspace",
-                     uiOutput("bias_gspace_layer_select"),
+                     fluidRow(
+                       column(width = 6,
+                              uiOutput("bias_gspace_layer_select"))
+                     ),
                      plotOutput("bias_gspace_plot")
                    )
 
@@ -529,46 +523,45 @@ dashboardPage(
                  uiOutput("bias_plot_settings_ui")
           )
         )
-      ),
+    ),
 
+    tabItem(
+      tabName = "generate_tab",
+      fluidRow(
+        column(width = 5,
+               fluidRow(
+                 uiOutput("generate_ui")
+               ),
 
-      tabItem(
-        tabName = "generate_tab",
-        fluidRow(
-          column(width = 5,
-                 fluidRow(
-                  uiOutput("generate_ui")
+               fluidRow(
+                 uiOutput("ellipsoid_library_gen")
+               )
+        ),
+
+        column(width = 7,
+
+               tabBox(
+                 id    = "generate_tabs",
+                 width = 12,
+
+                 tabPanel(
+                   title = tags$span("E-space",
+                                     class = "text-tab-title"),
+                   value = "generate_espace",
+                   uiOutput("generate_espace_options_ui"),
+                   plotOutput("generate_espace_plot")
                  ),
 
-                 fluidRow(
-                   uiOutput("ellipsoid_library_gen")
+                 tabPanel(
+                   title = tags$span("G-space",
+                                     class = "text-tab-title"),
+                   value = "generate_gspace",
+                   plotOutput("generate_gspace_plot")
                  )
-          ),
-
-          column(width = 7,
-
-                 tabBox(
-                   id    = "generate_tabs",
-                   width = 12,
-
-                   tabPanel(
-                     title = tags$span("E-space",
-                                       class = "text-tab-title"),
-                     value = "generate_espace",
-                     uiOutput("generate_espace_options_ui"),
-                     plotOutput("generate_espace_plot")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("G-space",
-                                        class = "text-tab-title"),
-                     value = "generate_gspace",
-                     plotOutput("generate_gspace_plot")
-                   )
-                 )
-          )
+               )
         )
       )
+    )
     )
   )
 )

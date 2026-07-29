@@ -1,6 +1,6 @@
 # Title: Bias Tab Plot server
 # Description: Server for the bias tab plots
-# Date Last Updated: 7/23/26
+# Date Last Updated: 7/29/26
 
 
 # Prepare bias plot outputs ---------------------------------------------------------
@@ -150,5 +150,107 @@ output$bias_gspace_plot <- renderPlot({
   # if(n_total %% 2 != 0){
   #   plot.new()
   # }
+
+})
+
+
+# Prediction and Biased G-space -------------------------------------------
+
+output$bias_gspace_layer_select <- renderUI({
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  pred_result <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
+  if(is.null(pred_result) && !is.null(ell$ell_name)){
+    pred_result <- session_data$ellipsoid_prediction_list[[ell$ell_name]]
+  }
+
+  req(!is.null(pred_result) && inherits(pred_result, "SpatRaster"))
+
+  selectInput("bias_gspace_layer",
+              label    = tags$span("Prediction layer", class = "text-widget-title"),
+              choices  = names(pred_result),
+              selected = if("suitability_trunc" %in% names(pred_result)) "suitability_trunc"
+              else names(pred_result)[1])
+})
+
+
+output$bias_gspace_plot <- renderPlot({
+
+  req(!is.null(session_data$bg_raster))
+  req(input$bias_gspace_layer)
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  id          <- ell$ell_id
+  pred_result <- session_data$ellipsoid_prediction_list[[id]]
+  if(is.null(pred_result) && !is.null(ell$ell_name)){
+    pred_result <- session_data$ellipsoid_prediction_list[[ell$ell_name]]
+  }
+
+  bias_result <- session_data$ellipsoid_prediction_list_biased[[id]]
+  if(is.null(bias_result) && !is.null(ell$ell_name)){
+    bias_result <- session_data$ellipsoid_prediction_list_biased[[ell$ell_name]]
+  }
+
+  has_pred_ell <- !is.null(pred_result) && inherits(pred_result, "SpatRaster")
+  has_bias_ell <- !is.null(bias_result) && inherits(bias_result, "SpatRaster")
+
+  req(has_pred_ell)
+
+  layer      <- input$bias_gspace_layer
+  map_bg_col <- "#F0F0F0"
+
+  matched_bias <- if(has_bias_ell){
+    names(bias_result)[startsWith(names(bias_result), paste0(layer, "_biased_"))]
+  } else {
+    character(0)
+  }
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  # No biased layers for this prediction layer
+  if(length(matched_bias) == 0){
+    par(mfrow = c(1, 2))
+    terra::plot(pred_result[[layer]],
+                main  = layer,
+                axes  = TRUE,
+                colNA = map_bg_col)
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "")
+    text(0.5, 0.5, paste0("No biased layer\ncomputed for\n'", layer, "'"),
+         cex = 1.1, col = "grey50", adj = c(0.5, 0.5))
+    return(invisible(NULL))
+  }
+
+  # Original + all matched biased layers in 2-column grid
+  all_panels <- c(
+    list(list(type = "pred", name = layer)),
+    lapply(matched_bias, function(nm) list(type = "bias", name = nm))
+  )
+
+  n_total <- length(all_panels)
+  n_rows  <- ceiling(n_total / 2L)
+
+  par(mfrow = c(n_rows, 2L), mar = c(3, 3, 2, 4))
+
+  for(panel in all_panels){
+    if(panel$type == "pred"){
+      terra::plot(pred_result[[panel$name]],
+                  main  = panel$name,
+                  axes  = TRUE,
+                  colNA = map_bg_col)
+    } else {
+      terra::plot(bias_result[[panel$name]],
+                  main  = panel$name,
+                  axes  = TRUE,
+                  colNA = map_bg_col)
+    }
+  }
+
+  if(n_total %% 2 != 0) plot.new()
 
 })

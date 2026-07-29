@@ -1,77 +1,56 @@
 # Title: Generate Tab Server Logic
 # Description: UI and observers for sampling occurrence data
-# Date Last Updated: 07/23/2026
+# Date Last Updated: 07/29/2026
 
 
 # Helpers -------------------------------------------------------------------
 
 generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
-                                 layer, surface, n_occ, sampling_mask,
-                                 sampling, strict, seed = 123L){
-
+                                 layers, n_occ, sampling,
+                                 strict, sampling_mask, seed = 123L){
   results <- list()
-  pred <- pred_list[[ell_id]]
-  method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)) "mahalanobis" else "suitability"
 
-  # unbiased
-  if(surface %in% c("unbiased", "both")){
-    if(!is.null(pred) && layer %in% names(pred)){
-      occ <- tryCatch(
-        sample_data(n_occ = n_occ,
-                    prediction = pred,
-                    prediction_layer = layer,
-                    sampling = sampling,
-                    method = method,
-                    seed = seed,
-                    sampling_mask = sampling_mask,
-                    strict = strict,
-                    verbose = FALSE),
-        error = function(e){
-          message("unbiased generate failed for ", ell_id, ": ", e$message)
-          NULL
-        }
-      )
-      if(!is.null(occ)){
-        results[[layer]] <- occ[, c("x", "y"), drop = FALSE]
-      }
-    } else {
-      message("Layer '", layer, "' not found for ", ell_id, " (unbiased). Skipping.")
+  for(layer in layers){
+    pred  <- pred_list[[ell_id]]
+    bias  <- biased_list[[ell_id]]
+
+    # Determine which raster contains this layer
+    source_rast  <- NULL
+    source_name  <- NULL
+
+    if(!is.null(pred) && inherits(pred, "SpatRaster") && layer %in% names(pred)){
+      source_rast <- pred
+      source_name <- "pred"
+    } else if(!is.null(bias) && inherits(bias, "SpatRaster") && layer %in% names(bias)){
+      source_rast <- bias
+      source_name <- "bias"
     }
-  }
 
-  # Biased
-  if(surface %in% c("bias", "both")){
-    bias_rast <- biased_list[[ell_id]]
-    if(!is.null(bias_rast)){
-      matched <- names(bias_rast)[startsWith(names(bias_rast),
-                                             paste0(layer, "_biased_"))]
-      if(length(matched) == 0){
-        message("No biased layer matching '", layer, "' for ", ell_id, ". Skipping.")
-      } else {
-        for(bias_lyr in matched){
-          occ <- tryCatch(
-            sample_data(n_occ = n_occ,
-                        prediction = bias_rast,
-                        prediction_layer = bias_lyr,
-                        sampling = sampling,
-                        method = method,
-                        seed = seed,
-                        sampling_mask = sampling_mask,
-                        strict = strict,
-                        verbose = FALSE),
-            error = function(e){
-              message("Biased generate failed for ", ell_id,
-                      " (", bias_lyr, "): ", e$message)
-              NULL
-            }
-          )
-          if(!is.null(occ)){
-            results[[bias_lyr]] <- occ[, c("x", "y"), drop = FALSE]
-          }
-        }
+    if(is.null(source_rast)){
+      message("Layer '", layer, "' not found for ", ell_id, ". Skipping.")
+      next
+    }
+
+    method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)) "mahalanobis" else "suitability"
+
+    occ <- tryCatch(
+      sample_data(n_occ            = n_occ,
+                  prediction       = source_rast,
+                  prediction_layer = layer,
+                  sampling         = sampling,
+                  method           = method,
+                  sampling_mask    = sampling_mask,
+                  seed             = seed,
+                  strict           = strict,
+                  verbose          = FALSE),
+      error = function(e){
+        message("Generate failed for ", ell_id, " (", layer, "): ", e$message)
+        NULL
       }
-    } else {
-      message("No biased prediction for ", ell_id, ". Skipping bias surface.")
+    )
+
+    if(!is.null(occ)){
+      results[[layer]] <- occ[, c("x", "y"), drop = FALSE]
     }
   }
 
@@ -95,24 +74,6 @@ output$generate_ui <- renderUI({
     )
   }
 
-  # if(has_done){
-  #   n_ell <- length(session_data$ ellipsoid_occurrence_list)
-  #   return(
-  #     box(title = tags$span("Generate Occurrences", class = "text-section-header"),
-  #         width = 12,
-  #         collapsible = TRUE,
-  #         collapsed = TRUE,
-  #         p(paste0("Occurrences generated for ", n_ell, " ellipsoid(s)."),
-  #           class = "text-instruction"),
-  #         fluidRow(
-  #           column(width = 12, class = "btn-spaced",
-  #                  actionLink("edit_generate",
-  #                             label = tagList(icon("pen"), "Generate again")))
-  #         )
-  #     )
-  #   )
-  # }
-
   box(title = tags$span("Generate Occurrences", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
@@ -121,33 +82,7 @@ output$generate_ui <- renderUI({
         class = "text-instruction"),
 
       # Ellipsoid version selector
-      uiOutput("gen_ell_select"),
-
-      # Prediction surface choice
-      fluidRow(
-        column(width = 12,
-               tags$span("Prediction surface", class = "text-widget-title"),
-               tags$span(icon("circle-info"),
-                         title = paste0("Unbiased: use original prediction. ",
-                                        "Bias: use bias-corrected prediction. ",
-                                        "Unbiased + Bias: generate both for comparison."),
-                         class = "tooltip-icon"),
-               radioButtons("gen_surface",
-                            label = NULL,
-                            choiceNames = list(
-                              tags$span("Unbiased", class = "text-widget-inner"),
-                              tags$span("Bias", class = "text-widget-inner"),
-                              tags$span("Unbiased + Bias", class = "text-widget-inner")
-                            ),
-                            choiceValues = c("unbiased", "bias", "both"),
-                            selected = if(has_biased) "both" else "unbiased",
-                            inline = TRUE))
-      ),
-
-      uiOutput("gen_pred_lyr_options"),
-
-      # Auto-detected method message
-      uiOutput("gen_method_msg"),
+      fluidRow(column(width = 6, uiOutput("gen_ell_select"))),
 
       # Number of occurrences
       fluidRow(
@@ -165,26 +100,29 @@ output$generate_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$span("Sampling strategy", class = "text-widget-title"),
+               tags$span("Centroid: Higher probability near the niche center.\n
+               Edge: Higher probability near the niche boundary.\nRandom: Equal probability across all suitable cells.")
                radioButtons("gen_sampling",
                             label = NULL,
-                            choiceNames = list(
-                              tagList(tags$span("Centroid", class = "text-widget-inner"),
-                                      tags$span(icon("circle-info"),
-                                                title = "Higher probability near the niche center.",
-                                                class = "tooltip-icon")),
-                              tagList(tags$span("Edge", class = "text-widget-inner"),
-                                      tags$span(icon("circle-info"),
-                                                title = "Higher probability near the niche boundary.",
-                                                class = "tooltip-icon")),
-                              tagList("Random",
-                                      tags$span(icon("circle-info"),
-                                                title = "Equal probability across all suitable cells.",
-                                                class = "tooltip-icon"))
-                            ),
+                            choiceNames = list("Centroid", "Edge", "Random"),
                             choiceValues = c("centroid", "edge", "random"),
                             selected = "centroid",
                             inline = TRUE))
       ),
+
+
+      # Prediction surface choice
+      fluidRow(
+        column(width = 12,
+               tags$span("Prediction surface", class = "text-widget-title"),
+               tags$span(icon("circle-info"),
+                         title = "Select one or more prediction layers to sample from.",
+                         class = "tooltip-icon"),
+               uiOutput("gen_surface_ui"))
+      ),
+
+      # Auto-detected method message
+      uiOutput("gen_method_msg"),
 
       # Strict filtering
       fluidRow(
@@ -391,52 +329,53 @@ observeEvent(input$edit_generate, {
 
 })
 
-output$gen_pred_lyr_options <- renderUI({
+output$gen_surface_ui <- renderUI({
 
   req(length(session_data$ellipsoid_prediction_list) > 0)
 
-  surface <- if(!is.null(input$gen_surface)) input$gen_surface else "unbiased"
   sel_id <- if(!is.null(input$gen_ell_selected) &&
                input$gen_ell_selected != "all"){
     input$gen_ell_selected
   } else {
-    names(session_data$ellipsoid_prediction_list)[1]
+    NULL
   }
 
-  # unbiased layers
-  pred <- session_data$ellipsoid_prediction_list[[sel_id]]
-  unbiased_lyrs <- if(!is.null(pred) && inherits(pred, "SpatRaster")) names(pred) else character(0)
+  # Get unique layer names across selected or all ellipsoids
+  pred_list  <- session_data$ellipsoid_prediction_list
+  bias_list  <- session_data$ellipsoid_prediction_list_biased
 
-  # Biased layers
-  bias <- session_data$ellipsoid_prediction_list_biased[[sel_id]]
-  bias_lyrs <- if(!is.null(bias) && inherits(bias, "SpatRaster")) names(bias) else character(0)
+  ids <- if(!is.null(sel_id)) sel_id else names(pred_list)
 
-  layers <- switch(surface,
-                   "unbiased" = unbiased_lyrs,
-                   "bias" = bias_lyrs,
-                   "both" = unique(c(unbiased_lyrs, bias_lyrs)))
+  unbiased_lyrs <- unique(unlist(lapply(ids, function(id){
+    r <- pred_list[[id]]
+    if(!is.null(r) && inherits(r, "SpatRaster")) names(r) else character(0)
+  })))
 
-  req(length(layers) > 0)
+  bias_lyrs <- unique(unlist(lapply(ids, function(id){
+    r <- bias_list[[id]]
+    if(!is.null(r) && inherits(r, "SpatRaster")) names(r) else character(0)
+  })))
 
-  all_choices <- c("All layers" = "all_lyrs", layers)
+  all_layers <- unique(c(unbiased_lyrs, bias_lyrs))
+  req(length(all_layers) > 0)
 
-  default <- if("suitability_trunc" %in% layers) "suitability_trunc"
-  else if("suitability" %in% layers) "suitability"
-  else layers[1]
+  # Default: select suitability_trunc if available, else first
+  default <- if("suitability_trunc" %in% unbiased_lyrs) "suitability_trunc"
+  else if(length(unbiased_lyrs) > 0) unbiased_lyrs[1]
+  else all_layers[1]
 
-  fluidRow(
-    column(width = 8,
-           tags$span("Prediction layer", class = "text-widget-title"),
-           tags$span(icon("circle-info"),
-                     title = "Select the prediction layer to sample from, or all.",
-                     class = "tooltip-icon"),
-           selectInput("gen_pred_layer",
-                       label = NULL,
-                       choices = all_choices,
-                       selected = default))
-  )
+  checkboxGroupInput("gen_surface",
+                     label        = NULL,
+                     choiceNames  = lapply(all_layers, function(nm){
+                       is_biased <- nm %in% bias_lyrs && !nm %in% unbiased_lyrs
+                       tags$span(nm,
+                                 style = if(is_biased) "color: #097a21;" else "",
+                                 class = "text-widget-inner")
+                     }),
+                     choiceValues = all_layers,
+                     selected     = default,
+                     inline       = TRUE)
 })
-
 
 
 # Ellipsoid Library -------------------------------------------------------

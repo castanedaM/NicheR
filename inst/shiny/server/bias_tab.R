@@ -1,20 +1,20 @@
 # Title: Bias Tab server
 # Description: Server for the bias tab
-# Date Last Updated: 7/27/26
+# Date Last Updated: 7/29/26
 
 output$save_ell_bias_ui <- renderUI({
   req(length(session_data$ellipsoid_prediction_list_biased) > 0)
 
   div(class = "action-btn-row",
-      actionButton(inputId = "save_ell_bias_btn",
-                   label = tags$span("Comfirm bias",
-                                     class = "text-widget-title"),
+      actionButton(inputId = "continue_from_bias_btn",
+                   label = tags$span("Continue",
+                                   icon("arrow-right")),
                    class = "btn-save")
   )
 
 })
 
-observeEvent(input$save_ell_bias_btn, {
+observeEvent(input$continue_from_bias_btn, {
 
   updateTabItems(session, "sidebarMenu", selected = "generate_tab")
 
@@ -172,18 +172,30 @@ output$upload_bias_ui <- renderUI({
         verbatimTextOutput("bias_raster_print")
       ),
 
-      fluidRow(
-        column(width = 12,
-               div(class = "action-btn-row",
-                   actionButton("bias_upload",
-                                "Upload bias",
-                                class = "btn-continue"),
-                   actionButton("continue_bias_example",
-                                "Example bias",
-                                class = "btn-back")
-               )
+      if("example" %in% session_data$input_mode){
+        fluidRow(
+          column(width = 12,
+                 div(class = "action-btn-row",
+                     actionButton("bias_upload",
+                                  "Upload bias",
+                                  class = "btn-continue"),
+                     actionButton("continue_bias_example",
+                                  "Example bias",
+                                  class = "btn-back")
+                 )
+          )
         )
-      )
+      }else{
+        fluidRow(
+          column(width = 12,
+                 div(class = "action-btn-row",
+                     actionButton("bias_upload",
+                                  "Upload bias",
+                                  class = "btn-continue")
+                 )
+          )
+        )
+      }
   )
 })
 
@@ -223,7 +235,7 @@ output$bias_raster_print <- renderPrint({
   }
 })
 
-# Prepare Bias ------------------------------------------------------------
+# Prepare Bias  ------------------------------------------------------------
 
 observeEvent(input$prepare_bias, {
   req(session_data$bias_raster)
@@ -316,13 +328,14 @@ output$prepare_bias_ui <- renderUI({
         column(width = 12,
                tags$span("NA overlap handling", class = "text-widget-title"),
                tags$span(icon("circle-info"),
-                         title = "Union keeps any pixel with at least one valid value across layers. NAs in other layers are ignored. Intersection keeps only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
-                         class = "tooltip-icon"),  radioButtons(inputId = "bias_mask_na",
-                                                                label = NULL,
-                                                                choiceNames = list("Union", "Intersection"),
-                                                                choiceValues = c("FALSE", "TRUE"),
-                                                                selected= "FALSE",
-                                                                inline = TRUE))
+                         title = "Union keeps any pixel with at least one valid value across layers. NAs in other layers are ignored.\nIntersection keeps only pixels with valid values in ALL layers. Any pixel with an NA in any layer becomes NA in the composite.",
+                         class = "tooltip-icon"),
+               radioButtons(inputId = "bias_mask_na",
+                            label = NULL,
+                            choiceNames = list("Union", "Intersection"),
+                            choiceValues = c("FALSE", "TRUE"),
+                            selected= "FALSE",
+                            inline = TRUE))
       ),
 
       fluidRow(
@@ -360,7 +373,7 @@ output$bias_effect_directions <- renderUI({
            tags$div(class = "tooltip-label-row",
                     tags$span("Effect direction", class = "text-widget-title"),
                     tags$span(icon("circle-info"),
-                              title = "Direct: higher values increase sampling probability. Inverse: higher values decrease sampling probability.",
+                              title = "Direct: higher values increase sampling probability.\nInverse: higher values decrease sampling probability.",
                               class = "tooltip-icon")))
   )
 
@@ -375,16 +388,7 @@ output$bias_effect_directions <- renderUI({
       column(width = 5,
              radioButtons(inputId = paste0("bias_dir_", nm),
                           label = NULL,
-                          choiceNames = list(
-                            tagList("Direct",
-                                    tags$span(icon("circle-info"),
-                                              title = "Higher values increase sampling probability.",
-                                              class = "tooltip-icon")),
-                            tagList("Inverse",
-                                    tags$span(icon("circle-info"),
-                                              title = "Higher values decrease sampling probability.",
-                                              class = "tooltip-icon"))
-                          ),
+                          choiceNames = list("Direct", "Inverse"),
                           choiceValues = c("direct", "inverse"),
                           selected = "direct",
                           inline = FALSE))
@@ -491,7 +495,8 @@ output$apply_bias_ui <- renderUI({
                          class = "tooltip-icon"),
                selectInput("bias_prediction_layer",
                            label = NULL,
-                           choices = c("All prediction layers" = "all_pred", layers),
+                           choices = c("All prediction layers" = "all_pred",
+                                       layers),
                            selected = if("suitability_trunc" %in% layers) "suitability_trunc"
                            else if("suitability" %in% layers) "suitability"
                            else layers[1]))
@@ -500,18 +505,12 @@ output$apply_bias_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$span("Effect direction", class = "text-widget-title"),
+               tags$span(icon("circle-info"),
+                         title = "Direct: prediction x bias.\nInverse: prediction x (1 - bias).",
+                         class = "tooltip-icon"),
                radioButtons("bias_effect_direction",
                             label = NULL,
-                            choiceNames = list(
-                              tagList("Direct",
-                                      tags$span(icon("circle-info"),
-                                                title = "prediction x bias.",
-                                                class = "tooltip-icon")),
-                              tagList("Inverse",
-                                      tags$span(icon("circle-info"),
-                                                title = "prediction x (1 - bias).",
-                                                class = "tooltip-icon"))
-                            ),
+                            choiceNames = list("Direct", "Inverse"),
                             choiceValues = c("direct", "inverse"),
                             selected = "direct",
                             inline = TRUE))
@@ -553,7 +552,6 @@ output$bias_ell_select <- renderUI({
               choices = ell_choices,
               selected = "all")
 })
-
 
 observeEvent(input$apply_bias_btn, {
 

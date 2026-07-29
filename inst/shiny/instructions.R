@@ -83,6 +83,14 @@ Prediction."),
   covariance_reset_tooltip = "Reset this pair's covariance back to zero.",
 
 
+#   TAB 4: BIAS
+
+bias = "Bias input is intended to add controlled sampling bias to a prediction layer. Note that once bias has been applied, the prediction is no longer a probability. In the steps below you will need one or more raster layers (.rds, .tif) that will be standardized to a 0-1 scale and can have a direct effect (increase sampling probability) or inverse effect (decrease sampling probability).",
+
+bias_input = "Upload one or more raster layers (.rds, .tif) to represent sampling bias across the study area.",
+
+bias_input_example = "Upload one or more raster layers (.rds, .tif) to represent sampling bias across the study area or use example layers provided.",
+
   # PLOT SETTINGS (shared across tabs that show build_espace_plot)
 
   plot_settings = HTML("Adjust point shape, size, and colors, toggle range

@@ -88,7 +88,7 @@ output$save_session_btn <- downloadHandler(
 
     # Must convert to plain list before saving
     session_list <- reactiveValuesToList(session_data)
-    session_list$input_mode <- "prev_session"
+    session_list$input_mode <- c(session_list$input_mode, "prev_session")
 
     if(!is.null(session_list$bg_raster)){
       session_list$bg_raster <- terra::wrap(session_list$bg_raster)
