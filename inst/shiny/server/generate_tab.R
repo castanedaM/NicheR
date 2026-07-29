@@ -11,12 +11,12 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
   results <- list()
 
   for(layer in layers){
-    pred  <- pred_list[[ell_id]]
-    bias  <- biased_list[[ell_id]]
+    pred <- pred_list[[ell_id]]
+    bias <- biased_list[[ell_id]]
 
     # Determine which raster contains this layer
-    source_rast  <- NULL
-    source_name  <- NULL
+    source_rast <- NULL
+    source_name <- NULL
 
     if(!is.null(pred) && inherits(pred, "SpatRaster") && layer %in% names(pred)){
       source_rast <- pred
@@ -34,15 +34,15 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
     method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)) "mahalanobis" else "suitability"
 
     occ <- tryCatch(
-      sample_data(n_occ            = n_occ,
-                  prediction       = source_rast,
+      sample_data(n_occ = n_occ,
+                  prediction = source_rast,
                   prediction_layer = layer,
-                  sampling         = sampling,
-                  method           = method,
-                  sampling_mask    = sampling_mask,
-                  seed             = seed,
-                  strict           = strict,
-                  verbose          = FALSE),
+                  sampling = sampling,
+                  method = method,
+                  sampling_mask = sampling_mask,
+                  seed = seed,
+                  strict = strict,
+                  verbose = FALSE),
       error = function(e){
         message("Generate failed for ", ell_id, " (", layer, "): ", e$message)
         NULL
@@ -100,14 +100,19 @@ output$generate_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$span("Sampling strategy", class = "text-widget-title"),
-               tags$span("Centroid: Higher probability near the niche center.\n
-               Edge: Higher probability near the niche boundary.\nRandom: Equal probability across all suitable cells.")
+               tags$span(icon("circle-info"),
+                         title = "Centroid: higher probability near the niche center.\nEdge: higher probability near the niche boundary.n/Random: equal probability across all suitable cells.",
+                         class = "tooltip-icon"),
                radioButtons("gen_sampling",
-                            label = NULL,
-                            choiceNames = list("Centroid", "Edge", "Random"),
+                            label        = NULL,
+                            choiceNames  = list(
+                              tags$span("Centroid", class = "text-widget-inner"),
+                              tags$span("Edge",     class = "text-widget-inner"),
+                              tags$span("Random",   class = "text-widget-inner")
+                            ),
                             choiceValues = c("centroid", "edge", "random"),
-                            selected = "centroid",
-                            inline = TRUE))
+                            selected     = "centroid",
+                            inline       = TRUE))
       ),
 
 
@@ -176,23 +181,20 @@ output$generate_ui <- renderUI({
 # Auto-detected method message
 output$gen_method_msg <- renderUI({
 
-  req(input$gen_pred_layer)
-  layer <- input$gen_pred_layer
-  method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)) "mahalanobis" else "suitability"
+  req(input$gen_surface)
+  layers <- input$gen_surface
+  req(length(layers) > 0)
 
-  if(method == "mahalanobis"){
-    method_label <- paste0("Mahalanobis distance detected in '", layer,
-                           "' — method set to mahalanobis.")
-  } else {
-    method_label <- paste0("Suitability surface detected in '", layer,
-                           "' — method set to suitability.")
-  }
+  methods <- unique(vapply(layers, function(layer){
+    if(grepl("mahalanobis", layer, ignore.case = TRUE)) "mahalanobis" else "suitability"
+  }, character(1)))
+
+  msg <- paste0("Method(s) detected: ", paste(methods, collapse = ", "), ".")
 
   fluidRow(
     column(width = 12,
-           tags$p(icon("circle-info"), " ", method_label,
-                  style = "font-size: 10px; color: #ccc; margin: 4px 0 8px;")
-    )
+           tags$p(icon("circle-info"), " ", msg,
+                  style = "font-size: 10px; color: #aaa; margin: 4px 0 8px;"))
   )
 })
 
@@ -230,22 +232,22 @@ output$gen_ell_select <- renderUI({
 observeEvent(input$generate_occ, {
 
   req(input$gen_ell_selected)
-  req(input$gen_pred_layer)
+  req(input$gen_surface)
   req(input$gen_n_occ)
   req(input$gen_sampling)
 
-  pred_list <- session_data$ellipsoid_prediction_list
-  bias_list <- session_data$ellipsoid_prediction_list_biased
-  is_all <- input$gen_ell_selected == "all"
+  pred_list    <- session_data$ellipsoid_prediction_list
+  bias_list    <- session_data$ellipsoid_prediction_list_biased
+  is_all       <- input$gen_ell_selected == "all"
   selected_ids <- if(is_all) names(pred_list) else input$gen_ell_selected
 
-  surface <- input$gen_surface
-  n_occ <- as.integer(input$gen_n_occ)
-  sampling <- input$gen_sampling
-  strict <- switch(input$gen_strict,
-                   "TRUE" = TRUE,
-                   "FALSE" = FALSE,
-                   NULL)
+  target_layers <- input$gen_surface
+  n_occ         <- as.integer(input$gen_n_occ)
+  sampling      <- input$gen_sampling
+  strict        <- switch(input$gen_strict,
+                          "TRUE"  = TRUE,
+                          "FALSE" = FALSE,
+                          NULL)
 
   sampling_mask <- if(!is.null(input$gen_mask_file)){
     ext <- tolower(tools::file_ext(input$gen_mask_file$name))
@@ -263,44 +265,23 @@ observeEvent(input$generate_occ, {
 
   session_data$sampling_mask <- sampling_mask
 
-  is_all_lyrs <- input$gen_pred_layer == "all_lyrs"
-
-  if(is_all_lyrs){
-    first_id <- selected_ids[1]
-    pred <- pred_list[[first_id]]
-    unbiased_lyrs <- if(!is.null(pred) && inherits(pred, "SpatRaster")) names(pred) else character(0)
-    bias <- bias_list[[first_id]]
-    bias_lyrs <- if(!is.null(bias) && inherits(bias, "SpatRaster")) names(bias) else character(0)
-    target_layers <- switch(surface,
-                            "unbiased" = unbiased_lyrs,
-                            "bias" = bias_lyrs,
-                            "both" = unique(c(unbiased_lyrs, bias_lyrs)))
-  } else {
-    target_layers <- input$gen_pred_layer
-  }
-
   if(length(target_layers) == 0){
-    showNotification("No prediction layers found.", type = "warning", duration = 4)
+    showNotification("Please select at least one prediction layer.",
+                     type = "warning", duration = 4)
     return()
   }
 
-  # Run generate for each ellipsoid, each layer
   occurrence_list <- setNames(
     lapply(selected_ids, function(id){
-      # Merge results across all target layers into one named list
-      Reduce(function(acc, layer){
-        new_res <- generate_occ_for_ell(ell_id = id,
-                                        pred_list = pred_list,
-                                        biased_list = bias_list,
-                                        layer = layer,
-                                        surface = surface,
-                                        n_occ = n_occ,
-                                        sampling = sampling,
-                                        strict = strict,
-                                        sampling_mask = sampling_mask,
-                                        seed = 123L)
-        c(acc, new_res)
-      }, target_layers, list())
+      generate_occ_for_ell(ell_id        = id,
+                           pred_list     = pred_list,
+                           biased_list   = bias_list,
+                           layers        = target_layers,
+                           n_occ         = n_occ,
+                           sampling      = sampling,
+                           strict        = strict,
+                           sampling_mask = sampling_mask,
+                           seed          = 123L)
     }),
     selected_ids
   )
@@ -324,10 +305,11 @@ observeEvent(input$generate_occ, {
   showNotification(msg, type = "message", duration = 4)
 })
 
+
 observeEvent(input$edit_generate, {
-
-
+  session_data$ellipsoid_occurrence_list <- NULL
 })
+
 
 output$gen_surface_ui <- renderUI({
 
@@ -341,8 +323,8 @@ output$gen_surface_ui <- renderUI({
   }
 
   # Get unique layer names across selected or all ellipsoids
-  pred_list  <- session_data$ellipsoid_prediction_list
-  bias_list  <- session_data$ellipsoid_prediction_list_biased
+  pred_list <- session_data$ellipsoid_prediction_list
+  bias_list <- session_data$ellipsoid_prediction_list_biased
 
   ids <- if(!is.null(sel_id)) sel_id else names(pred_list)
 
@@ -365,16 +347,16 @@ output$gen_surface_ui <- renderUI({
   else all_layers[1]
 
   checkboxGroupInput("gen_surface",
-                     label        = NULL,
-                     choiceNames  = lapply(all_layers, function(nm){
+                     label = NULL,
+                     choiceNames = lapply(all_layers, function(nm){
                        is_biased <- nm %in% bias_lyrs && !nm %in% unbiased_lyrs
                        tags$span(nm,
                                  style = if(is_biased) "color: #097a21;" else "",
                                  class = "text-widget-inner")
                      }),
                      choiceValues = all_layers,
-                     selected     = default,
-                     inline       = TRUE)
+                     selected = default,
+                     inline = TRUE)
 })
 
 
@@ -401,10 +383,10 @@ output$ellipsoid_library_gen <- renderUI({
       column(width = 4,
              tags$span(icon("eye"),
                        tags$span(paste0(" ", cur_ell$ell_name),
-                                 class  = "text-widget-inner",
-                                 style  = "color: #097a21; font-weight: 500;"),
+                                 class = "text-widget-inner",
+                                 style = "color: #097a21; font-weight: 500;"),
                        tags$span("(current)",
-                                 style  = "font-size: 11px; color: #aaa;"))),
+                                 style = "font-size: 11px; color: #aaa;"))),
       column(width = 3,
              tags$span(cur_ell$ell_id,
                        style = "font-size: 11px; color: #aaa;")),
