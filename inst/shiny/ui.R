@@ -309,31 +309,32 @@ dashboardPage(
                    tabPanel(
                      title = tags$span("E-space", class = "text-tab-title"),
                      value = "tab_espace",
-                     uiOutput("plot_espace_top_options_ui"),
-                     plotOutput("build_espace_plot"),
+                     uiOutput("espace_top_options_ui_build"),
+                     plotOutput("espace_build"),
                      br(),
-                     uiOutput("plot_espace_bottom_options_ui")
+                     uiOutput("espace_bottom_options_ui_build")
                    ),
 
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "tab_gspace",
-                     plotOutput("build_gspace_plot")
+                     uiOutput("gspace_top_options_ui_build"),
+                     plotOutput("gspace_build")
                    ),
 
                    tabPanel(
                      title = tags$span("Combined", class = "text-tab-title"),
                      value = "tab_combined",
-                     uiOutput("plot_combined_options_ui"),
-                     plotOutput("build_combined_plot"),
+                     uiOutput("combined_options_ui_build"),
+                     plotOutput("combined_build"),
                      br(),
-                     uiOutput("plot_espace_bottom_options_ui_combined")
+                     uiOutput("combined_bottom_options_ui_build")
                    )
 
                  ),
 
-                 uiOutput("ellipsoid_info"),
-                 uiOutput("plot_settings_ui")
+                 uiOutput("ellipsoid_info_build"),
+                 uiOutput("plot_settings_ui_build")
 
           )
         )
@@ -523,45 +524,58 @@ dashboardPage(
                  uiOutput("bias_plot_settings_ui")
           )
         )
-    ),
+      ),
 
-    tabItem(
-      tabName = "generate_tab",
-      fluidRow(
-        column(width = 5,
-               fluidRow(
-                 uiOutput("generate_ui")
-               ),
-
-               fluidRow(
-                 uiOutput("ellipsoid_library_gen")
-               )
-        ),
-
-        column(width = 7,
-
-               tabBox(
-                 id    = "generate_tabs",
-                 width = 12,
-
-                 tabPanel(
-                   title = tags$span("E-space",
-                                     class = "text-tab-title"),
-                   value = "generate_espace",
-                   uiOutput("generate_espace_options_ui"),
-                   plotOutput("generate_espace_plot")
+      tabItem(
+        tabName = "generate_tab",
+        fluidRow(
+          column(width = 5,
+                 fluidRow(
+                   uiOutput("generate_ui")
                  ),
 
-                 tabPanel(
-                   title = tags$span("G-space",
-                                     class = "text-tab-title"),
-                   value = "generate_gspace",
-                   plotOutput("generate_gspace_plot")
+                 fluidRow(
+                   uiOutput("ellipsoid_library_gen")
                  )
-               )
+          ),
+
+          column(width = 7,
+                 tabBox(
+                   id    = "generate_tabs",
+                   width = 12,
+
+                   tabPanel(
+                     title = tags$span("E-space", class = "text-tab-title"),
+                     value = "generate_espace",
+                     uiOutput("gen_espace_options_ui"),
+                     plotOutput("generate_espace_plot"),
+                     br(),
+                     uiOutput("gen_espace_bottom_options_ui")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("G-space", class = "text-tab-title"),
+                     value = "generate_gspace",
+                     uiOutput("gen_layer_select_ui"),
+                     plotOutput("generate_gspace_plot")
+                   ),
+
+                   tabPanel(
+                     title = tags$span("Combined", class = "text-tab-title"),
+                     value = "generate_combined",
+                     uiOutput("gen_espace_options_ui"),
+                     plotOutput("generate_combined_plot"),
+                     br(),
+                     uiOutput("gen_espace_bottom_options_ui_combined")
+                   )
+                 ),
+
+                 br(),
+
+                 uiOutput("gen_plot_settings_ui")
+          )
         )
       )
-    )
     )
   )
 )

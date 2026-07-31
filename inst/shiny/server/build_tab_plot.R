@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/28/2026
+# Date last updated: 07/30/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -173,59 +173,6 @@ draw_espace_panel <- function(v1, v2, s){
   }
 }
 
-draw_gspace_panel <- function(s, title = "G-space"){
-
-  rast       <- session_data$bg_raster
-  map_bg_col <- s$map_bg_col
-  cex_val    <- if(!is.null(s$export_cex)) s$export_cex else 1
-  is_virtual <- identical(session_data$input_mode, "virtual_mode")
-
-  if(is_virtual){
-    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
-         xlab = "", ylab = "", main = title)
-    text(0.5, 0.5, "Virtual mode on\nG-space unavailable.",
-         cex = cex_val, col = "grey50")
-    return(invisible(NULL))
-  }
-
-  if(is.null(rast)){
-    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
-         xlab = "", ylab = "", main = title)
-    text(0.5, 0.5, "No raster data available.", cex = cex_val, col = "grey50")
-    return(invisible(NULL))
-  }
-
-  plot_rast <- function(r, ttl){
-    par(cex.axis = cex_val,
-        cex.lab  = cex_val,
-        cex.main = cex_val * 1.1)
-    terra::plot(r,
-                main  = ttl,
-                colNA = map_bg_col,
-                axes  = TRUE,
-                xlab  = "Longitude",
-                ylab  = "Latitude")
-  }
-
-  if(!s$has_ell || !s$show_suitable_gspace){
-    plot_rast(rast[[1]], title)
-    return(invisible(NULL))
-  }
-
-  pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
-
-  if(!is.null(pred)){
-    binary <- terra::classify(pred[["suitability_trunc"]],
-                              rcl = matrix(c(-Inf, 0, 0,
-                                             0, Inf, 1),
-                                           ncol = 3, byrow = TRUE),
-                              include.lowest = TRUE)
-    plot_rast(binary, title)
-  } else {
-    plot_rast(rast[[1]], title)
-  }
-}
-
 draw_espace_pairs <- function(vars, s){
   pairs <- t(combn(seq_along(vars), 2))
   n_pairs <- nrow(pairs)
@@ -235,10 +182,42 @@ draw_espace_pairs <- function(vars, s){
   for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
 }
 
+draw_gspace_panel <- function(rast, s, title = NULL, col = NULL){
+  map_bg_col <- s$map_bg_col
+  cex_val <- if(!is.null(s$export_cex)) s$export_cex else 1
+  ttl  <- if(!is.null(title)) title else names(rast)[1]
+  par(cex.axis = cex_val, cex.lab = cex_val, cex.main = cex_val * 1.1)
+  if(!is.null(col)){
+    terra::plot(rast,
+                col = col,
+                legend = FALSE,
+                main = ttl,
+                colNA = map_bg_col,
+                axes = TRUE,
+                xlab = "Longitude",
+                ylab = "Latitude")
+  } else {
+    terra::plot(rast,
+                main = ttl,
+                colNA = map_bg_col,
+                axes = TRUE,
+                xlab = "Longitude",
+                ylab = "Latitude")
+  }
+}
+
+draw_gspace_all <- function(vars, s){
+  n_cols <- 2
+  n_rows <- ceiling(length(vars) / n_cols)
+  par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
+  for(i in seq_len(length(vars)))
+    draw_gspace_panel(session_data$bg_raster[[vars[i]]], s)
+}
 
 # Called at the top of every draw function.
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
+
   ranges <- tryCatch(
     withCallingHandlers(
       range_preview(),
@@ -390,7 +369,7 @@ plot_vars <- reactive({
 
 # Selector observers ------------------------------------------------------
 
-# Selects the x and y based on the avialbel variables, prevent form selection a
+# Selects the x and y based on the available variables, prevent form selection a
 # 1:1
 observeEvent({
   input$plot_espace_state
@@ -418,41 +397,440 @@ observeEvent({
 
 # Outputs -----------------------------------------------------------------
 
-output$plot_combined_options_ui <- renderUI({
+output$espace_top_options_ui_build <- renderUI({
+
+  vars <- session_data$vars
+  req(vars)
+
+  fluidRow(
+    column(width = 12,
+           column(width = 4,
+                  radioButtons("plot_espace_state",
+                               label = tags$span("Plot type:",
+                                                 class = "text-widget-title"),
+                               choices = c("All pairs" = "plot_pairs",
+                                           "2D" = "plot_2d"),
+                               selected = "plot_pairs",
+                               inline = TRUE)),
+
+           conditionalPanel(
+             "input.plot_espace_state == 'plot_2d'",
+             column(width = 4,
+                    selectInput("plot_2d_x",
+                                label = NULL,
+                                choices = character(0))),
+             column(width = 4,
+                    selectInput("plot_2d_y",
+                                label = NULL,
+                                choices = character(0)))
+           )
+    )
+  )
+})
+
+output$espace_build <- renderPlot({
+
+  vars <- plot_vars()
+  req(vars)
+
+  s <- collect_plot_settings()
+
+  req(s)
+  s$cex_val <- s$cex_espace
+
+  state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  switch(state,
+         "plot_pairs" = draw_espace_pairs(vars, s),
+         "plot_2d"= {
+           req(input$plot_2d_x, input$plot_2d_y)
+           par(mar = c(4, 4, 2, 1))
+           draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
+         }
+  )
+
+})
+
+output$gspace_top_options_ui_build <- renderUI({
+
+  req(session_data$bg_raster)
+  req(session_data$vars)
+
+  vars <- session_data$vars
+  has_ell <- !is.null(session_data$current_ellipsoid) &&
+    length(session_data$ellipsoid_list) > 0
+
+  if(has_ell){
+    fluidRow(
+      column(width = 4,
+             radioButtons("plot_gspace_state",
+                          label = tags$span("Show:", class = "text-widget-title"),
+                          choices = c("All variables" = "plot_all",
+                                      "One variable" = "plot_one"),
+                          selected = "plot_all",
+                          inline = TRUE)),
+      conditionalPanel(
+        "input.plot_gspace_state == 'plot_one'",
+        column(width = 4,
+               selectInput("plot_gspace_lyr",
+                           label = NULL,
+                           choices = vars))
+      )
+    )
+  } else {
+    fluidRow(
+      column(width = 4,
+             radioButtons("plot_gspace_state",
+                          label = tags$span("Show:", class = "text-widget-title"),
+                          choices = c("All layers" = "plot_all",
+                                      "One layer" = "plot_one"),
+                          selected = "plot_one",
+                          inline = TRUE)),
+      conditionalPanel(
+        "input.plot_gspace_state == 'plot_one'",
+        column(width = 4,
+               selectInput("plot_gspace_lyr",
+                           label = NULL,
+                           choices = vars))
+      )
+    )
+  }
+})
+
+output$gspace_build <- renderPlot({
+
+  vars <- plot_vars()
+  req(vars)
+
+  is_virtual <- identical(session_data$input_mode, "virtual_mode")
+  if(is_virtual || is.null(session_data$bg_raster)){
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "", main = "G-space")
+    text(0.5, 0.5, "Virtual mode on or no raster provided.\nG-space unavailable.",
+         cex = 1, col = "grey50")
+    return(invisible(NULL))
+  }
+
+  s <- collect_plot_settings()
+  rast <- session_data$bg_raster
+  lyr <- if(!is.null(input$plot_gspace_lyr)) input$plot_gspace_lyr else vars[1]
+  state <- if(!is.null(input$plot_gspace_state)) input$plot_gspace_state else "plot_all"
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  has_ell <- s$has_ell && !is.null(s$ell$ranges)
+
+  binarize_by_range <- function(v){
+    r_min <- s$ell$ranges["min", v]
+    r_max <- s$ell$ranges["max", v]
+    binary <- terra::classify(rast[[v]],
+                              rcl = matrix(c(-Inf, r_min, NA,
+                                             r_min, r_max, 1,
+                                             r_max, Inf, NA),
+                                           ncol = 3, byrow = TRUE),
+                              include.lowest = TRUE,  right = FALSE)
+    names(binary) <- v
+    binary
+  }
+
+  if(has_ell){
+
+    within_col <- c("#D3D3D3", "#E07B39")
+    outside_col <- s$map_bg_col
+
+    if(state == "plot_all"){
+      n_cols <- 2L
+      n_rows <- ceiling(length(vars) / n_cols)
+      par(mfrow = c(n_rows, n_cols), mar = c(3, 3, 2, 3))
+      for(v in vars){
+        draw_gspace_panel(binarize_by_range(v), s,
+                          title = paste0(v, " (within range)"),
+                          col = c(outside_col, within_col))
+      }
+      if(length(vars) %% 2 != 0) plot.new()
+    } else {
+      par(mar = c(4, 4, 2, 4))
+      draw_gspace_panel(binarize_by_range(lyr), s,
+                        title = paste0(lyr, " (within range)"),
+                        col = c(outside_col, within_col))
+    }
+
+  } else {
+
+    if(state == "plot_all"){
+      draw_gspace_all(vars, s)
+    } else {
+      par(mar = c(4, 4, 2, 4))
+      draw_gspace_panel(rast[[lyr]], s, title = lyr)
+    }
+
+  }
+})
+
+output$combined_build <- renderPlot({
+
+  is_virtual <- identical(session_data$input_mode, "virtual_mode")
+  if(is_virtual || is.null(session_data$bg_raster)){
+    plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+         xlab = "", ylab = "", main = "Combined")
+    text(0.5, 0.5, "Virtual mode on or raster not provided.\nG-space unavailable.",
+         cex = 1, col = "grey50")
+    return(invisible(NULL))
+  }
+
+  req(input$plot_combined_x, input$plot_combined_y)
+
+  vars <- plot_vars()
+  req(vars)
+
+  s <- collect_plot_settings()
+  s$cex_val    <- s$cex_espace
+  s$asp_espace <- s$asp_combined
+
+  layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+  mfrow  <- if(layout == "col") c(2, 1) else c(1, 2)
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+  par(mfrow = mfrow, mar = c(4, 4, 2, 1))
+
+  draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
+
+  # G-space: binary suitability if ellipsoid exists, else first raster layer
+  gspace_rast <- if(s$show_suitable_gspace && s$has_ell){
+    pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
+    if(!is.null(pred)){
+      terra::classify(pred[["suitability_trunc"]],
+                      rcl = matrix(c(-Inf, 0,   0,
+                                     0,   Inf,  1),
+                                   ncol = 3, byrow = TRUE),
+                      include.lowest = TRUE)
+    } else {
+      session_data$bg_raster[[1]]
+    }
+  } else {
+    session_data$bg_raster[[1]]
+  }
+
+  draw_gspace_panel(gspace_rast, s,
+                    title = "G-space",
+                    col   = if(s$show_suitable_gspace && s$has_ell)
+                      c(s$unsuitable_col, s$suitable_col)
+                    else NULL)
+})
+
+output$combined_options_ui_build <- renderUI({
 
   vars <- plot_vars()
   req(vars)
 
   fluidRow(
-    column(width = 3,
+    column(width = 4,
            radioButtons("plot_combined_layout",
                         label = tags$span("Layout:", class = "text-widget-title"),
                         choices = c("Stacked" = "col", "Side by side" = "row"),
                         selected = "col",
                         inline = TRUE)),
-    column(width = 3,
+    column(width = 4,
            selectInput("plot_combined_x", label = NULL, choices = character(0))),
-    column(width = 3,
-           selectInput("plot_combined_y", label = NULL, choices = character(0))),
-    column(width = 2,
-           tags$span("cex", class = "text-widget-title"),
-           numericInput("plot_cex_combined", label = NULL,
-                        value = 0.3, min = 0.1, max = 5, step = 0.1)),
+    column(width = 4,
+           selectInput("plot_combined_y", label = NULL, choices = character(0)))
+  )
+})
+
+output$espace_bottom_options_ui_build <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  fluidRow(
     column(width = 1,
-           tags$span("asp", class = "text-widget-title"),
-           radioButtons("plot_asp_combined", label = NULL,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
+    column(width = 3,
+           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_asp_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Fixed", class = "text-widget-inner")
                         ),
                         choiceValues = c("auto", "fixed"),
                         selected = "auto",
-                        inline = FALSE))
+                        inline = TRUE))
+  )
+})
+
+output$espace_bottom_options_ui_combined_build <- renderUI({
+  req(length(session_data$ellipsoid_list) > 0)
+
+  fluidRow(
+    column(width = 1,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 5,
+           radioButtons("plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
+    column(width = 2,
+           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("plot_asp_espace", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Fixed", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "fixed"),
+                        selected = "auto",
+                        inline = TRUE))
+  )
+})
+
+# Ellipsoid library, this shows all version of the base elliposid created
+output$ellipsoid_info_build <- renderUI({
+
+  req(session_data$current_ellipsoid)
+
+  ell <- session_data$current_ellipsoid
+  base_ell <- session_data$ellipsoid_list[["base"]]
+  vars <- ell$var_names
+  n_vars <- length(vars)
+
+  # Volume change relative to base
+  vol_current <- ell$volume
+  vol_base <- if(!is.null(base_ell) && !is.null(base_ell$volume)){
+    base_ell$volume
+  } else {
+    vol_current
+  }
+
+  vol_pct <- if(!is.null(base_ell) && vol_base > 0){
+    round((vol_current - vol_base) / vol_base * 100, 1)
+  } else {
+    0
+  }
+  vol_icon<- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
+  vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
+
+  # Covariance pairs that differ from zero
+  pairs <- t(combn(vars, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = " / "))
+  cov_vals <- apply(pairs, 1, function(p){
+    round(ell$cov_matrix[p[1], p[2]], 4)
+  })
+
+  nonzero <- cov_vals != 0
+
+  # Covariance table rows
+  cov_rows <- if(any(nonzero)){
+    lapply(which(nonzero), function(i){
+      val <- cov_vals[i]
+      color <- if(val > 0) "#097a21" else "#e74c3c"
+      icn <- if(val > 0) icon("arrow-up") else icon("arrow-down")
+      tags$tr(
+        tags$td(pair_names[i],
+                style = "font-size: 12px; color: #666; padding: 3px 6px;"),
+        tags$td(style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"),
+                icn, " ", format(val, nsmall = 4))
+      )
+    })
+  } else {
+    list(tags$tr(tags$td(
+      colspan = "2",
+      style = "font-size: 12px; color: #aaa; padding: 3px 6px;",
+      "All covariances at zero (base ellipsoid)"
+    )))
+  }
+
+  # Centroid rows
+  centroid_rows <- lapply(vars, function(v){
+
+    cur_val<- round(ell$centroid[v], 3)
+    base_val <- if(!is.null(base_ell)) round(base_ell$centroid[v], 3) else cur_val
+    delta <- round(cur_val - base_val, 3)
+    color <- if(delta > 0) "#097a21" else if(delta < 0) "#e74c3c" else "#aaa"
+    delta_str <- if(delta > 0) paste0("+", delta) else if(delta < 0) as.character(delta) else "no change"
+
+    tags$tr(
+      tags$td(v,
+              style = "font-size: 12px; color: #666; padding: 3px 6px;"),
+      tags$td(cur_val,
+              style = "font-size: 12px; color: #555; padding: 3px 6px;"),
+      tags$td(delta_str,
+              style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"))
+    )
+  })
+
+  box(title = tagList(
+    tags$span("Ellipsoid summary", class = "text-section-header"),
+    tags$span(paste0(" — ", session_data$current_ellipsoid$ell_name),
+              style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
+    width = 12,
+    collapsible = TRUE,
+    collapsed = FALSE,
+
+    fluidRow(
+      column(width = 4,
+             tags$div(
+               tags$span("Dimensions", class = "text-widget-title"),
+               tags$p(paste0(n_vars, "D (", paste(vars, collapse = ", "), ")"),
+                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+
+               tags$span("Confidence level", class = "text-widget-title"),
+               tags$p(paste0(round(ell$cl * 100, 1), "%"),
+                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
+
+               tags$span("Volume", class = "text-widget-title"),
+               tags$p(
+                 tags$span(format(round(vol_current, 2), big.mark = ","),
+                           style = "font-size: 12px; color: #555;"),
+                 tags$span(
+                   style = paste0("font-size: 11px; color:", vol_color,
+                                  "; margin-left: 6px;"),
+                   vol_icon, " ", abs(vol_pct), "% vs base"
+                 ),
+                 style = "margin: 2px 0 12px;"
+               )
+             )
+      ),
+
+      # Covariance summary
+      column(width = 4,
+             tags$span("Covariance adjustments", class = "text-widget-title"),
+             tags$table(
+               style = "width: 100%; margin-top: 4px;",
+               tags$tbody(cov_rows)
+             )
+      ),
+
+      # Centroid
+      column(width = 4,
+             tags$span("Centroid", class = "text-widget-title"),
+             tags$table(
+               style = "width: 100%; margin-top: 4px;",
+               tags$tbody(centroid_rows)
+             )
+      )
+    )
   )
 })
 
 # Advanced plot settings UI
-output$plot_settings_ui <- renderUI({
+output$plot_settings_ui_build <- renderUI({
 
   has_ell <- !is.null(session_data$current_ellipsoid)
   has_raster <- !is.null(session_data$bg_raster)
@@ -669,280 +1047,6 @@ output$plot_settings_ui <- renderUI({
   )
 })
 
-output$build_espace_plot <- renderPlot({
-
-  vars <- plot_vars()
-  req(vars)
-
-  s <- collect_plot_settings()
-
-  req(s)
-  s$cex_val <- s$cex_espace
-
-  state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
-
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par))
-
-  switch(state,
-         "plot_pairs" = draw_espace_pairs(vars, s),
-         "plot_2d"= {
-           req(input$plot_2d_x, input$plot_2d_y)
-           par(mar = c(4, 4, 2, 1))
-           draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
-         }
-  )
-
-})
-
-output$build_gspace_plot <- renderPlot({
-  vars <- plot_vars()
-  req(vars)
-
-  s <- collect_plot_settings()
-  req(s)
-
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par))
-  par(mar = c(4, 4, 2, 1))
-
-  draw_gspace_panel(s)
-
-})
-
-output$build_combined_plot <- renderPlot({
-
-  req(input$plot_combined_x, input$plot_combined_y)
-
-  vars <- plot_vars()
-  req(vars)
-
-  s <- collect_plot_settings()
-  req(s)
-
-  s$cex_val <- s$cex_espace
-  s$asp_espace <- s$asp_combined
-
-  layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
-  mfrow<- if(layout == "col") c(2, 1) else c(1, 2)
-
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par))
-  par(mfrow = mfrow, mar = c(4, 4, 2, 1))
-
-  draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
-  draw_gspace_panel(s, title = "G-space")
-
-})
-
-output$plot_combined_options_ui <- renderUI({
-
-  vars <- plot_vars()
-  req(vars)
-
-  fluidRow(
-    column(width = 4,
-           radioButtons("plot_combined_layout",
-                        label = tags$span("Layout:", class = "text-widget-title"),
-                        choices = c("Stacked" = "col", "Side by side" = "row"),
-                        selected = "col",
-                        inline = TRUE)),
-    column(width = 4,
-           selectInput("plot_combined_x", label = NULL, choices = character(0))),
-    column(width = 4,
-           selectInput("plot_combined_y", label = NULL, choices = character(0)))
-  )
-})
-
-output$plot_espace_bottom_options_ui <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
-
-  fluidRow(
-    column(width = 1,
-           tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_zoom_mode", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Zoom in", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "ellipsoid"),
-                        selected = "auto",
-                        inline = TRUE)),
-    column(width = 3,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Fixed", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "fixed"),
-                        selected = "auto",
-                        inline = TRUE))
-  )
-})
-
-output$plot_espace_bottom_options_ui_combined <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
-
-  fluidRow(
-    column(width = 1,
-           tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 5,
-           radioButtons("plot_zoom_mode", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Zoom in", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "ellipsoid"),
-                        selected = "auto",
-                        inline = TRUE)),
-    column(width = 2,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Fixed", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "fixed"),
-                        selected = "auto",
-                        inline = TRUE))
-  )
-})
-
-# Ellipsoid library, this shows all version of the base elliposid created
-output$ellipsoid_info <- renderUI({
-
-  req(session_data$current_ellipsoid)
-
-  ell <- session_data$current_ellipsoid
-  base_ell <- session_data$ellipsoid_list[["base"]]
-  vars <- ell$var_names
-  n_vars <- length(vars)
-
-  # Volume change relative to base
-  vol_current <- ell$volume
-  vol_base <- if(!is.null(base_ell) && !is.null(base_ell$volume)){
-    base_ell$volume
-  } else {
-    vol_current
-  }
-
-  vol_pct <- if(!is.null(base_ell) && vol_base > 0){
-    round((vol_current - vol_base) / vol_base * 100, 1)
-  } else {
-    0
-  }
-  vol_icon<- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
-  vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
-
-  # Covariance pairs that differ from zero
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = " / "))
-  cov_vals <- apply(pairs, 1, function(p){
-    round(ell$cov_matrix[p[1], p[2]], 4)
-  })
-
-  nonzero <- cov_vals != 0
-
-  # Covariance table rows
-  cov_rows <- if(any(nonzero)){
-    lapply(which(nonzero), function(i){
-      val <- cov_vals[i]
-      color <- if(val > 0) "#097a21" else "#e74c3c"
-      icn <- if(val > 0) icon("arrow-up") else icon("arrow-down")
-      tags$tr(
-        tags$td(pair_names[i],
-                style = "font-size: 12px; color: #666; padding: 3px 6px;"),
-        tags$td(style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"),
-                icn, " ", format(val, nsmall = 4))
-      )
-    })
-  } else {
-    list(tags$tr(tags$td(
-      colspan = "2",
-      style = "font-size: 12px; color: #aaa; padding: 3px 6px;",
-      "All covariances at zero (base ellipsoid)"
-    )))
-  }
-
-  # Centroid rows
-  centroid_rows <- lapply(vars, function(v){
-
-    cur_val<- round(ell$centroid[v], 3)
-    base_val <- if(!is.null(base_ell)) round(base_ell$centroid[v], 3) else cur_val
-    delta <- round(cur_val - base_val, 3)
-    color <- if(delta > 0) "#097a21" else if(delta < 0) "#e74c3c" else "#aaa"
-    delta_str <- if(delta > 0) paste0("+", delta) else if(delta < 0) as.character(delta) else "no change"
-
-    tags$tr(
-      tags$td(v,
-              style = "font-size: 12px; color: #666; padding: 3px 6px;"),
-      tags$td(cur_val,
-              style = "font-size: 12px; color: #555; padding: 3px 6px;"),
-      tags$td(delta_str,
-              style = paste0("color:", color, "; padding: 3px 6px; font-size: 12px;"))
-    )
-  })
-
-  box(title = tagList(
-    tags$span("Ellipsoid summary", class = "text-section-header"),
-    tags$span(paste0(" — ", session_data$current_ellipsoid$ell_name),
-              style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
-    width = 12,
-    collapsible = TRUE,
-    collapsed = FALSE,
-
-    fluidRow(
-      column(width = 4,
-             tags$div(
-               tags$span("Dimensions", class = "text-widget-title"),
-               tags$p(paste0(n_vars, "D (", paste(vars, collapse = ", "), ")"),
-                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
-
-               tags$span("Confidence level", class = "text-widget-title"),
-               tags$p(paste0(round(ell$cl * 100, 1), "%"),
-                      style = "font-size: 12px; color: #555; margin: 2px 0 12px;"),
-
-               tags$span("Volume", class = "text-widget-title"),
-               tags$p(
-                 tags$span(format(round(vol_current, 2), big.mark = ","),
-                           style = "font-size: 12px; color: #555;"),
-                 tags$span(
-                   style = paste0("font-size: 11px; color:", vol_color,
-                                  "; margin-left: 6px;"),
-                   vol_icon, " ", abs(vol_pct), "% vs base"
-                 ),
-                 style = "margin: 2px 0 12px;"
-               )
-             )
-      ),
-
-      # Covariance summary
-      column(width = 4,
-             tags$span("Covariance adjustments", class = "text-widget-title"),
-             tags$table(
-               style = "width: 100%; margin-top: 4px;",
-               tags$tbody(cov_rows)
-             )
-      ),
-
-      # Centroid
-      column(width = 4,
-             tags$span("Centroid", class = "text-widget-title"),
-             tags$table(
-               style = "width: 100%; margin-top: 4px;",
-               tags$tbody(centroid_rows)
-             )
-      )
-    )
-  )
-})
-
-
-
 # Export Logic ------------------------------------------------------------
 
 open_device <- function(file, ext){
@@ -1100,7 +1204,6 @@ observeEvent(input$open_export_modal, {
 })
 
 output$confirm_export <- downloadHandler(
-
   filename = function(){
     ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
     tab <- if(!is.null(input$plot_build)) input$plot_build else "tab_espace"

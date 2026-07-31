@@ -1,6 +1,6 @@
 # Title: Generate Tab Server Logic
 # Description: UI and observers for sampling occurrence data
-# Date Last Updated: 07/29/2026
+# Date Last Updated: 07/30/2026
 
 
 # Helpers -------------------------------------------------------------------
@@ -82,7 +82,7 @@ output$generate_ui <- renderUI({
         class = "text-instruction"),
 
       # Ellipsoid version selector
-      fluidRow(column(width = 6, uiOutput("gen_ell_select"))),
+      fluidRow(column(width = 12, uiOutput("gen_ell_select"))),
 
       # Number of occurrences
       fluidRow(
@@ -104,15 +104,15 @@ output$generate_ui <- renderUI({
                          title = "Centroid: higher probability near the niche center.\nEdge: higher probability near the niche boundary.n/Random: equal probability across all suitable cells.",
                          class = "tooltip-icon"),
                radioButtons("gen_sampling",
-                            label        = NULL,
-                            choiceNames  = list(
+                            label = NULL,
+                            choiceNames = list(
                               tags$span("Centroid", class = "text-widget-inner"),
-                              tags$span("Edge",     class = "text-widget-inner"),
-                              tags$span("Random",   class = "text-widget-inner")
+                              tags$span("Edge", class = "text-widget-inner"),
+                              tags$span("Random", class = "text-widget-inner")
                             ),
                             choiceValues = c("centroid", "edge", "random"),
-                            selected     = "centroid",
-                            inline       = TRUE))
+                            selected = "centroid",
+                            inline = TRUE))
       ),
 
 
@@ -236,18 +236,18 @@ observeEvent(input$generate_occ, {
   req(input$gen_n_occ)
   req(input$gen_sampling)
 
-  pred_list    <- session_data$ellipsoid_prediction_list
-  bias_list    <- session_data$ellipsoid_prediction_list_biased
-  is_all       <- input$gen_ell_selected == "all"
+  pred_list <- session_data$ellipsoid_prediction_list
+  bias_list <- session_data$ellipsoid_prediction_list_biased
+  is_all <- input$gen_ell_selected == "all"
   selected_ids <- if(is_all) names(pred_list) else input$gen_ell_selected
 
   target_layers <- input$gen_surface
-  n_occ         <- as.integer(input$gen_n_occ)
-  sampling      <- input$gen_sampling
-  strict        <- switch(input$gen_strict,
-                          "TRUE"  = TRUE,
-                          "FALSE" = FALSE,
-                          NULL)
+  n_occ  <- as.integer(input$gen_n_occ)
+  sampling <- input$gen_sampling
+  strict <- switch(input$gen_strict,
+                   "TRUE" = TRUE,
+                   "FALSE" = FALSE,
+                   NULL)
 
   sampling_mask <- if(!is.null(input$gen_mask_file)){
     ext <- tolower(tools::file_ext(input$gen_mask_file$name))
@@ -273,15 +273,15 @@ observeEvent(input$generate_occ, {
 
   occurrence_list <- setNames(
     lapply(selected_ids, function(id){
-      generate_occ_for_ell(ell_id        = id,
-                           pred_list     = pred_list,
-                           biased_list   = bias_list,
-                           layers        = target_layers,
-                           n_occ         = n_occ,
-                           sampling      = sampling,
-                           strict        = strict,
+      generate_occ_for_ell(ell_id = id,
+                           pred_list = pred_list,
+                           biased_list = bias_list,
+                           layers = target_layers,
+                           n_occ  = n_occ,
+                           sampling = sampling,
+                           strict = strict,
                            sampling_mask = sampling_mask,
-                           seed          = 123L)
+                           seed = 123L)
     }),
     selected_ids
   )
@@ -305,11 +305,9 @@ observeEvent(input$generate_occ, {
   showNotification(msg, type = "message", duration = 4)
 })
 
-
 observeEvent(input$edit_generate, {
   session_data$ellipsoid_occurrence_list <- NULL
 })
-
 
 output$gen_surface_ui <- renderUI({
 
@@ -351,7 +349,7 @@ output$gen_surface_ui <- renderUI({
                      choiceNames = lapply(all_layers, function(nm){
                        is_biased <- nm %in% bias_lyrs && !nm %in% unbiased_lyrs
                        tags$span(nm,
-                                 style = if(is_biased) "color: #097a21;" else "",
+                                 style = if(is_biased) "color: #c47c16;" else "",
                                  class = "text-widget-inner")
                      }),
                      choiceValues = all_layers,
