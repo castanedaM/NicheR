@@ -541,38 +541,39 @@ dashboardPage(
 
           column(width = 7,
                  tabBox(
-                   id    = "generate_tabs",
+                   id = "plot_generate",
                    width = 12,
 
                    tabPanel(
                      title = tags$span("E-space", class = "text-tab-title"),
-                     value = "generate_espace",
-                     uiOutput("gen_espace_options_ui"),
-                     plotOutput("generate_espace_plot"),
+                     value = "gen_tab_espace",
+                     uiOutput("espace_top_options_ui_generate"),
+                     plotOutput("espace_generate"),
                      br(),
-                     uiOutput("gen_espace_bottom_options_ui")
+                     uiOutput("espace_bottom_options_ui_generate")
                    ),
 
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
-                     value = "generate_gspace",
-                     uiOutput("gen_layer_select_ui"),
-                     plotOutput("generate_gspace_plot")
+                     value = "gen_tab_gspace",
+                     uiOutput("gspace_top_options_ui_generate"),
+                     plotOutput("gspace_generate")
                    ),
 
                    tabPanel(
                      title = tags$span("Combined", class = "text-tab-title"),
-                     value = "generate_combined",
-                     uiOutput("gen_espace_options_ui"),
-                     plotOutput("generate_combined_plot"),
+                     value = "gen_tab_combined",
+                     uiOutput("combined_options_ui_generate"),
+                     plotOutput("combined_generate"),
                      br(),
-                     uiOutput("gen_espace_bottom_options_ui_combined")
+                     uiOutput("combined_bottom_options_ui_generate")
                    )
+
                  ),
 
-                 br(),
+                 uiOutput("ellipsoid_info_generate"),
+                 uiOutput("plot_settings_ui_generate")
 
-                 uiOutput("gen_plot_settings_ui")
           )
         )
       )

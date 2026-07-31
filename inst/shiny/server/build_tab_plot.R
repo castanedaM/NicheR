@@ -184,9 +184,8 @@ draw_espace_pairs <- function(vars, s){
 
 draw_gspace_panel <- function(rast, s, title = NULL, col = NULL){
   map_bg_col <- s$map_bg_col
-  cex_val <- if(!is.null(s$export_cex)) s$export_cex else 1
   ttl  <- if(!is.null(title)) title else names(rast)[1]
-  par(cex.axis = cex_val, cex.lab = cex_val, cex.main = cex_val * 1.1)
+
   if(!is.null(col)){
     terra::plot(rast,
                 col = col,
@@ -284,8 +283,6 @@ collect_plot_settings <- function(){
 
     zoom_mode = get_input("plot_zoom_mode","auto"),
 
-    cex_espace = get_input("plot_cex_espace", 0.3),
-    cex_combined = get_input("plot_cex_combined", 0.3),
     asp_espace = get_input("plot_asp_espace", "auto"),
     asp_combined = get_input("plot_asp_combined", "auto"),
     export_cex = get_input("export_cex", 1),
@@ -436,7 +433,6 @@ output$espace_build <- renderPlot({
   s <- collect_plot_settings()
 
   req(s)
-  s$cex_val <- s$cex_espace
 
   state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
 
@@ -588,7 +584,6 @@ output$combined_build <- renderPlot({
   req(vars)
 
   s <- collect_plot_settings()
-  s$cex_val    <- s$cex_espace
   s$asp_espace <- s$asp_combined
 
   layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
@@ -671,7 +666,7 @@ output$espace_bottom_options_ui_build <- renderUI({
   )
 })
 
-output$espace_bottom_options_ui_combined_build <- renderUI({
+output$combined_bottom_options_ui_build <- renderUI({
   req(length(session_data$ellipsoid_list) > 0)
 
   fluidRow(
@@ -1088,15 +1083,14 @@ open_device <- function(file, ext){
       cex.sub = cex_val * 0.9)
 }
 
-output$export_settings_ui <- renderUI({
+output$export_settings_ui_build <- renderUI({
 
-  ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-
-  unit <- if(!is.null(input$export_unit)) input$export_unit else "mm"
+  ext  <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
+  unit <- if(!is.null(input$export_unit))     input$export_unit     else "mm"
 
   defaults <- switch(unit,
-                     "mm" = list(val = 166, min = 50, max = 500, step = 1),
-                     "in" = list(val = 6.54, min = 1, max = 20, step = 0.1),
+                     "mm" = list(val = 166,  min = 50,  max = 500,  step = 1),
+                     "in" = list(val = 6.54, min = 1,   max = 20,   step = 0.1),
                      "px" = list(val = 1961, min = 400, max = 6000, step = 100)
   )
 
@@ -1110,30 +1104,20 @@ output$export_settings_ui <- renderUI({
                tags$span(paste0("Width (", unit, ")"), class = "text-widget-title"),
                numericInput("export_width_val", label = NULL,
                             value = defaults$val,
-                            min = defaults$min,
-                            max = defaults$max,
-                            step = defaults$step)),
-
+                            min   = defaults$min,
+                            max   = defaults$max,
+                            step  = defaults$step)),
         column(width = 4,
                tags$span(paste0("Height (", unit, ")"), class = "text-widget-title"),
                numericInput("export_height_val", label = NULL,
                             value = defaults$val,
-                            min = defaults$min,
-                            max = defaults$max,
-                            step = defaults$step)),
+                            min   = defaults$min,
+                            max   = defaults$max,
+                            step  = defaults$step)),
         column(width = 4,
                tags$span("Resolution (dpi)", class = "text-widget-title"),
                numericInput("export_res", label = NULL,
                             value = 300, min = 72, max = 600, step = 50))
-      ),
-      fluidRow(
-        column(width = 4,
-               tags$span("Text size (cex)", class = "text-widget-title"),
-               numericInput("export_cex", label = NULL,
-                            value = 1, min = 0.5, max = 3, step = 0.1)),
-        column(width = 8,
-               br(),
-               uiOutput("export_cex_msg"))
       )
     )
   } else {
@@ -1142,58 +1126,59 @@ output$export_settings_ui <- renderUI({
                 " Default is a standard full-page publication figure (166 x 166 mm)."),
         style = "font-size: 12px; color: #666; margin-bottom: 8px;"),
       fluidRow(
-        column(width = 4,
+        column(width = 6,
                tags$span("Width (mm)", class = "text-widget-title"),
                numericInput("export_width_val", label = NULL,
                             value = 166, min = 50, max = 500, step = 1)),
-        column(width = 4,
+        column(width = 6,
                tags$span("Height (mm)", class = "text-widget-title"),
                numericInput("export_height_val", label = NULL,
                             value = 166, min = 50, max = 500, step = 1))
-      ),
-      fluidRow(
-        column(width = 4,
-               tags$span("Text size (cex)", class = "text-widget-title"),
-               numericInput("export_cex", label = NULL,
-                            value = 1, min = 0.5, max = 3, step = 0.1)),
-        column(width = 8,
-               br(),
-               uiOutput("export_cex_msg"))
       ),
       p("PDF and SVG do not require a resolution setting.",
         class = "text-instruction")
     )
   }
 })
-
 observeEvent(input$open_export_modal, {
   showModal(modalDialog(
     title = "Export Figure",
-    size = "m",
-
+    size  = "m",
     fluidRow(
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
              radioButtons("export_filetype", label = NULL,
-                          choices = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
+                          choices  = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
                           selected = if(!is.null(input$export_filetype))
                             input$export_filetype else "png",
-                          inline = TRUE)),
+                          inline   = TRUE)),
       column(width = 6,
              tags$span("Unit", class = "text-widget-title"),
              radioButtons("export_unit", label = NULL,
-                          choiceNames = list(
-                            tags$span("mm", class = "text-widget-inner"),
+                          choiceNames  = list(
+                            tags$span("mm",     class = "text-widget-inner"),
                             tags$span("inches", class = "text-widget-inner"),
-                            tags$span("px", class = "text-widget-inner")
+                            tags$span("px",     class = "text-widget-inner")
                           ),
                           choiceValues = c("mm", "in", "px"),
-                          selected = if(!is.null(input$export_unit))
+                          selected     = if(!is.null(input$export_unit))
                             input$export_unit else "mm",
-                          inline = TRUE))
+                          inline       = TRUE))
     ),
 
-    uiOutput("export_settings_ui"),
+    # cex outside renderUI so it never resets when file type or unit changes
+    fluidRow(
+      column(width = 4,
+             tags$span("Text size (cex)", class = "text-widget-title"),
+             numericInput("export_cex", label = NULL,
+                          value = if(!is.null(input$export_cex)) input$export_cex else 1,
+                          min   = 0.5, max = 3, step = 0.1)),
+      column(width = 8,
+             br(),
+             uiOutput("export_cex_msg"))
+    ),
+
+    uiOutput("export_settings_ui_build"),
 
     footer = tagList(
       modalButton("Cancel"),
