@@ -4,32 +4,6 @@
 
 # Functions -----------------------------------------------------------------
 
-# Read a single plot input with a NULL-safe default.
-# Keeps collect_plot_settings() concise without repeating the pattern.
-get_input <- function(id, default){
-  if(!is.null(input[[id]])){
-    input[[id]]
-  } else {
-    default
-  }
-}
-
-# Helper to avoid repeating the mutual-exclusion update logic in varibales.
-update_axis_selectors <- function(x_id, y_id, vars){
-  x_sel <- input[[x_id]]
-  y_sel <- input[[y_id]]
-
-  if(is.null(x_sel) || !x_sel %in% vars) x_sel <- vars[1]
-
-  y_choices <- setdiff(vars, x_sel)
-  if(is.null(y_sel) || !y_sel %in% y_choices) y_sel <- y_choices[1]
-
-  x_choices <- setdiff(vars, y_sel)
-
-  updateSelectInput(session, x_id, choices = x_choices, selected = x_sel)
-  updateSelectInput(session, y_id, choices = y_choices, selected = y_sel)
-}
-
 compute_lims <- function(v1, v2, s){
 
   ell_valid <- s$has_ell &&

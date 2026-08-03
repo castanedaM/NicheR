@@ -88,7 +88,7 @@
   font-size: 12px;
   font-weight: 350;
   color: #fff;
-  transition: opacity 0.15s ease;
+  background-color: opacity 0.15s ease;
 }
 
 .btn-save:hover {
@@ -96,7 +96,7 @@
 }
 
 .btn-continue:hover {
-  background-color: #BBDAF7;
+  background-color: #2b6fb8;
 }
 
 .btn-cancel:hover{
@@ -104,7 +104,7 @@
 }
 
 .btn-back:hover {
-  background-color: #BBDAF7;
+  background-color: #565e64;
 }
 
 /* Semantic colors */

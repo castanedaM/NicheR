@@ -222,8 +222,6 @@ observeEvent({
   update_axis_selectors("gen_plot_combined_x", "gen_plot_combined_y", vars)
 }, ignoreInit = FALSE)
 
-
-
 # Outputs -----------------------------------------------------------------
 
 # Checked

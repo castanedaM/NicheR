@@ -6,25 +6,9 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 07/23/2026
+# Date last updated: 08/03/2026
 
 # ELLIPSOID ---------------------------------------------------------------
-
-# Session-level counter, increments every time a new ellipsoid is created
-ell_id_counter <- reactiveVal(0L)
-
-make_ell_id <- function(){
-  n <- ell_id_counter() + 1L
-  ell_id_counter(n)
-  paste0("E", n, "_", format(Sys.time(), "%d%m%y"))
-}
-
-tag_ellipsoid <- function(ell, name){
-  ell$ell_id <- make_ell_id()
-  ell$ell_name <- name
-  ell
-}
-
 
 # Button that builds the ellipsoid
 observeEvent(input$build_ell, {
@@ -84,12 +68,14 @@ observeEvent(input$confirm_save_ell_version, {
     title = paste0(clean_name, " saved."),
     p("What would you like to do next?"),
     footer = tagList(
+      div(class = "action-row-btn",
       actionButton("next_build_another",
                    tagList(icon("circle-plus"), "Build another ellipsoid"),
-                   class = "btn-default"),
-      actionButton("next_go_predict",
-                   tagList(icon("arrow-right"), "Continue to predict"),
-                   class = "btn-primary")
+                   class = "btn-continue"),
+      actionButton("next_done",
+                   tagList(icon("arrow-right"), "Done"),
+                   class = "btn-back")
+      )
     ),
     easyClose = FALSE
   ))
@@ -115,10 +101,9 @@ observeEvent(input$next_build_another, {
                    type = "message", duration = 3)
 })
 
-# Continue to predict: navigate to the predict tab
-observeEvent(input$next_go_predict, {
+# Done, exist out of model
+observeEvent(input$next_done, {
   removeModal()
-  updateTabItems(session, "sidebarMenu", selected = "predict_tab")
 })
 
 observeEvent(input$update_ell_version, {

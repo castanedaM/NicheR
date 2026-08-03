@@ -403,43 +403,6 @@ output$bias_effect_directions <- renderUI({
 
 show_apply_bias_form <- reactiveVal(FALSE)
 
-# Helper: apply bias to one layer for one ellipsoid and merge into biased list.
-# If ell_id exists, appends new layer to existing SpatRaster stack.
-# If layer already exists in stack, skips silently.
-apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
-                               layer, prepared_bias, direction = "direct"){
-
-  result <- tryCatch(
-    apply_bias(prepared_bias = prepared_bias,
-               prediction = pred_rast,
-               prediction_layer = layer,
-               effect_direction = direction,
-               verbose = FALSE),
-    error = function(e) NULL
-  )
-
-  if(is.null(result)) return(biased_list)
-
-  # Extract SpatRaster from result, drop combination_formula
-  new_rast <- result[[paste0(layer, "_biased")]]
-  if(is.null(new_rast) || !inherits(new_rast, "SpatRaster")) return(biased_list)
-
-  if(!ell_id %in% names(biased_list)){
-    biased_list[[ell_id]] <- new_rast
-  } else {
-    existing <- biased_list[[ell_id]]
-    new_lyr_nm <- names(new_rast)
-
-    if(new_lyr_nm %in% names(existing)){
-      message("Layer '", new_lyr_nm, "' already exists for ", ell_id, ". Skipping.")
-    } else {
-      biased_list[[ell_id]] <- c(existing, new_rast)
-    }
-  }
-
-  biased_list
-}
-
 output$apply_bias_ui <- renderUI({
 
   req(session_data$prepared_bias)

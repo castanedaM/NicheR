@@ -1,179 +1,196 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 07/27/2026
+# Date last updated: 08/03/2026
 
 # Start session button in about
-observeEvent(input$start_session, {
-  updateTabItems(session, "sidebarMenu", selected = "build_tab")
+observeEvent(input$about_start_session_btn, {
+  updateTabItems(session, "sidebar_menu",
+                 selected = "build_tab")
 })
+
+# Reactives ---------------------------------------------------------------
+
+# Variable names available for selection, with coordinate columns removed.
+# Used by the selector UI, the mutual-exclusion observer, and Confirm.
+available_vars <- reactive({
+  nms <- if(!is.null(session_data$bg_raster)){
+    names(session_data$bg_raster)
+  } else if(!is.null(session_data$bg_df)){
+    colnames(session_data$bg_df)
+  } else {
+    return(NULL)
+  }
+
+  is_coord <- grepl(X_COL_PATTERN, nms, ignore.case = TRUE) |
+    grepl(Y_COL_PATTERN, nms, ignore.case = TRUE)
+
+  nms[!is_coord]
+})
+
+
+# Loads the selected raster file(s) once so the preview and the Upload
+# button do not parse the same files twice.
+build_raster_upload <- reactive({
+  files <- input$build_raster_file
+  if(is.null(files)) return(NULL)
+
+  if(nrow(files) > 10){
+    showNotification("Maximum 10 raster files allowed.",
+                     type = "warning", duration = 4)
+    return(NULL)
+  }
+
+  rasters <- lapply(seq_len(nrow(files)), function(i){
+    ext <- tolower(tools::file_ext(files$name[i]))
+    tryCatch(
+      load_raster_file(files$datapath[i], ext),
+      error = function(e){
+        showNotification(paste0("Could not load ", files$name[i], ": ", e$message),
+                         type = "error", duration = 4)
+        NULL
+      }
+    )
+  })
+
+  rasters <- Filter(Negate(is.null), rasters)
+
+  if(length(rasters) == 0){
+    showNotification("No raster files could be loaded.",
+                     type = "error", duration = 4)
+    return(NULL)
+  }
+
+  if(length(rasters) == 1) return(rasters[[1]])
+
+  tryCatch(
+    do.call(c, rasters),
+    error = function(e){
+      showNotification(paste0("Could not stack rasters: ", e$message,
+                              " Check that all files have matching resolution, ",
+                              "extent, and CRS."),
+                       type = "error", duration = 6)
+      NULL
+    }
+  )
+})
+
 
 # Observer Events ---------------------------------------------------------
 
-observeEvent(input$raster_file, {
-  req(input$raster_file)
+observeEvent(input$build_clear_files, {
+  session_data$bg_raster <- NULL
+  session_data$bg_df <- NULL
+  session_data$file_type <- NULL
+  session_data$vars <- NULL
 
-  if(nrow(input$raster_file) > 10){
-    showNotification("Maximum 10 raster files allowed.",
-                     type = "warning", duration = 4)
-    return()
-  }
+  shinyjs::reset("build_raster_file")
+  shinyjs::reset("build_df_file")
+
+  shinyjs::show("build_raster_file_box")
+  shinyjs::show("build_df_file_box")
+
+  removeNotification("raster_preview_msg")
+  removeNotification("df_preview_msg")
+})
+
+observeEvent(input$build_raster_file, {
+  req(input$build_raster_file)
+
+  session_data$file_type <- "raster"
+  shinyjs::hide("build_df_file_box")
 
   showNotification("Raster file(s) selected, preview loading...",
                    id = "raster_preview_msg",
                    type = "message",
                    duration = NULL)
-
-  shinyjs::hide("df_file")
 })
-observeEvent(input$df_file, {
+
+observeEvent(input$build_df_file, {
+  req(input$build_df_file)
+
+  session_data$file_type <- "df"
+  shinyjs::hide("build_raster_file_box")
+
   showNotification("CSV file selected, preview loading...",
                    id = "df_preview_msg",
                    type = "message",
                    duration = NULL)
-
 })
 
-observeEvent(input$data_upload, {
-  uploaded <- FALSE
+observeEvent(input$build_data_upload_btn, {
 
   session_data$input_mode <- "bg_layers"
+  session_data$bg_raster <- NULL
 
-  if(!is.null(input$raster_file)){
-
-    if(nrow(input$raster_file) > 10){
-      showNotification("Maximum 10 raster files allowed.",
-                       type = "warning", duration = 4)
-      return()
-    }
-
-    files <- input$raster_file
-
-    rasters <- lapply(seq_len(nrow(files)), function(i){
-      ext <- tolower(tools::file_ext(files$name[i]))
-      tryCatch(
-        load_raster_file(files$datapath[i], ext),
-        error = function(e){
-          showNotification(paste0("Could not load ", files$name[i],
-                                  ": ", e$message),
-                           type = "error", duration = 4)
-          NULL
-        }
-      )
-    })
-
-    rasters <- Filter(Negate(is.null), rasters)
-
-    if(length(rasters) == 0){
-      showNotification("No raster files could be loaded.",
-                       type = "error", duration = 4)
-      return()
-    }
-
-    if(length(rasters) == 1){
-      session_data$bg_raster <- rasters[[1]]
-      uploaded <- TRUE
-    } else {
-      stacked <- tryCatch(
-        do.call(c, rasters),
-        error = function(e){
-          showNotification(paste0("Could not stack rasters: ", e$message,
-                                  " Check that all files have matching resolution, ",
-                                  "extent, and CRS."),
-                           type  = "error",
-                           duration = 6)
-          NULL
-        }
-      )
-      if(!is.null(stacked)){
-        session_data$bg_raster <- stacked
-        uploaded <- TRUE
-      }
-    }
-  }
-
-  if(!is.null(input$df_file)){
-    ext <- tolower(tools::file_ext(input$df_file$name))
-
-    session_data$bg_df <- tryCatch(
-      load_df_file(input$df_file$datapath, ext),
-      error = function(e) stop(safeError(e))
-    )
-    uploaded <- TRUE
-  }
-
-  if(!uploaded){
-    showNotification(
-      "No files selected. Please choose at least one file before uploading.",
-      type = "warning", duration = 4)
+  if(is.null(session_data$file_type)){
+    showNotification("No files selected. Please choose a file before uploading.",
+                     type = "warning", duration = 4)
     return()
   }
 
-  if(is.null(session_data$bg_df) && !is.null(session_data$bg_raster)){
-    session_data$bg_df <- terra::as.data.frame(session_data$bg_raster, xy = TRUE, na.rm = TRUE)
+  # Raster: g-space always available
+  if(identical(session_data$file_type, "raster")){
+    rast <- build_raster_upload()
+    if(is.null(rast)) return()
+
+    session_data$bg_raster <- rast
+    session_data$bg_df <- terra::as.data.frame(rast, xy = TRUE, na.rm = TRUE)
+
+    showNotification("Raster loaded successfully.", type = "message", duration = 4)
+    updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
+    return()
   }
 
-  msg <- paste(c(if(!is.null(session_data$bg_raster)) "Raster loaded successfully.",
-                 if(!is.null(session_data$bg_df)) "CSV loaded successfully."),
-               collapse = " ")
-  showNotification(msg, type = "message", duration = 4)
 
-  if(!is.null(session_data$bg_raster) && !is.null(session_data$bg_df)){
-    raster_names <- names(session_data$bg_raster)
-    df_names <- names(session_data$bg_df)
-    missing_in_df <- setdiff(raster_names, df_names)
-    raster_cells <- sum(!is.na(terra::values(session_data$bg_raster[[1]])))
-    row_match <- nrow(session_data$bg_df) == raster_cells
+  # CSV: g-space only if coordinates are present and form a regular grid
+  if(identical(session_data$file_type, "df")){
+    ext <- tolower(tools::file_ext(input$build_df_file$name))
 
-    warning_parts <- c(
-      if(length(missing_in_df) > 0){
-        paste("Raster layers missing from CSV:",
-              paste(missing_in_df, collapse = ", "))},
-      if(!row_match){
-        paste0("Row count mismatch: CSV has ",
-               nrow(session_data$bg_df), " rows but raster has ",
-               raster_cells, " non-NA cells.")}
+    df <- tryCatch(
+      load_df_file(input$build_df_file$datapath, ext),
+      error = function(e){
+        showNotification(paste("Could not load file:", e$message),
+                         type = "error", duration = 4)
+        NULL
+      }
     )
+    if(is.null(df)) return()
 
-    if(length(warning_parts) > 0){
-      showModal(modalDialog(
-        title = "Data mismatch warning",
-        p("The following issues were found:"),
-        tags$ul(lapply(warning_parts, tags$li)),
-        p("You can continue using raster layers only, or re-upload corrected files."),
-        footer = tagList(
-          actionButton("continue_raster_only", "Continue with raster only",
-                       class = "btn-warning"),
-          actionButton("reupload", "Re-upload",
-                       class = "btn-default")
-        ),
-        easyClose = FALSE
-      ))
-      return()
+    session_data$bg_df <- df
+
+    x_col <- names(df)[grepl(X_COL_PATTERN, names(df), ignore.case = TRUE)][1]
+    y_col <- names(df)[grepl(Y_COL_PATTERN, names(df), ignore.case = TRUE)][1]
+
+    if(is.na(x_col) || is.na(y_col)){
+      showNotification(instructions$no_spatial_cols, type = "warning", duration = 8)
+    } else {
+      rast <- tryCatch(
+        terra::rast(df[, c(x_col, y_col, setdiff(names(df), c(x_col, y_col)))],
+                    type = "xyz"),
+        error = function(e) NULL
+      )
+
+      if(is.null(rast)){
+        showNotification(instructions$irregular_grid, type = "warning", duration = 8)
+      } else {
+        session_data$bg_raster <- rast
+      }
     }
+
+    showNotification("File loaded successfully.", type = "message", duration = 4)
+    updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
+    return()
   }
 
-  updateTabsetPanel(session, "tabpanel-build", selected = "range")
 })
 
-observeEvent(input$continue_raster_only, {
-  session_data$bg_df <- NULL
-  removeModal()
-  updateTabsetPanel(session, "tabpanel-build", selected = "range")
-})
-
-observeEvent(input$reupload, {
-  session_data$bg_raster <- NULL
-  session_data$bg_df <- NULL
-  removeModal()
-})
-
-observeEvent(input$continue_virtual, {
+observeEvent(input$build_continue_virtual_btn, {
   session_data$input_mode <- "virtual"
 
-  updateTabsetPanel(session, "tabpanel-build", selected = "range")
+  updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
 })
 
-observeEvent(input$continue_example, {
+observeEvent(input$build_continue_example_btn, {
   session_data$input_mode <- "example"
 
   session_data$bg_raster <- terra::rast(system.file("extdata", "ma_bios.tif",
@@ -181,31 +198,26 @@ observeEvent(input$continue_example, {
   session_data$bg_df <- terra::as.data.frame(session_data$bg_raster,
                                              xy = TRUE, na.rm = TRUE)
 
-  updateTabsetPanel(session, "tabpanel-build", selected = "range")
+  updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
 })
 
 observeEvent({
-  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_select_", i)]])
-  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("var_active_", i)]])
+  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("build_var_select_", i)]])
+  lapply(seq_len(MAX_DIMS), function(i) input[[paste0("build_var_active_", i)]])
 }, {
 
-  vars <- if(!is.null(session_data$bg_raster)){
-    names(session_data$bg_raster)
-  } else if (!is.null(session_data$bg_df)){
-    names(session_data$bg_df)
-  } else {
-    return()
-  }
+  vars <- available_vars()
+  if(is.null(vars)) return()
 
   req(vars)
 
   n_slots <- min(length(vars), MAX_DIMS)
 
   active <- vapply(seq_len(n_slots), function(i)
-    isTRUE(input[[paste0("var_active_", i)]]), logical(1))
+    isTRUE(input[[paste0("build_var_active_", i)]]), logical(1))
 
   current <- vapply(seq_len(n_slots), function(i){
-    val <- input[[paste0("var_select_", i)]]
+    val <- input[[paste0("build_var_select_", i)]]
     if(is.null(val)) vars[i] else val
   }, character(1))
 
@@ -216,21 +228,21 @@ observeEvent({
     others <- if(active[i]) setdiff(active_selections, current[i]) else active_selections
     available <- c(current[i], setdiff(vars, others))
     updateSelectInput(session,
-                      inputId = paste0("var_select_", i),
+                      inputId = paste0("build_var_select_", i),
                       choices = available,
                       selected = current[i])
   })
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-observeEvent(input$confirm_variables, {
+observeEvent(input$build_confirm_variables_btn, {
 
   if(identical(session_data$input_mode, "virtual")){
 
-    req(input$virtual_n_dims)
-    n_dims <- input$virtual_n_dims
+    req(input$build_virtual_n_dims)
+    n_dims <- input$build_virtual_n_dims
 
     vars <- vapply(seq_len(n_dims), function(i){
-      val <- input[[paste0("virtual_var_name_", i)]]
+      val <- input[[paste0("build_virtual_var_name_", i)]]
       if(is.null(val) || !nzchar(val)) paste0("var", i) else val
     }, character(1))
 
@@ -246,22 +258,17 @@ observeEvent(input$confirm_variables, {
 
   } else {
 
-    all_vars <- if(!is.null(session_data$bg_raster)){
-      names(session_data$bg_raster)
-    } else if (!is.null(session_data$bg_df)){
-      colnames(session_data$bg_df)
-    } else {
-      return()
-    }
+    all_vars <- available_vars()
+    if(is.null(all_vars)) return()
 
     n_slots  <- min(length(all_vars), MAX_DIMS)
 
     active <- vapply(seq_len(n_slots), function(i)
-      isTRUE(input[[paste0("var_active_", i)]]), logical(1))
+      isTRUE(input[[paste0("build_var_active_", i)]]), logical(1))
 
     vars <- vapply(seq_len(n_slots),
                    function(i){
-                     val <- input[[paste0("var_select_", i)]]
+                     val <- input[[paste0("build_var_select_", i)]]
                      if(is.null(val)) all_vars[i] else val
                    }, character(1))[active]
 
@@ -274,30 +281,31 @@ observeEvent(input$confirm_variables, {
   # Clear everything downstream that depended on the old variable set
   session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
-  session_data$current_ellipsoid_id <- NULL
 
 })
 
-observeEvent(input$edit_variables, {
+observeEvent(input$build_edit_variables_link, {
 
-  if(length(session_data$ellipsoid_list) > 0 || !is.null(session_data$vars)){
-    showModal(modalDialog(
-      title = "Edit variables?",
-      p("You have already selected variables or built an ellipsoid. Editing your variables will
-         delete the current selection or ellipsoid and any covariance adjustments."),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("confirm_edit_variables",
-                     "Yes, edit variables",
-                     class = "btn-warning")
-      ),
-      easyClose = FALSE
-    ))
+  # Nothing built yet, so there is nothing to lose
+  if(length(session_data$ellipsoid_list) == 0){
+    session_data$vars <- NULL
+    return()
   }
 
+  showModal(modalDialog(
+    title = "Edit variables?",
+    p(instructions$build_edit_variables_tooltip, class = "text-instruction"),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("build_confirm_edit_variables_btn",
+                   "Yes, edit variables",
+                   class = "btn-warning")
+    ),
+    easyClose = FALSE
+  ))
 })
 
-observeEvent(input$confirm_edit_variables, {
+observeEvent(input$build_confirm_edit_variables_btn, {
   removeModal()
 
   session_data$vars <- NULL
@@ -321,9 +329,11 @@ observeEvent(input$confirm_edit_variables, {
 })
 
 # Reset logic if user changes from one input to the other of the input data
-observeEvent(input$data_input_type_choice, {
+observeEvent(input$build_data_input_type_choice, {
 
   session_data$input_mode <- NULL
+  session_data$file_type <- NULL
+
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
   session_data$vars <- NULL
@@ -350,41 +360,48 @@ observeEvent(input$data_input_type_choice, {
 
 # Render Outputs ----------------------------------------------------------
 
-output$data_input_type <- renderUI({
-  req(input$data_input_type_choice)
+output$build_data_input_type_ui <- renderUI({
+  req(input$build_data_input_type_choice)
 
-  switch(input$data_input_type_choice,
-         "bg_layers" =  {
+  switch(input$build_data_input_type_choice,
+         "bg_layers" = {
 
            tagList(box(title = tags$span("Load Background Layers", class = "text-section-header"),
                        width = 12,
-                       p(instructions$data_upload, class = "text-instruction"),
+                       p(instructions$build_data_upload, class = "text-instruction"),
                        fluidRow(
                          column(
                            width = 12,
-                           fileInput(inputId = "raster_file",
-                                     label = tagList(
-                                       tags$span("Background layers (raster)", class = "text-widget-title"),
-                                       tags$span(icon("circle-info"),
-                                                 title = "Environmental conditions of the study area in raster format.\nRequired if no CSV is provided. Accepted: .tif, .rds", class = "text-widget-title")),
-                                     multiple = TRUE,
-                                     accept = c("tif", "tiff", "rds")),
+                           div(id = "build_raster_file_box",
+                               fileInput(inputId = "build_raster_file",
+                                         label = tagList(
+                                           tags$span("Background layers (raster)", class = "text-widget-title"),
+                                           tags$span(icon("circle-info"),
+                                                     title = instructions$build_raster_file_tooltip,
+                                                     class = "tooltip-icon")),
+                                         multiple = TRUE,
+                                         accept = c(".tif", ".tiff", ".rds"))),
 
-                           fileInput(inputId = "df_file",
-                                     label = tagList(
-                                       tags$span("Background layers (CSV)", class = "text-widget-title"),
-                                       tags$span(icon("circle-info"),
-                                                 title = "Same data as the raster but in tabular form.\nOptional if raster is provided. Accepted: .csv, .rds", class = "text-widget-title"))
-                                     ,
-                                     multiple = FALSE,
-                                     accept = c("text/csv",
-                                                "text/comma-separated-values",
-                                                "text/plain",
-                                                ".csv", "rds")),
+                           div(id = "build_df_file_box",
+                               fileInput(inputId = "build_df_file",
+                                         label = tagList(
+                                           tags$span("Background layers (CSV)", class = "text-widget-title"),
+                                           tags$span(icon("circle-info"),
+                                                     title = instructions$build_df_file_tooltip,
+                                                     class = "tooltip-icon")),
+                                         multiple = FALSE,
+                                         accept = c("text/csv",
+                                                    "text/comma-separated-values",
+                                                    "text/plain",
+                                                    ".csv", ".rds"))),
 
-                           verbatimTextOutput("raster_print"),
-                           tableOutput("df_header")
+                           actionLink("build_clear_files",
+                                      label = tagList(icon("rotate-left"), "Clear files")),
 
+                           br(), br(),
+
+                           verbatimTextOutput("build_raster_print"),
+                           tableOutput("build_df_header")
                          )
                        ),
 
@@ -392,7 +409,7 @@ output$data_input_type <- renderUI({
                          column(
                            width = 12,
                            class = "btn-spaced",
-                           actionButton(inputId = "data_upload",
+                           actionButton(inputId = "build_data_upload_btn",
                                         label = "Upload",
                                         class = "btn-default")
                          )
@@ -405,7 +422,7 @@ output$data_input_type <- renderUI({
            tagList(box(title = tags$span("Load Previous Session", class = "text-section-header"),
                        width = 12,
                        p(instructions$prev_session, class = "text-instruction"),
-                       fileInput(inputId = "session_file",
+                       fileInput(inputId = "build_session_file",
                                  label = tags$span("Session file (.rds)", class = "text-widget-title"),
                                  multiple = FALSE,
                                  accept = c(".rds")),
@@ -413,7 +430,7 @@ output$data_input_type <- renderUI({
                          column(
                            width = 12,
                            class = "btn-spaced",
-                           actionButton(inputId = "load_session",
+                           actionButton(inputId = "build_load_session_btn",
                                         label = "Load Session",
                                         class = "btn-default")
                          )
@@ -430,7 +447,7 @@ output$data_input_type <- renderUI({
                          column(
                            width = 12,
                            class = "btn-spaced",
-                           actionButton(inputId = "continue_virtual",
+                           actionButton(inputId = "build_continue_virtual_btn",
                                         label = "Continue",
                                         class = "btn-default")
                          )
@@ -449,7 +466,7 @@ output$data_input_type <- renderUI({
                    column(
                      width = 12,
                      class = "btn-spaced",
-                     actionButton(inputId = "continue_example",
+                     actionButton(inputId = "build_continue_example_btn",
                                   label = "Continue",
                                   class = "btn-default")
                    )
@@ -462,56 +479,30 @@ output$data_input_type <- renderUI({
   )
 })
 
-output$raster_print <- renderPrint({
-  req(input$raster_file)
-  req(nrow(input$raster_file) <= 10)
+output$build_raster_print <- renderPrint({
+  req(identical(session_data$file_type, "raster"))
 
-  files <- input$raster_file
-
-  rasters <- lapply(seq_len(nrow(files)), function(i){
-    ext <- tolower(tools::file_ext(files$name[i]))
-    tryCatch(
-      load_raster_file(files$datapath[i], ext),
-      error = function(e){
-        cat("Could not load", files$name[i], ":", e$message, "\n")
-        NULL
-      }
-    )
-  })
-
-  rasters <- Filter(Negate(is.null), rasters)
-  req(length(rasters) > 0)
-
-  if(length(rasters) == 1){
-    print(rasters[[1]])
-  } else {
-    stacked <- tryCatch(
-      do.call(c, rasters),
-      error = function(e){
-        cat("Could not stack rasters:", e$message, "\n")
-        NULL
-      }
-    )
-    if(!is.null(stacked)){
-      print(stacked)
-    }
-  }
+  rast <- build_raster_upload()
+  removeNotification("raster_preview_msg")
+  req(rast)
+  print(rast)
 })
 
-output$df_header <- renderTable({
-  req(input$df_file)
-  ext <- tolower(tools::file_ext(input$df_file$name))
+output$build_df_header <- renderTable({
+  req(identical(session_data$file_type, "df"))
+  req(input$build_df_file)
+
+  ext <- tolower(tools::file_ext(input$build_df_file$name))
   result <- tryCatch(
-    load_df_file(input$df_file$datapath, ext),
+    load_df_file(input$build_df_file$datapath, ext),
     error = function(e) stop(safeError(e))
   )
 
   removeNotification("df_preview_msg")
   head(result)
-
 })
 
-output$variable_selectors_ui <- renderUI({
+output$build_variable_selector_ui <- renderUI({
 
   # If variables are already confirmed, show a collapsed summary box
   if(!is.null(session_data$vars)){
@@ -524,7 +515,7 @@ output$variable_selectors_ui <- renderUI({
             class = "text-instruction"),
           fluidRow(
             column(12, class = "btn-spaced",
-                   actionLink("edit_variables",
+                   actionLink("build_edit_variables_link",
                               label = tagList(icon("pen"), "Edit variables")))
           )
       )
@@ -534,14 +525,14 @@ output$variable_selectors_ui <- renderUI({
   # Virtual mode: ask for number of dimensions, then name each one
   if(identical(session_data$input_mode, "virtual")){
 
-    n_dims <- if(!is.null(input$virtual_n_dims)) input$virtual_n_dims else 2
+    n_dims <- if(!is.null(input$build_virtual_n_dims)) input$build_virtual_n_dims else 2
 
     name_rows <- lapply(seq_len(n_dims), function(i){
       fluidRow(
         column(width = 4, class = "var-label",
                tags$span(paste("Variable", i), class = "text-widget-inner")),
         column(width = 8,
-               textInput(inputId = paste0("virtual_var_name_", i),
+               textInput(inputId = paste0("build_virtual_var_name_", i),
                          label = NULL,
                          value = paste0("var", i)))
       )
@@ -555,26 +546,21 @@ output$variable_selectors_ui <- renderUI({
             column(width = 4, tags$span("Number of dimensions",
                                         class = "text-widget-title")),
             column(width = 4,
-                   numericInput(inputId = "virtual_n_dims",
+                   numericInput(inputId = "build_virtual_n_dims",
                                 label = NULL,
                                 value = n_dims,
                                 min = 2, max = MAX_DIMS, step = 1))
           ),
           name_rows,
           fluidRow(column(12, class = "btn-spaced",
-                          actionButton("confirm_variables", "Confirm", class = "btn-default")))
+                          actionButton("build_confirm_variables_btn", "Confirm", class = "btn-default")))
       )
     )
   }
 
   # Default: bg_layers / example_data / prev_session
-  vars <- if(!is.null(session_data$bg_raster)){
-    names(session_data$bg_raster)
-  } else if (!is.null(session_data$bg_df)){
-    colnames(session_data$bg_df)
-  } else {
-    return()
-  }
+  vars <- available_vars()
+  if(is.null(vars)) return()
 
   n_slots <- min(length(vars), MAX_DIMS)
   all_choices <- vars
@@ -582,18 +568,18 @@ output$variable_selectors_ui <- renderUI({
   var_slots <- lapply(seq_len(n_slots), function(i){
     fluidRow(
       column(width = 2, class = "checkbox-align",
-             checkboxInput(paste0("var_active_", i),
+             checkboxInput(paste0("build_var_active_", i),
                            label = NULL,
                            value = TRUE)),
       column(width = 10,
-             conditionalPanel(paste0("input.var_active_", i, " == true"),
-                              selectInput(paste0("var_select_", i),
+             conditionalPanel(paste0("input.build_var_active_", i, " == true"),
+                              selectInput(paste0("build_var_select_", i),
                                           paste("Variable", i),
                                           all_choices,
                                           selected = vars[i])),
-             conditionalPanel(paste0("input.var_active_", i, " == false"),
+             conditionalPanel(paste0("input.build_var_active_", i, " == false"),
                               tags$div(class = "selector-disabled",
-                                       selectInput(paste0("var_select_", i, "_ghost"),
+                                       selectInput(paste0("build_var_select_", i, "_ghost"),
                                                    paste("Variable", i),
                                                    all_choices,
                                                    selected = vars[i])))
@@ -603,10 +589,10 @@ output$variable_selectors_ui <- renderUI({
 
   box(title = tags$span("Select Variables", class = "text-section-header"),
       width = 12,
-      p(instructions$variable_settings, class = "text-instruction"),
+      p(instructions$build_variable_settings, class = "text-instruction"),
       var_slots,
       fluidRow(column(12, class = "btn-spaced",
-                      actionButton("confirm_variables", "Confirm", class = "btn-default")))
+                      actionButton("build_confirm_variables_btn", "Confirm", class = "btn-default")))
   )
 })
 
