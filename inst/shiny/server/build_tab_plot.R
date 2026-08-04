@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 07/30/2026
+# Date last updated: 08/04/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -69,7 +69,7 @@ compute_lims <- function(v1, v2, s){
        asp = NA)
 }
 
-draw_espace_panel <- function(v1, v2, s){
+build_draw_espace_panel <- function(v1, v2, s){
 
   lims <- compute_lims(v1, v2, s)
   bg <- session_data$bg_df
@@ -147,16 +147,16 @@ draw_espace_panel <- function(v1, v2, s){
   }
 }
 
-draw_espace_pairs <- function(vars, s){
+build_draw_espace_pairs <- function(vars, s){
   pairs <- t(combn(seq_along(vars), 2))
   n_pairs <- nrow(pairs)
   n_cols <- ceiling(sqrt(n_pairs))
   n_rows <- ceiling(n_pairs / n_cols)
   par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
-  for(i in seq_len(n_pairs)) draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
+  for(i in seq_len(n_pairs)) build_draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
 }
 
-draw_gspace_panel <- function(rast, s, title = NULL, col = NULL){
+build_draw_gspace_panel <- function(rast, s, title = NULL, col = NULL){
   map_bg_col <- s$map_bg_col
   ttl  <- if(!is.null(title)) title else names(rast)[1]
 
@@ -179,12 +179,12 @@ draw_gspace_panel <- function(rast, s, title = NULL, col = NULL){
   }
 }
 
-draw_gspace_all <- function(vars, s){
+build_draw_gspace_all <- function(vars, s){
   n_cols <- 2
   n_rows <- ceiling(length(vars) / n_cols)
   par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
   for(i in seq_len(length(vars)))
-    draw_gspace_panel(session_data$bg_raster[[vars[i]]], s)
+    build_draw_gspace_panel(session_data$bg_raster[[vars[i]]], s)
 }
 
 # Called at the top of every draw function.
@@ -200,10 +200,11 @@ collect_plot_settings <- function(){
   )
 
   if(is.null(ranges)){
-    # Prefer base ellipsoid ranges for range lines since they represent
-    # the original niche definition and should not move with the centroid
-    base_ell <- session_data$ellipsoid_list[["base"]]
-    ref_ell<- if(!is.null(base_ell)) base_ell else session_data$current_ellipsoid
+    # Prefer base ellipsoid ranges for range lines since they represent the
+    # original niche definition and should not move with the centroid
+    ref_ell <- session_data$reference_ellipsoid
+    if(is.null(ref_ell))
+      ref_ell <- session_data$current_ellipsoid
 
     if(!is.null(ref_ell) &&
        !is.null(ref_ell$ranges) &&
@@ -226,40 +227,40 @@ collect_plot_settings <- function(){
     show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
 
     pch_val = {
-      v <- get_input("plot_pch", ".")
+      v <- get_input("build_plot_pch", ".")
       if(v == ".") "." else as.numeric(v)
     },
-    cex_val = get_input("plot_cex", 0.3),
-    bg_col = get_input("plot_bg_col", "#B3B3B3"),
+    cex_val = get_input("build_plot_cex", 0.3),
+    bg_col = get_input("build_plot_bg_col", "#B3B3B3"),
 
-    suitable_pch = as.numeric(get_input("plot_suitable_pch", "16")),
-    suitable_cex = get_input("plot_suitable_cex", 0.3),
-    suitable_col = get_input("plot_suitable_col", "#097a21"),
-    unsuitable_col = get_input("plot_unsuitable_col", "#D3D3D3"),
-    map_bg_col = get_input("plot_map_bg_col", "#F0F0F0"),
+    suitable_pch = as.numeric(get_input("build_plot_suitable_pch", "16")),
+    suitable_cex = get_input("build_plot_suitable_cex", 0.3),
+    suitable_col = get_input("build_plot_suitable_col", "#097a21"),
+    unsuitable_col = get_input("build_plot_unsuitable_col", "#D3D3D3"),
+    map_bg_col = get_input("build_plot_map_bg_col", "#F0F0F0"),
 
     show_lines = {
       show <- get_input("show_range_lines", TRUE)
       list(active = show && !is.null(ranges), ranges = ranges)
     },
 
-    xline_col = get_input("plot_xline_col","#E10000"),
-    yline_col = get_input("plot_yline_col","#0004D5"),
-    line_lwd = get_input("plot_line_lwd", 2),
+    xline_col = get_input("build_plot_xline_col","#E10000"),
+    yline_col = get_input("build_plot_yline_col","#0004D5"),
+    line_lwd = get_input("build_plot_line_lwd", 2),
 
-    ell_col = get_input("plot_ell_col", "#000000"),
-    ell_lwd = get_input("plot_ell_lwd", 2),
-    ell_lty = as.numeric(get_input("plot_ell_lty", "1")),
+    ell_col = get_input("build_plot_ell_col", "#000000"),
+    ell_lwd = get_input("build_plot_ell_lwd", 2),
+    ell_lty = as.numeric(get_input("build_plot_ell_lty", "1")),
 
-    centroid_pch = as.numeric(get_input("plot_centroid_pch", "8")),
-    centroid_col = get_input("plot_centroid_col", "#000000"),
-    centroid_cex = get_input("plot_centroid_cex", 1.5),
+    centroid_pch = as.numeric(get_input("build_plot_centroid_pch", "8")),
+    centroid_col = get_input("build_plot_centroid_col", "#000000"),
+    centroid_cex = get_input("build_plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("plot_zoom_mode","auto"),
+    zoom_mode = get_input("build_plot_zoom_mode","auto"),
 
-    asp_espace = get_input("plot_asp_espace", "auto"),
-    asp_combined = get_input("plot_asp_combined", "auto"),
-    export_cex = get_input("export_cex", 1),
+    asp_espace = get_input("build_plot_asp_espace", "auto"),
+    asp_combined = get_input("build_plot_asp_combined", "auto"),
+    export_cex = get_input("build_export_cex", 1),
 
     centroid_preview_val = tryCatch(
       withCallingHandlers(
@@ -275,7 +276,7 @@ collect_plot_settings <- function(){
 # Reactives ---------------------------------------------------------------
 
 # Prediction raster for G-space and Combined tabs only.
-# E-space uses predict() on bg_df directly inside draw_espace_panel().
+# E-space uses predict() on bg_df directly inside build_draw_espace_panel().
 pred_raster_vis <- reactive({
 
   req(session_data$current_ellipsoid)
@@ -343,32 +344,33 @@ plot_vars <- reactive({
 # Selects the x and y based on the available variables, prevent form selection a
 # 1:1
 observeEvent({
-  input$plot_espace_state
-  input$plot_2d_x
-  input$plot_2d_y
+  input$build_plot_espace_state
+  input$build_plot_2d_x
+  input$build_plot_2d_y
   session_data$vars
 }, {
   vars <- plot_vars()
   req(vars)
-  req(input$plot_espace_state == "plot_2d")
-  update_axis_selectors("plot_2d_x", "plot_2d_y", vars)
+  req(input$build_plot_espace_state == "build_plot_2d")
+  update_axis_selectors("build_plot_2d_x", "build_plot_2d_y", vars)
 }, ignoreInit = FALSE)
 
 observeEvent({
-  input$plot_combined_x
-  input$plot_combined_y
+  input$build_plot_combined_x
+  input$build_plot_combined_y
   session_data$vars
 }, {
   vars <- plot_vars()
   req(vars)
-  update_axis_selectors("plot_combined_x", "plot_combined_y", vars)
+  update_axis_selectors("build_plot_combined_x", "build_plot_combined_y", vars)
 }, ignoreInit = FALSE)
 
 
 
 # Outputs -----------------------------------------------------------------
 
-output$espace_top_options_ui_build <- renderUI({
+# E-Space
+output$build_espace_plot_top_options_ui <- renderUI({
 
   vars <- session_data$vars
   req(vars)
@@ -376,22 +378,22 @@ output$espace_top_options_ui_build <- renderUI({
   fluidRow(
     column(width = 12,
            column(width = 4,
-                  radioButtons("plot_espace_state",
+                  radioButtons("build_plot_espace_state",
                                label = tags$span("Plot type:",
                                                  class = "text-widget-title"),
-                               choices = c("All pairs" = "plot_pairs",
-                                           "2D" = "plot_2d"),
-                               selected = "plot_pairs",
+                               choices = c("All pairs" = "build_plot_pairs",
+                                           "2D" = "build_plot_2d"),
+                               selected = "build_plot_pairs",
                                inline = TRUE)),
 
            conditionalPanel(
-             "input.plot_espace_state == 'plot_2d'",
+             "input.plot_espace_state == 'build_plot_2d'",
              column(width = 4,
-                    selectInput("plot_2d_x",
+                    selectInput("build_plot_2d_x",
                                 label = NULL,
                                 choices = character(0))),
              column(width = 4,
-                    selectInput("plot_2d_y",
+                    selectInput("build_plot_2d_y",
                                 label = NULL,
                                 choices = character(0)))
            )
@@ -399,7 +401,36 @@ output$espace_top_options_ui_build <- renderUI({
   )
 })
 
-output$espace_build <- renderPlot({
+output$build_espace_plot_bottom_options_ui <- renderUI({
+  req(session_data$current_ellipsoid)
+
+  fluidRow(
+    column(width = 1,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("build_plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
+    column(width = 3,
+           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("build_plot_asp_espace", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Fixed", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "fixed"),
+                        selected = "auto",
+                        inline = TRUE))
+  )
+})
+
+output$build_espace_plot <- renderPlot({
 
   vars <- plot_vars()
   req(vars)
@@ -408,44 +439,44 @@ output$espace_build <- renderPlot({
 
   req(s)
 
-  state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
+  state <- if(!is.null(input$build_plot_espace_state)) input$build_plot_espace_state else "build_plot_pairs"
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
 
   switch(state,
-         "plot_pairs" = draw_espace_pairs(vars, s),
-         "plot_2d"= {
-           req(input$plot_2d_x, input$plot_2d_y)
+         "build_plot_pairs" = build_draw_espace_pairs(vars, s),
+         "build_plot_2d"= {
+           req(input$build_plot_2d_x, input$build_plot_2d_y)
            par(mar = c(4, 4, 2, 1))
-           draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
+           build_draw_espace_panel(input$build_plot_2d_x, input$build_plot_2d_y, s)
          }
   )
 
 })
 
-output$gspace_top_options_ui_build <- renderUI({
+# G-space
+output$build_gspace_plot_top_options_ui <- renderUI({
 
   req(session_data$bg_raster)
   req(session_data$vars)
 
   vars <- session_data$vars
-  has_ell <- !is.null(session_data$current_ellipsoid) &&
-    length(session_data$ellipsoid_list) > 0
+  has_ell <- !is.null(session_data$current_ellipsoid)
 
   if(has_ell){
     fluidRow(
       column(width = 4,
-             radioButtons("plot_gspace_state",
+             radioButtons("build_plot_gspace_state",
                           label = tags$span("Show:", class = "text-widget-title"),
-                          choices = c("All variables" = "plot_all",
-                                      "One variable" = "plot_one"),
-                          selected = "plot_all",
+                          choices = c("All variables" = "build_plot_all",
+                                      "One variable" = "build_plot_one"),
+                          selected = "build_plot_all",
                           inline = TRUE)),
       conditionalPanel(
         "input.plot_gspace_state == 'plot_one'",
         column(width = 4,
-               selectInput("plot_gspace_lyr",
+               selectInput("build_plot_gspace_lyr",
                            label = NULL,
                            choices = vars))
       )
@@ -453,16 +484,16 @@ output$gspace_top_options_ui_build <- renderUI({
   } else {
     fluidRow(
       column(width = 4,
-             radioButtons("plot_gspace_state",
+             radioButtons("build_plot_gspace_state",
                           label = tags$span("Show:", class = "text-widget-title"),
-                          choices = c("All layers" = "plot_all",
-                                      "One layer" = "plot_one"),
-                          selected = "plot_one",
+                          choices = c("All layers" = "build_plot_all",
+                                      "One layer" = "build_plot_one"),
+                          selected = "build_plot_one",
                           inline = TRUE)),
       conditionalPanel(
         "input.plot_gspace_state == 'plot_one'",
         column(width = 4,
-               selectInput("plot_gspace_lyr",
+               selectInput("build_plot_gspace_lyr",
                            label = NULL,
                            choices = vars))
       )
@@ -470,7 +501,7 @@ output$gspace_top_options_ui_build <- renderUI({
   }
 })
 
-output$gspace_build <- renderPlot({
+output$build_gspace_plot <- renderPlot({
 
   vars <- plot_vars()
   req(vars)
@@ -486,8 +517,8 @@ output$gspace_build <- renderPlot({
 
   s <- collect_plot_settings()
   rast <- session_data$bg_raster
-  lyr <- if(!is.null(input$plot_gspace_lyr)) input$plot_gspace_lyr else vars[1]
-  state <- if(!is.null(input$plot_gspace_state)) input$plot_gspace_state else "plot_all"
+  lyr <- if(!is.null(input$build_plot_gspace_lyr)) input$build_plot_gspace_lyr else vars[1]
+  state <- if(!is.null(input$build_plot_gspace_state)) input$build_plot_gspace_state else "build_plot_all"
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
@@ -512,36 +543,37 @@ output$gspace_build <- renderPlot({
     within_col <- c("#D3D3D3", "#E07B39")
     outside_col <- s$map_bg_col
 
-    if(state == "plot_all"){
+    if(state == "build_plot_all"){
       n_cols <- 2L
       n_rows <- ceiling(length(vars) / n_cols)
       par(mfrow = c(n_rows, n_cols), mar = c(3, 3, 2, 3))
       for(v in vars){
-        draw_gspace_panel(binarize_by_range(v), s,
+        build_draw_gspace_panel(binarize_by_range(v), s,
                           title = paste0(v, " (within range)"),
                           col = c(outside_col, within_col))
       }
       if(length(vars) %% 2 != 0) plot.new()
     } else {
       par(mar = c(4, 4, 2, 4))
-      draw_gspace_panel(binarize_by_range(lyr), s,
+      build_draw_gspace_panel(binarize_by_range(lyr), s,
                         title = paste0(lyr, " (within range)"),
                         col = c(outside_col, within_col))
     }
 
   } else {
 
-    if(state == "plot_all"){
-      draw_gspace_all(vars, s)
+    if(state == "build_plot_all"){
+      build_draw_gspace_all(vars, s)
     } else {
       par(mar = c(4, 4, 2, 4))
-      draw_gspace_panel(rast[[lyr]], s, title = lyr)
+      build_draw_gspace_panel(rast[[lyr]], s, title = lyr)
     }
 
   }
 })
 
-output$combined_build <- renderPlot({
+# Combined
+output$build_combined_plot <- renderPlot({
 
   is_virtual <- identical(session_data$input_mode, "virtual_mode")
   if(is_virtual || is.null(session_data$bg_raster)){
@@ -552,7 +584,7 @@ output$combined_build <- renderPlot({
     return(invisible(NULL))
   }
 
-  req(input$plot_combined_x, input$plot_combined_y)
+  req(input$build_plot_combined_x, input$build_plot_combined_y)
 
   vars <- plot_vars()
   req(vars)
@@ -560,14 +592,14 @@ output$combined_build <- renderPlot({
   s <- collect_plot_settings()
   s$asp_espace <- s$asp_combined
 
-  layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+  layout <- if(!is.null(input$build_plot_combined_layout)) input$build_plot_combined_layout else "col"
   mfrow  <- if(layout == "col") c(2, 1) else c(1, 2)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
   par(mfrow = mfrow, mar = c(4, 4, 2, 1))
 
-  draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
+  build_draw_espace_panel(input$build_plot_combined_x, input$build_plot_combined_y, s)
 
   # G-space: binary suitability if ellipsoid exists, else first raster layer
   gspace_rast <- if(s$show_suitable_gspace && s$has_ell){
@@ -585,69 +617,40 @@ output$combined_build <- renderPlot({
     session_data$bg_raster[[1]]
   }
 
-  draw_gspace_panel(gspace_rast, s,
+  build_draw_gspace_panel(gspace_rast, s,
                     title = "G-space",
                     col   = if(s$show_suitable_gspace && s$has_ell)
                       c(s$unsuitable_col, s$suitable_col)
                     else NULL)
 })
 
-output$combined_options_ui_build <- renderUI({
+output$build_combined_plot_top_options_ui <- renderUI({
 
   vars <- plot_vars()
   req(vars)
 
   fluidRow(
     column(width = 4,
-           radioButtons("plot_combined_layout",
+           radioButtons("build_plot_combined_layout",
                         label = tags$span("Layout:", class = "text-widget-title"),
                         choices = c("Stacked" = "col", "Side by side" = "row"),
                         selected = "col",
                         inline = TRUE)),
     column(width = 4,
-           selectInput("plot_combined_x", label = NULL, choices = character(0))),
+           selectInput("build_plot_combined_x", label = NULL, choices = character(0))),
     column(width = 4,
-           selectInput("plot_combined_y", label = NULL, choices = character(0)))
+           selectInput("build_plot_combined_y", label = NULL, choices = character(0)))
   )
 })
 
-output$espace_bottom_options_ui_build <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
-
-  fluidRow(
-    column(width = 1,
-           tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_zoom_mode", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Zoom in", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "ellipsoid"),
-                        selected = "auto",
-                        inline = TRUE)),
-    column(width = 3,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
-    column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
-                        choiceNames = list(
-                          tags$span("Auto", class = "text-widget-inner"),
-                          tags$span("Fixed", class = "text-widget-inner")
-                        ),
-                        choiceValues = c("auto", "fixed"),
-                        selected = "auto",
-                        inline = TRUE))
-  )
-})
-
-output$combined_bottom_options_ui_build <- renderUI({
-  req(length(session_data$ellipsoid_list) > 0)
+output$build_combined_plot_bottom_options_ui <- renderUI({
+  req(session_data$current_ellipsoid)
 
   fluidRow(
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 5,
-           radioButtons("plot_zoom_mode", label = NULL,
+           radioButtons("build_plot_zoom_mode", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -658,7 +661,7 @@ output$combined_bottom_options_ui_build <- renderUI({
     column(width = 2,
            tags$span("Aspect ratio:", class = "text-widget-title")),
     column(width = 4,
-           radioButtons("plot_asp_espace", label = NULL,
+           radioButtons("build_plot_asp_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Fixed", class = "text-widget-inner")
@@ -669,25 +672,27 @@ output$combined_bottom_options_ui_build <- renderUI({
   )
 })
 
-# Ellipsoid library, this shows all version of the base elliposid created
-output$ellipsoid_info_build <- renderUI({
 
+# Ellipsoid library, this shows all version of the base elliposid created
+output$build_ellipsoid_info_ui <- renderUI({
   req(session_data$current_ellipsoid)
 
-  ell <- session_data$current_ellipsoid
-  base_ell <- session_data$ellipsoid_list[["base"]]
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  ref_ell <- session_data$reference_ellipsoid
   vars <- ell$var_names
   n_vars <- length(vars)
 
   # Volume change relative to base
   vol_current <- ell$volume
-  vol_base <- if(!is.null(base_ell) && !is.null(base_ell$volume)){
-    base_ell$volume
+  vol_base <- if(!is.null(ref_ell) && !is.null(ref_ell$volume)){
+    ref_ell$volume
   } else {
     vol_current
   }
 
-  vol_pct <- if(!is.null(base_ell) && vol_base > 0){
+  vol_pct <- if(!is.null(ref_ell) && vol_base > 0){
     round((vol_current - vol_base) / vol_base * 100, 1)
   } else {
     0
@@ -721,7 +726,7 @@ output$ellipsoid_info_build <- renderUI({
     list(tags$tr(tags$td(
       colspan = "2",
       style = "font-size: 12px; color: #aaa; padding: 3px 6px;",
-      "All covariances at zero (base ellipsoid)"
+      "All covariances at zero"
     )))
   }
 
@@ -729,8 +734,8 @@ output$ellipsoid_info_build <- renderUI({
   centroid_rows <- lapply(vars, function(v){
 
     cur_val<- round(ell$centroid[v], 3)
-    base_val <- if(!is.null(base_ell)) round(base_ell$centroid[v], 3) else cur_val
-    delta <- round(cur_val - base_val, 3)
+    ref_val <- if(!is.null(ref_ell)) round(ref_ell$centroid[v], 3) else cur_val
+    delta <- round(cur_val - ref_val, 3)
     color <- if(delta > 0) "#097a21" else if(delta < 0) "#e74c3c" else "#aaa"
     delta_str <- if(delta > 0) paste0("+", delta) else if(delta < 0) as.character(delta) else "no change"
 
@@ -799,7 +804,7 @@ output$ellipsoid_info_build <- renderUI({
 })
 
 # Advanced plot settings UI
-output$plot_settings_ui_build <- renderUI({
+output$build_plot_settings_ui <- renderUI({
 
   has_ell <- !is.null(session_data$current_ellipsoid)
   has_raster <- !is.null(session_data$bg_raster)
@@ -817,7 +822,7 @@ output$plot_settings_ui_build <- renderUI({
     fluidRow(
       column(width = 4,
              tags$span("Point shape (pch)", class = "text-widget-title"),
-             selectInput("plot_pch", label = NULL,
+             selectInput("build_plot_pch", label = NULL,
                          choices= c("Dot (.)"= ".",
                                     "Open circle" = "1",
                                     "Filled circle" = "16",
@@ -827,7 +832,7 @@ output$plot_settings_ui_build <- renderUI({
                          selected = ".")),
       column(width = 4,
              tags$span("Point size (cex)", class = "text-widget-title"),
-             numericInput("plot_cex", label = NULL, value = 0.3,
+             numericInput("build_plot_cex", label = NULL, value = 0.3,
                           min = 0.1, max = 5, step = 0.1)),
       column(width = 4,
              tags$span("Background point color", class = "text-widget-title"),
@@ -873,7 +878,7 @@ output$plot_settings_ui_build <- renderUI({
         ),
         column(width = 3,
                tags$span("Line width", class = "text-widget-title"),
-               numericInput("plot_line_lwd", label = NULL, value = 2,
+               numericInput("build_plot_line_lwd", label = NULL, value = 2,
                             min = 0.5, max = 6, step = 0.5))
       )
     ),
@@ -897,11 +902,11 @@ output$plot_settings_ui_build <- renderUI({
         ),
         column(width = 3,
                tags$span("Ellipsoid line width", class = "text-widget-title"),
-               numericInput("plot_ell_lwd", label = NULL, value = 2,
+               numericInput("build_plot_ell_lwd", label = NULL, value = 2,
                             min = 0.5, max = 6, step = 0.5)),
         column(width = 3,
                tags$span("Ellipsoid line type", class = "text-widget-title"),
-               selectInput("plot_ell_lty", label = NULL,
+               selectInput("build_plot_ell_lty", label = NULL,
                            choices= c("Solid"= "1",
                                       "Dashed" = "2",
                                       "Dotted" = "3"),
@@ -913,7 +918,7 @@ output$plot_settings_ui_build <- renderUI({
                checkboxInput("show_centroid", "Show centroid", value = TRUE)),
         column(width = 3,
                tags$span("Centroid shape (pch)", class = "text-widget-title"),
-               selectInput("plot_centroid_pch", label = NULL,
+               selectInput("build_plot_centroid_pch", label = NULL,
                            choices = c("Cross (X)"= "4",
                                        "Star" = "8",
                                        "Filled diamond" = "18",
@@ -933,7 +938,7 @@ output$plot_settings_ui_build <- renderUI({
         ),
         column(width = 3,
                tags$span("Centroid size (cex)", class = "text-widget-title"),
-               numericInput("plot_centroid_cex", label = NULL, value = 1.5,
+               numericInput("build_plot_centroid_cex", label = NULL, value = 1.5,
                             min = 0.5, max = 5, step = 0.5))
       ),
 
@@ -974,7 +979,7 @@ output$plot_settings_ui_build <- renderUI({
       fluidRow(
         column(width = 3,
                tags$span("Suitable point shape (pch)", class = "text-widget-title"),
-               selectInput("plot_suitable_pch", label = NULL,
+               selectInput("build_plot_suitable_pch", label = NULL,
                            choices= c("Dot (.)"= ".",
                                       "Open circle" = "1",
                                       "Filled circle" = "16",
@@ -984,7 +989,7 @@ output$plot_settings_ui_build <- renderUI({
                            selected = "16")),
         column(width = 3,
                tags$span("Suitable point size (cex)", class = "text-widget-title"),
-               numericInput("plot_suitable_cex", label = NULL, value = 0.3,
+               numericInput("build_plot_suitable_cex", label = NULL, value = 0.3,
                             min = 0.1, max = 5, step = 0.1))
       )
     ),
@@ -1009,7 +1014,7 @@ output$plot_settings_ui_build <- renderUI({
     fluidRow(
       column(width = 4,
              br(),
-             actionButton("open_export_modal",
+             actionButton("build_open_export_modal",
                           tagList(icon("download"), "Export Figure"),
                           class = "btn-default"))
     )
@@ -1018,13 +1023,13 @@ output$plot_settings_ui_build <- renderUI({
 
 # Export Logic ------------------------------------------------------------
 
-open_device <- function(file, ext){
+build_open_device <- function(file, ext){
 
-  unit <- if(!is.null(input$export_unit)) input$export_unit else "mm"
-  w_val <- if(!is.null(input$export_width_val)) input$export_width_val else 166
-  h_val <- if(!is.null(input$export_height_val)) input$export_height_val else 166
-  res <- if(!is.null(input$export_res)) input$export_res else 300
-  cex_val <- if(!is.null(input$export_cex)) input$export_cex else 1
+  unit <- if(!is.null(input$build_export_unit)) input$build_export_unit else "mm"
+  w_val <- if(!is.null(input$build_export_width_val)) input$build_export_width_val else 166
+  h_val <- if(!is.null(input$build_export_height_val)) input$build_export_height_val else 166
+  res <- if(!is.null(input$build_export_res)) input$build_export_res else 300
+  cex_val <- if(!is.null(input$build_export_cex)) input$build_export_cex else 1
 
   # Convert to px for png, inches for pdf/svg
   to_inches <- function(val){
@@ -1057,10 +1062,10 @@ open_device <- function(file, ext){
       cex.sub = cex_val * 0.9)
 }
 
-output$export_settings_ui_build <- renderUI({
+output$build_export_settings_ui <- renderUI({
 
-  ext  <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-  unit <- if(!is.null(input$export_unit))     input$export_unit     else "mm"
+  ext  <- if(!is.null(input$build_export_filetype)) input$build_export_filetype else "png"
+  unit <- if(!is.null(input$build_export_unit))     input$build_export_unit     else "mm"
 
   defaults <- switch(unit,
                      "mm" = list(val = 166,  min = 50,  max = 500,  step = 1),
@@ -1076,21 +1081,21 @@ output$export_settings_ui_build <- renderUI({
       fluidRow(
         column(width = 4,
                tags$span(paste0("Width (", unit, ")"), class = "text-widget-title"),
-               numericInput("export_width_val", label = NULL,
+               numericInput("build_export_width_val", label = NULL,
                             value = defaults$val,
                             min   = defaults$min,
                             max   = defaults$max,
                             step  = defaults$step)),
         column(width = 4,
                tags$span(paste0("Height (", unit, ")"), class = "text-widget-title"),
-               numericInput("export_height_val", label = NULL,
+               numericInput("build_export_height_val", label = NULL,
                             value = defaults$val,
                             min   = defaults$min,
                             max   = defaults$max,
                             step  = defaults$step)),
         column(width = 4,
                tags$span("Resolution (dpi)", class = "text-widget-title"),
-               numericInput("export_res", label = NULL,
+               numericInput("build_export_res", label = NULL,
                             value = 300, min = 72, max = 600, step = 50))
       )
     )
@@ -1102,11 +1107,11 @@ output$export_settings_ui_build <- renderUI({
       fluidRow(
         column(width = 6,
                tags$span("Width (mm)", class = "text-widget-title"),
-               numericInput("export_width_val", label = NULL,
+               numericInput("build_export_width_val", label = NULL,
                             value = 166, min = 50, max = 500, step = 1)),
         column(width = 6,
                tags$span("Height (mm)", class = "text-widget-title"),
-               numericInput("export_height_val", label = NULL,
+               numericInput("build_export_height_val", label = NULL,
                             value = 166, min = 50, max = 500, step = 1))
       ),
       p("PDF and SVG do not require a resolution setting.",
@@ -1114,29 +1119,30 @@ output$export_settings_ui_build <- renderUI({
     )
   }
 })
-observeEvent(input$open_export_modal, {
+
+observeEvent(input$build_open_export_modal, {
   showModal(modalDialog(
     title = "Export Figure",
     size  = "m",
     fluidRow(
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
-             radioButtons("export_filetype", label = NULL,
+             radioButtons("build_export_filetype", label = NULL,
                           choices  = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
-                          selected = if(!is.null(input$export_filetype))
-                            input$export_filetype else "png",
+                          selected = if(!is.null(input$build_export_filetype))
+                            input$build_export_filetype else "png",
                           inline   = TRUE)),
       column(width = 6,
              tags$span("Unit", class = "text-widget-title"),
-             radioButtons("export_unit", label = NULL,
+             radioButtons("build_export_unit", label = NULL,
                           choiceNames  = list(
                             tags$span("mm",     class = "text-widget-inner"),
                             tags$span("inches", class = "text-widget-inner"),
                             tags$span("px",     class = "text-widget-inner")
                           ),
                           choiceValues = c("mm", "in", "px"),
-                          selected     = if(!is.null(input$export_unit))
-                            input$export_unit else "mm",
+                          selected     = if(!is.null(input$build_export_unit))
+                            input$build_export_unit else "mm",
                           inline       = TRUE))
     ),
 
@@ -1144,69 +1150,69 @@ observeEvent(input$open_export_modal, {
     fluidRow(
       column(width = 4,
              tags$span("Text size (cex)", class = "text-widget-title"),
-             numericInput("export_cex", label = NULL,
-                          value = if(!is.null(input$export_cex)) input$export_cex else 1,
+             numericInput("build_export_cex", label = NULL,
+                          value = if(!is.null(input$build_export_cex)) input$build_export_cex else 1,
                           min   = 0.5, max = 3, step = 0.1)),
       column(width = 8,
              br(),
-             uiOutput("export_cex_msg"))
+             uiOutput("build_export_cex_msg_ui"))
     ),
 
-    uiOutput("export_settings_ui_build"),
+    uiOutput("build_export_settings_ui"),
 
     footer = tagList(
       modalButton("Cancel"),
-      downloadButton("confirm_export", "Export", class = "btn-primary")
+      downloadButton("build_confirm_export", "Export", class = "btn-primary")
     ),
     easyClose = TRUE
   ))
 })
 
-output$confirm_export <- downloadHandler(
+output$build_confirm_export <- downloadHandler(
   filename = function(){
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-    tab <- if(!is.null(input$plot_build)) input$plot_build else "tab_espace"
+    ext <- if(!is.null(input$build_export_filetype)) input$build_export_filetype else "png"
+    tab <- if(!is.null(input$build_plot_tabs)) input$build_plot_tabs else "build_espace_plot_tab"
     prefix <- switch(tab,
-                     "tab_espace" = "espace_plot",
-                     "tab_gspace" = "gspace_plot",
-                     "tab_combined" = "combined_plot",
-                     "espace_plot")
+                     "build_espace_plot_tab" = "build_espace_plot",
+                     "build_gspace_plot_tab" = "build_gspace_plot",
+                     "build_combined_plot_tab" = "build_combined_plot",
+                     "build_espace_plot")
     paste0(prefix, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext)
 
   },
   content = function(file){
-    ext <- if(!is.null(input$export_filetype)) input$export_filetype else "png"
-    tab <- if(!is.null(input$plot_build)) input$plot_build else "tab_espace"
+    ext <- if(!is.null(input$build_export_filetype)) input$build_export_filetype else "png"
+    tab <- if(!is.null(input$build_plot_tabs)) input$build_plot_tabs else "build_espace_plot_tab"
     s <- collect_plot_settings()
     req(s)
 
-    open_device(file, ext)
+    build_open_device(file, ext)
 
     switch(tab,
-           "tab_espace" = {
+           "build_espace_plot_tab" = {
              vars <- plot_vars()
              req(vars)
-             state <- if(!is.null(input$plot_espace_state)) input$plot_espace_state else "plot_pairs"
+             state <- if(!is.null(input$build_plot_espace_state)) input$build_plot_espace_state else "build_plot_pairs"
              switch(state,
-                    "plot_pairs" = draw_espace_pairs(vars, s),
-                    "plot_2d" = {
-                      req(input$plot_2d_x, input$plot_2d_y)
+                    "build_plot_pairs" = build_draw_espace_pairs(vars, s),
+                    "build_plot_2d" = {
+                      req(input$build_plot_2d_x, input$build_plot_2d_y)
                       par(mar = c(4, 4, 2, 1))
-                      draw_espace_panel(input$plot_2d_x, input$plot_2d_y, s)
+                      build_draw_espace_panel(input$build_plot_2d_x, input$build_plot_2d_y, s)
                     }
              )
            },
-           "tab_gspace" = {
+           "build_espace_plot_tab" = {
              par(mar = c(4, 4, 2, 1))
-             draw_gspace_panel(s)
+             build_draw_gspace_panel(s)
            },
-           "tab_combined" = {
-             req(input$plot_combined_x, input$plot_combined_y)
-             layout <- if(!is.null(input$plot_combined_layout)) input$plot_combined_layout else "col"
+           "build_combined_plot_tab" = {
+             req(input$build_plot_combined_x, input$build_plot_combined_y)
+             layout <- if(!is.null(input$build_plot_combined_layout)) input$build_plot_combined_layout else "col"
              mfrow <- if(layout == "col") c(2, 1) else c(1, 2)
              par(mfrow = mfrow, mar = c(4, 4, 2, 1))
-             draw_espace_panel(input$plot_combined_x, input$plot_combined_y, s)
-             draw_gspace_panel(s, title = "G-space")
+             build_draw_espace_panel(input$build_plot_combined_x, input$build_plot_combined_y, s)
+             build_draw_gspace_panel(s, title = "G-space")
            }
     )
 

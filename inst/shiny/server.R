@@ -1,12 +1,13 @@
 # Title: Server for shiny nicheR
 # Description: The server of the app
-# Lats Updated: 08/03/2026
+# Lats Updated: 08/04/2026
 
 
 function(input, output, session){
 
   session_data <- reactiveValues(
 
+    # Input
     input_mode = NULL,
     file_type = NULL,
 
@@ -15,19 +16,24 @@ function(input, output, session){
 
     vars = NULL,
 
+    # Ranges
     session_range = NULL,
-    range_df = NULL,
+    df_range = NULL,
 
+    # Ellipsoids
     ellipsoid_list = list(),
     current_ellipsoid = NULL,
+    pending_ell_delete = NULL,
 
+    # Prediction
     ellipsoid_prediction_list = list(),
 
+    # Bias
     bias_raster = NULL,
     prepared_bias = NULL,
     ellipsoid_prediction_list_biased = list(),
 
-
+    # Generate
     sampling_mask = NULL,
     ellipsoid_occurrence_list = list()
 

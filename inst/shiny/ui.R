@@ -277,11 +277,12 @@ dashboardPage(
                        uiOutput("build_centroid_mover_ui")
                      ),
                      fluidRow(
-                       uiOutput("build_ellipsoid_library_ui")
+                       uiOutput("build_ellipsoid_library_ui"),
+                       uiOutput("build_reference_select_ui")
                      ),
                      fluidRow(
                        column(width = 12,
-                              uiOutput("build_save_ellipsoid_ui")
+                              uiOutput("build_next_step_ui")
                        )
                      )
                    )
@@ -413,7 +414,7 @@ dashboardPage(
 
                      fluidRow(
                        column(width = 12,
-                              uiOutput("predict_save_ellipsoid_ui")
+                              uiOutput("predict_next_step_ui")
                        )
                      )
                  )

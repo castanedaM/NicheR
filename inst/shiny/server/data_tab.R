@@ -162,7 +162,7 @@ observeEvent(input$build_data_upload_btn, {
     y_col <- names(df)[grepl(Y_COL_PATTERN, names(df), ignore.case = TRUE)][1]
 
     if(is.na(x_col) || is.na(y_col)){
-      showNotification(instructions$no_spatial_cols, type = "warning", duration = 8)
+      showNotification(instructions$build_no_spatial_cols, type = "warning", duration = 8)
     } else {
       rast <- tryCatch(
         terra::rast(df[, c(x_col, y_col, setdiff(names(df), c(x_col, y_col)))],
@@ -171,7 +171,7 @@ observeEvent(input$build_data_upload_btn, {
       )
 
       if(is.null(rast)){
-        showNotification(instructions$irregular_grid, type = "warning", duration = 8)
+        showNotification(instructions$build_irregular_grid, type = "warning", duration = 8)
       } else {
         session_data$bg_raster <- rast
       }
@@ -421,7 +421,7 @@ output$build_data_input_type_ui <- renderUI({
 
            tagList(box(title = tags$span("Load Previous Session", class = "text-section-header"),
                        width = 12,
-                       p(instructions$prev_session, class = "text-instruction"),
+                       p(instructions$build_prev_session, class = "text-instruction"),
                        fileInput(inputId = "build_session_file",
                                  label = tags$span("Session file (.rds)", class = "text-widget-title"),
                                  multiple = FALSE,
@@ -442,7 +442,7 @@ output$build_data_input_type_ui <- renderUI({
 
            tagList(box(title = tags$span("Virtual Mode", class = "text-section-header"),
                        width = 12,
-                       p(instructions$virtual_mode, class = "text-instruction"),
+                       p(instructions$build_virtual_mode, class = "text-instruction"),
                        fluidRow(
                          column(
                            width = 12,
@@ -461,7 +461,7 @@ output$build_data_input_type_ui <- renderUI({
            tagList(
              box(title = tags$span("Example Data", class = "text-section-header"),
                  width = 12,
-                 p(instructions$example_data, class = "text-instruction"),
+                 p(instructions$build_example_data, class = "text-instruction"),
                  fluidRow(
                    column(
                      width = 12,
@@ -541,7 +541,7 @@ output$build_variable_selector_ui <- renderUI({
     return(
       box(title = tags$span("Define Variables", class = "text-section-header"),
           width = 12,
-          p(instructions$virtual_variables, class = "text-instruction"),
+          p(instructions$build_virtual_variables, class = "text-instruction"),
           fluidRow(
             column(width = 4, tags$span("Number of dimensions",
                                         class = "text-widget-title")),

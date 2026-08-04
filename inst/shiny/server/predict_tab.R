@@ -1,53 +1,30 @@
-# Title: Title: Predict Tab server
+# Title: Predict Tab server
 
-# Description: Server for the predict tab, it take theelliposid of more
-# ellipsoid to predict over
+# Description: Server for the predict tab. Projects one or more saved
+# ellipsoids onto the background data, and lists the saved ellipsoids in a
+# view-only library.
 
-# Date Last Updated: 7/23/26
+# Date Last Updated: 08/04/2026
 
-output$save_ell_pred_ui <- renderUI({
+
+output$predict_save_ellipsoid_ui <- renderUI({
+
   req(length(session_data$ellipsoid_prediction_list) > 0)
 
   div(class = "action-btn-row",
-      actionButton(inputId = "save_ell_pred_btn",
-                   label = tags$span("Confirm predictions",
-                                     class = "text-widget-title"),
+      actionButton(inputId = "predict_next_step_btn",
+                   label = "Continue",
                    class = "btn-save")
   )
 
 })
 
-observeEvent(input$save_ell_pred_btn, {
-  req(length(session_data$ellipsoid_prediction_list) > 0)
-
-  showModal(modalDialog(
-    title = "Predictions complete",
-    p("Would you like to apply a sampling bias surface to your predictions,
-   or continue directly to occurrence generation?",
-      class = "text-instruction"),
-    footer = tagList(
-      actionButton("skip_bias",
-                   tagList(icon("forward-step"), "Skip bias"),
-                   class = "btn-default"),
-      actionButton("continue_bias",
-                   tagList(icon("arrow-right"), "Continue with bias"),
-                   class = "btn-primary")
-    ),
-    easyClose = FALSE
-  ))
-}, ignoreInit = TRUE)
-
-observeEvent(input$skip_bias, {
+observeEvent(input$predict_next_step_btn, {
   removeModal()
-  updateTabItems(session, "sidebarMenu", selected = "generate_tab")
+  updateTabItems(session, "sidebar_menu", selected = "bias_tab")
 })
 
-observeEvent(input$continue_bias, {
-  removeModal()
-  updateTabItems(session, "sidebarMenu", selected = "bias_tab")
-})
-
-output$pred_ell_select <- renderUI({
+output$predict_ellipsoid_selector_ui <- renderUI({
 
   req(length(session_data$ellipsoid_list) > 0)
 
@@ -59,24 +36,23 @@ output$pred_ell_select <- renderUI({
                                    function(ell) ell$ell_name,
                                    character(1))))
 
-  selectInput(inputId = "pred_ell_selected",
+  selectInput(inputId = "predict_ellipsoid_selected",
               label = tagList(
                 tags$span("Ellipsoid Version", class = "text-widget-title"),
                 tags$span(icon("circle-info"),
-                          title = "Select ellipsoid version to predict over",
+                          title = instructions$predict_ellipsoid_select_tooltip,
                           class = "tooltip-icon")
               ),
               choices  = ell_choices,
               selected = "all")
 })
 
-observeEvent(input$ell_predict, {
+observeEvent(input$predict_run_btn, {
 
   req(length(session_data$ellipsoid_list) > 0)
-  req(input$pred_ell_selected)
+  req(input$predict_ellipsoid_selected)
 
   versions <- session_data$ellipsoid_list
-  req(length(versions) > 0)
 
   newdata <- if(!is.null(session_data$bg_raster)){
     terra::subset(session_data$bg_raster, session_data$vars)
@@ -88,56 +64,68 @@ observeEvent(input$ell_predict, {
     return()
   }
 
-  is_all <- input$pred_ell_selected == "all"
+  is_all <- input$predict_ellipsoid_selected == "all"
 
-  trunc_val <- input$adjust_trunc
-  use_trunc <- !is.null(trunc_val) && is.finite(trunc_val) && trunc_val != versions$base$cl
+  trunc_val <- input$predict_adjust_trunc
 
   if(is_all){
 
-    result_stacked <- setNames(
-      lapply(names(versions), function(id){
-        ell  <- versions[[id]]
-        pred <- tryCatch(
-          predict(ell,
-                  newdata = newdata,
-                  adjust_truncation_level = if(use_trunc) trunc_val else NULL,
-                  include_suitability = isTRUE(input$pred_suitability),
-                  suitability_truncated = isTRUE(input$pred_suitability_trunc),
-                  include_mahalanobis = isTRUE(input$pred_mahalanobis),
-                  mahalanobis_truncated = isTRUE(input$pred_mahalanobis_trunc),
-                  verbose = FALSE),
-          error = function(e){
-            showNotification(paste("Ellipsoid prediction failed:", e$message),
-                             type = "error", duration = 4)
-            return(NULL)
-          }
-        )
-        if(is.null(pred)) return(NULL)
-        Reduce(c, pred)
-      }),
-      vapply(names(versions), function(id) versions[[id]]$ell_id, character(1))
-    )
+    n_ok <- 0L
 
-    req(result_stacked)
+    # Assigned per id rather than replacing the whole list, so one failed
+    # ellipsoid does not discard predictions that already succeeded
+    for(id in names(versions)){
 
-    session_data$ellipsoid_prediction_list <- result_stacked
-    showNotification("Batch prediction completed.", type = "message", duration = 4)
+      ell <- versions[[id]]
+
+      use_trunc <- !is.null(trunc_val) && is.finite(trunc_val) &&
+        !isTRUE(all.equal(trunc_val, ell$cl))
+
+      pred <- tryCatch(
+        predict(ell,
+                newdata = newdata,
+                adjust_truncation_level = if(use_trunc) trunc_val else NULL,
+                include_suitability = isTRUE(input$predict_suitability),
+                suitability_truncated = isTRUE(input$predict_suitability_trunc),
+                include_mahalanobis = isTRUE(input$predict_mahalanobis),
+                mahalanobis_truncated = isTRUE(input$predict_mahalanobis_trunc),
+                verbose = FALSE),
+        error = function(e){
+          showNotification(paste0(ell$ell_name, " prediction failed: ", e$message),
+                           type = "error", duration = 4)
+          NULL
+        }
+      )
+
+      if(is.null(pred)) next
+
+      session_data$ellipsoid_prediction_list[[id]] <- Reduce(c, pred)
+      n_ok <- n_ok + 1L
+    }
+
+    req(n_ok > 0)
+
+    showNotification(paste0("Batch prediction completed for ", n_ok,
+                            " of ", length(versions), " ellipsoids."),
+                     type = "message", duration = 4)
 
   } else {
 
-    id <- input$pred_ell_selected
+    id <- input$predict_ellipsoid_selected
     ell <- versions[[id]]
     req(ell)
+
+    use_trunc <- !is.null(trunc_val) && is.finite(trunc_val) &&
+      !isTRUE(all.equal(trunc_val, ell$cl))
 
     result <- tryCatch(
       predict(ell,
               newdata = newdata,
               adjust_truncation_level = if(use_trunc) trunc_val else NULL,
-              include_suitability = isTRUE(input$pred_suitability),
-              suitability_truncated = isTRUE(input$pred_suitability_trunc),
-              include_mahalanobis = isTRUE(input$pred_mahalanobis),
-              mahalanobis_truncated = isTRUE(input$pred_mahalanobis_trunc),
+              include_suitability = isTRUE(input$predict_suitability),
+              suitability_truncated = isTRUE(input$predict_suitability_trunc),
+              include_mahalanobis = isTRUE(input$predict_mahalanobis),
+              mahalanobis_truncated = isTRUE(input$predict_mahalanobis_trunc),
               verbose = FALSE),
       error = function(e){
         showNotification(paste("Prediction failed:", e$message),
@@ -148,65 +136,48 @@ observeEvent(input$ell_predict, {
 
     req(result)
 
+    # Same shape as the batch branch: a single stacked SpatRaster, which is
+    # what every downstream consumer checks for
+    session_data$ellipsoid_prediction_list[[id]] <- Reduce(c, result)
 
-    result_stacked <- lapply(result, function(ell){
-      Reduce(c, ell)
-    })
-
-    session_data$ellipsoid_prediction_list[[id]] <- result_stacked
     showNotification(paste0(ell$ell_name, ": prediction completed."),
                      type = "message", duration = 4)
   }
 
-  # Check if base was predicted and change to base instead of id
-  base_id <- session_data$ellipsoid_list[["base"]]$ell_id
-  idx <- which(names(session_data$ellipsoid_prediction_list) == base_id)
-  if(length(idx) > 0){
-    names(session_data$ellipsoid_prediction_list)[idx] <- "base"
-  }
-
 })
 
-output$ellipsoid_library_pred <- renderUI({
 
-  req(length(session_data$ellipsoid_list) > 0)
+# ELLIPSOID LIBRARY -------------------------------------------------------
 
+output$predict_ellipsoid_library_ui <- renderUI({
+
+  cur_ell <- session_data$current_ellipsoid
   versions <- session_data$ellipsoid_list
   ids <- names(versions)
-  cur_ell <- session_data$current_ellipsoid
 
-  if(!cur_ell$ell_id %in% names(session_data$ellipsoid_list)){
-    cur_ell <- session_data$ellipsoid_list[["base"]]
-  }
+  req(!is.null(cur_ell) || length(ids) > 0)
 
-  is_base <- !is.null(cur_ell$ell_id) &&
-    identical(cur_ell$ell_name, "base")
-
-  # Working ellipsoid slot
+  # Working slot, the ellipsoid every plot on this tab uses. Read-only here,
+  # editing happens on the Build tab.
   working_row <- if(!is.null(cur_ell)){
     fluidRow(
       style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
-      column(width = 4,
+      column(width = 5,
              tags$span(icon("eye"),
                        tags$span(paste0(" ", cur_ell$ell_name),
-                                 class  = "text-widget-inner",
-                                 style  = "color: #097a21; font-weight: 500;"),
-                       tags$span("(current)",
-                                 style  = "font-size: 11px; color: #aaa;"))),
-      column(width = 3,
+                                 class = "text-widget-inner",
+                                 style = "color: #097a21; font-weight: 500;"))),
+      column(width = 4,
              tags$span(cur_ell$ell_id,
                        style = "font-size: 11px; color: #aaa;")),
-
-      column(width = 5,
-             p("View Only")
-      )
+      column(width = 3,
+             tags$span("View-only", style = "font-size: 11px; color: #aaa;"))
     )
   }
 
   rows <- lapply(ids, function(id){
 
     ell <- versions[[id]]
-    is_base <- id == "base"
 
     fluidRow(
       style = "padding: 2px 0;",
@@ -218,24 +189,18 @@ output$ellipsoid_library_pred <- renderUI({
              tags$div(
                style = "display: flex; gap: 8px;",
 
-               tagList(
-                 actionLink(
-                   inputId = paste0("ell_view_pred_", id),
-                   label = tags$span(icon("eye"),
-                                     title = paste0("View ", ell$ell_name),
-                                     class = "tooltip-icon")
-                 ),
+               tags$a(href = "#",
+                      onclick = sprintf("Shiny.setInputValue('predict_ell_view', '%s', {priority: 'event'}); return false;", id),
+                      tags$span(icon("eye"),
+                                title = paste0("View ", ell$ell_name, " (read-only)"),
+                                class = "tooltip-icon")),
 
-                 if(isFALSE(is_base)){
-                   actionLink(
-                     inputId = paste0("ell_delete_pred_", id),
-                     label = tags$span(icon("trash"),
-                                       title = paste0("Delete ", ell$ell_name),
-                                       class = "tooltip-icon",
-                                       style = "color: #e74c3c;")
-                   )
-                 }
-               )
+               tags$a(href = "#",
+                      onclick = sprintf("Shiny.setInputValue('predict_ell_delete', '%s', {priority: 'event'}); return false;", id),
+                      tags$span(icon("trash"),
+                                title = paste0("Delete ", ell$ell_name),
+                                class = "tooltip-icon",
+                                style = "color: #e74c3c;"))
              ))
     )
   })
@@ -244,131 +209,93 @@ output$ellipsoid_library_pred <- renderUI({
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
+      p(instructions$predict_library, class = "text-instruction"),
 
       if(!is.null(cur_ell)){
-        tagList(
-          working_row,
-          tags$hr(style = "margin: 8px 0;")
-        )
+        tagList(working_row, tags$hr(style = "margin: 8px 0;"))
       },
 
-      fluidRow(
-        column(width = 5, tags$span("Name", class = "text-widget-title")),
-        column(width = 4, tags$span("ID", class = "text-widget-title")),
-        column(width = 3, tags$span("Actions", class = "text-widget-title"))
-      ),
-
-      tagList(rows)
+      if(length(ids) > 0){
+        tagList(
+          fluidRow(
+            column(width = 5, tags$span("Name", class = "text-widget-title")),
+            column(width = 4, tags$span("ID", class = "text-widget-title")),
+            column(width = 3, tags$span("Actions", class = "text-widget-title"))
+          ),
+          tagList(rows)
+        )
+      } else {
+        p(instructions$predict_library_empty, class = "text-muted-small")
+      }
   )
 })
 
-# Load a saved ellipsoid for viewing pred
-observeEvent({
-  ids <- names(session_data$ellipsoid_list)
-  lapply(ids, function(id) input[[paste0("ell_view_pred_", id)]])
-}, {
-  ids <- names(session_data$ellipsoid_list)
-  req(length(ids) > 0)
+# View, read-only
+observeEvent(input$predict_ell_view, {
 
-  clicked <- ids[vapply(ids, function(id){
-    val <- input[[paste0("ell_view_pred_", id)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
+  ell <- session_data$ellipsoid_list[[input$predict_ell_view]]
+  req(ell)
 
-  req(length(clicked) > 0)
-  id <- clicked[1]
-  ell <- session_data$ellipsoid_list[[id]]
+  set_working_ellipsoid(ell, mode = "view")
 
-  session_data$current_ellipsoid <- ell
-
-  showNotification(paste0(ell$ell_name, " loaded for prediction viewing"),
+  showNotification(paste0("Viewing ", ell$ell_name, "."),
                    type = "message", duration = 3)
+})
 
-}, ignoreInit = TRUE)
+# Delete, asks first
+observeEvent(input$predict_ell_delete, {
 
-# Delete a saved ellipsoid
-observeEvent({
-  ids <- setdiff(names(session_data$ellipsoid_list), "base")
-  lapply(ids, function(id) input[[paste0("ell_delete_pred_", id)]])
-}, {
-  ids <- setdiff(names(session_data$ellipsoid_list), "base")
-  req(length(ids) > 0)
+  ell <- session_data$ellipsoid_list[[input$predict_ell_delete]]
+  req(ell)
 
-  clicked <- ids[vapply(ids, function(id){
-    val <- input[[paste0("ell_delete_pred_", id)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-  id <- clicked[1]
-  nm <- session_data$ellipsoid_list[[id]]$ell_name
+  session_data$pending_ell_delete <- input$predict_ell_delete
 
   showModal(modalDialog(
-    title = paste0("Delete ", nm, "?"),
-    p(paste0("This will permanently remove ", nm,
-             " and any prediction results associated with it.")),
+    title = paste0("Delete ", ell$ell_name, "?"),
+    p(instructions$predict_delete_ell, class = "text-instruction"),
     footer = tagList(
       modalButton("Cancel"),
-      actionButton(paste0("confirm_ell_delete_pred_", id),
+      actionButton("predict_confirm_ell_delete_btn",
                    "Yes, delete",
-                   class = "btn-warning")
+                   class = "btn-cancel")
     ),
     easyClose = FALSE
   ))
+})
 
-}, ignoreInit = TRUE)
+observeEvent(input$predict_confirm_ell_delete_btn, {
 
-# Confirmed delete
-observeEvent({
-  ids <- setdiff(names(session_data$ellipsoid_list), "base")
-  lapply(ids, function(id) input[[paste0("confirm_ell_delete_pred_", id)]])
-}, {
-  ids <- setdiff(names(session_data$ellipsoid_list), "base")
-  req(length(ids) > 0)
+  id <- session_data$pending_ell_delete
+  req(id)
 
-  clicked <- ids[vapply(ids, function(id){
-    val <- input[[paste0("confirm_ell_delete_pred_", id)]]
-    !is.null(val) && val > 0
-  }, logical(1))]
-
-  req(length(clicked) > 0)
-  id <- clicked[1]
   nm <- session_data$ellipsoid_list[[id]]$ell_name
 
   removeModal()
 
   session_data$ellipsoid_list[[id]] <- NULL
+  session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
+  session_data$pending_ell_delete <- NULL
 
-  if(!is.null(session_data$ellipsoid_prediction_list[[id]])){
-    session_data$ellipsoid_prediction_list[[id]] <- NULL
+  # If the deleted version was the comparison reference, fall back to origin
+  if(identical(session_data$reference_ellipsoid$ell_id, id)){
+    session_data$reference_ellipsoid <- session_data$origin_ellipsoid
   }
 
-  # If the deleted version was the current working ellipsoid, move back to base
+  # If the deleted version was in the working slot, clear the slot
   if(identical(session_data$current_ellipsoid$ell_id, id)){
-    session_data$current_ellipsoid <- session_data$ellipsoid_list[["base"]]
+    session_data$current_ellipsoid <- NULL
+    session_data$origin_ellipsoid <- NULL
+    session_data$reference_ellipsoid <- NULL
+    ell_mode("edit")
 
-    showNotification(paste0(nm, " deleted. Moved to viewing base"),
-                     type = "message", duration = 3)
+    covariance_set(FALSE)
+    centroid_set(FALSE)
+
+    showNotification(paste0(nm, " deleted. Go back to Build to create a new ellipsoid."),
+                     type = "message", duration = 4)
   } else {
     showNotification(paste0(nm, " deleted."),
                      type = "message", duration = 3)
   }
-
-}, ignoreInit = TRUE)
-
-
-
-output$save_ell_pred_btn <- renderUI({
-  req(length(session_data$ellipsoid_prediction_list) > 0)
-
-  div(class = "action-btn-row",
-      actionButton("save_pred_list",
-                   label = "Save prediction",
-                   class = "btn-save")
-  )
-
-})
-
-observeEvent(input$save_pred_list, {
-  updateTabItems(session, "sidebarMenu", selected = "generate_tab")
 })
