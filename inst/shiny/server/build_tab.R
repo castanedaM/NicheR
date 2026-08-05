@@ -9,18 +9,17 @@
 
 # Date last updated: 08/04/2026
 
-carry_ell_meta <- function(new_ell, old_ell){
-  new_ell$ell_id <- old_ell$ell_id
-  new_ell$ell_name <- old_ell$ell_name
-  new_ell$parent_id <- old_ell$parent_id
-  new_ell$range_method <- old_ell$range_method
-  new_ell$range_inputs <- old_ell$range_inputs
-  new_ell
-}
 
-# Debug tracing, set to FALSE to silence
-BUILD_DEBUG <- TRUE
+# DEBUG -------------------------------------------------------------------
 
+# For Debugging, set to FALSE to stop messages printing
+BUILD_DEBUG <- FALSE
+
+# Which ellipsoid the covariance sliders currently on screen belong to.
+# Set when they render, checked before any slider value is applied.
+cov_owner <- reactiveVal(NULL)
+
+# Debug message for covariance
 dbg <- function(...){
   if(isTRUE(BUILD_DEBUG)) message("[cov] ", ...)
 }
@@ -28,6 +27,7 @@ dbg <- function(...){
 # Which ellipsoid the centroid sliders currently on screen belong to
 centroid_owner <- reactiveVal(NULL)
 
+# Debug message for centroid
 dbgc <- function(...){
   if(isTRUE(BUILD_DEBUG)) message("[cen] ", ...)
 }
@@ -74,6 +74,7 @@ set_working_ellipsoid <- function(ell, mode = "edit"){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
+  range_dirty(FALSE)
 }
 
 # Empties the working slot. Separate from the above so every caller goes
@@ -89,7 +90,22 @@ clear_working_ellipsoid <- function(){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
+  range_dirty(FALSE)
 }
+
+carry_ell_meta <- function(new_ell, old_ell){
+  new_ell$ell_id <- old_ell$ell_id
+  new_ell$ell_name <- old_ell$ell_name
+  new_ell$parent_id <- old_ell$parent_id
+  new_ell$range_method <- old_ell$range_method
+  new_ell$range_inputs <- old_ell$range_inputs
+  new_ell
+}
+
+# TRUE once the user edits a range input after an ellipsoid is in the slot.
+# Range lines follow the live inputs while this is TRUE, so edits preview
+# without being committed until Rebuild.
+range_dirty <- reactiveVal(FALSE)
 
 # RANGES ------------------------------------------------------------------
 
@@ -547,6 +563,27 @@ range_preview <- reactive({
   )
 })
 
+# Marks the range inputs as edited so the plot previews them. Ignores the
+# initial render, which fires once as the widgets are created.
+observeEvent({
+  req(session_data$vars)
+  vars <- session_data$vars
+  list(
+    input$build_range_method_choice,
+    input$build_cl_range,
+    lapply(vars, function(v) input[[paste0("build_min_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_max_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_mean_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_sd_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_expand_min_df_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_expand_max_df_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_expand_min_stats_", v)]]),
+    lapply(vars, function(v) input[[paste0("build_expand_max_stats_", v)]])
+  )
+}, {
+  if(!is.null(session_data$current_ellipsoid)) range_dirty(TRUE)
+}, ignoreInit = TRUE)
+
 observeEvent(input$build_reset_ranges_link, {
 
   req(input$build_range_method_choice, session_data$vars)
@@ -671,8 +708,9 @@ output$build_ellipsoid_library_ui <- renderUI({
   # Working slot, the ellipsoid every plot and every downstream tab uses
   working_row <- if(!is.null(cur_ell)){
     fluidRow(
+      class = "ell-row",
       style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
-      column(width = 5,
+      column(width = 4,
              tags$span(icon(if(is_view) "eye" else "pen"),
                        tags$span(paste0(" ", cur_ell$ell_name),
                                  class = "text-widget-inner",
@@ -682,10 +720,10 @@ output$build_ellipsoid_library_ui <- renderUI({
       column(width = 4,
              tags$span(ell_lineage_label(cur_ell),
                        style = "font-size: 11px; color: #aaa;")),
-      column(width = 3,
+      column(width = 4,
              if(is_view){
                actionButton("build_exit_view_btn",
-                            "Return to editing",
+                            "Edit",
                             class = "btn-default")
              } else if(is_saved){
                actionButton("build_update_ell_btn",
@@ -704,43 +742,34 @@ output$build_ellipsoid_library_ui <- renderUI({
     ell <- versions[[id]]
 
     fluidRow(
+      class = "ell-row",
       style = "padding: 2px 0;",
-      column(width = 5,
+      column(width = 4,
              tags$span(ell$ell_name, class = "text-widget-inner"),
              tags$br(),
              tags$span(id, style = "font-size: 10px; color: #bbb;")),
       column(width = 4,
              tags$span(ell_lineage_label(ell),
                        style = "font-size: 11px; color: #aaa;")),
-      column(width = 3,
-             tags$div(
-               style = "display: flex; gap: 8px;",
-
-               tags$a(href = "#",
-                      onclick = sprintf("Shiny.setInputValue('build_ell_view', '%s', {priority: 'event'}); return false;", id),
-                      tags$span(icon("eye"),
-                                title = paste0("View ", ell$ell_name, " (read-only)"),
-                                class = "tooltip-icon")),
-
-               tags$a(href = "#",
-                      onclick = sprintf("Shiny.setInputValue('build_ell_edit', '%s', {priority: 'event'}); return false;", id),
-                      tags$span(icon("pen-to-square"),
-                                title = paste0("Edit ", ell$ell_name),
-                                class = "tooltip-icon")),
-
-               tags$a(href = "#",
-                      onclick = sprintf("Shiny.setInputValue('build_ell_add', '%s', {priority: 'event'}); return false;", id),
-                      tags$span(icon("circle-plus"),
-                                title = paste0("New copy from ", ell$ell_name),
-                                class = "tooltip-icon")),
-
-               tags$a(href = "#",
-                      onclick = sprintf("Shiny.setInputValue('build_ell_delete', '%s', {priority: 'event'}); return false;", id),
-                      tags$span(icon("trash"),
-                                title = paste0("Delete ", ell$ell_name),
-                                class = "tooltip-icon",
-                                style = "color: #e74c3c;"))
-             ))
+      column(width = 4,
+             class = "ell-actions",
+             tags$a(href = "#",
+                    onclick = sprintf("Shiny.setInputValue('build_ell_view', '%s', {priority: 'event'}); return false;", id),
+                    title = paste0("View ", ell$ell_name, " (read-only)"),
+                    icon("eye")),
+             tags$a(href = "#",
+                    onclick = sprintf("Shiny.setInputValue('build_ell_edit', '%s', {priority: 'event'}); return false;", id),
+                    title = paste0("Edit ", ell$ell_name),
+                    icon("pen-to-square")),
+             tags$a(href = "#",
+                    onclick = sprintf("Shiny.setInputValue('build_ell_add', '%s', {priority: 'event'}); return false;", id),
+                    title = paste0("New copy from ", ell$ell_name),
+                    icon("plus")),
+             tags$a(href = "#",
+                    class = "ell-action-danger",
+                    onclick = sprintf("Shiny.setInputValue('build_ell_delete', '%s', {priority: 'event'}); return false;", id),
+                    title = paste0("Delete ", ell$ell_name),
+                    icon("trash-can")))
     )
   })
 
@@ -757,9 +786,11 @@ output$build_ellipsoid_library_ui <- renderUI({
       if(length(ids) > 0){
         tagList(
           fluidRow(
-            column(width = 5, tags$span("Name", class = "text-widget-title")),
-            column(width = 4, tags$span("Built from", class = "text-widget-title")),
-            column(width = 3, tags$span("Actions", class = "text-widget-title"))
+            class = "ell-row",
+            style = "padding: 2px 0;",
+            column(width = 4, tags$span("Name", class = "text-widget-title text-center")),
+            column(width = 4, tags$span("Built from", class = "text-widget-title text-center")),
+            column(width = 4, tags$span("Actions", class = "text-widget-title text-center"))
           ),
           tagList(rows)
         )
@@ -1272,11 +1303,6 @@ observeEvent(input$build_cov_reset_all, {
   })
 })
 
-# Which ellipsoid the covariance sliders currently on screen belong to.
-# Set when they render, checked before any slider value is applied.
-cov_owner <- reactiveVal(NULL)
-
-
 observeEvent(input$build_set_cov_btn, {
   covariance_set(TRUE)
 })
@@ -1284,7 +1310,6 @@ observeEvent(input$build_set_cov_btn, {
 observeEvent(input$build_edit_cov_link, {
   covariance_set(FALSE)
 })
-
 
 # CENTROID ----------------------------------------------------------------
 

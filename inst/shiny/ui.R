@@ -228,7 +228,7 @@ dashboardPage(
 
       tabItem(
         tabName = "build_tab",
-        fluidRow(
+        fluidRow(class = "row-tight",
           column(width = 5,
                  tabBox(
                    id = "build_tabs",
@@ -255,7 +255,7 @@ dashboardPage(
                                            ),
                                            choiceValues = c("bg_layers", "prev_session", "virtual_mode", "example_data"),
                                            selected = character(0),
-                                           inline = FALSE),
+                                           inline = TRUE),
                               uiOutput("build_data_input_type_ui")
                        )
                      )

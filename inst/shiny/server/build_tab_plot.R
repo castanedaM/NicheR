@@ -191,28 +191,32 @@ build_draw_gspace_all <- function(vars, s){
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
 
-  ranges <- tryCatch(
+  # Range lines. Follow the live inputs when there is no ellipsoid yet, or
+  # when the user has edited the ranges of an existing one, so edits preview
+  # before Rebuild commits them. Otherwise show the ranges the current
+  # ellipsoid was built from, which do not move with the centroid.
+  cur_ell <- session_data$current_ellipsoid
+
+  live_ranges <- tryCatch(
     withCallingHandlers(
-      range_preview(),
+      {
+        rp <- range_preview()
+        if(is.null(rp)) NULL else list(mins = rp$mins, maxs = rp$maxs)
+      },
       shiny.silent.error = function(e) invokeRestart("muffleWarning")
     ),
     error = function(e) NULL
   )
 
-  if(is.null(ranges)){
-    # Prefer base ellipsoid ranges for range lines since they represent the
-    # original niche definition and should not move with the centroid
-    ref_ell <- session_data$reference_ellipsoid
-    if(is.null(ref_ell))
-      ref_ell <- session_data$current_ellipsoid
-
-    if(!is.null(ref_ell) &&
-       !is.null(ref_ell$ranges) &&
-       !is.null(colnames(ref_ell$ranges)) &&
-       length(colnames(ref_ell$ranges)) > 0){
-      ranges <- list(mins = as.list(ref_ell$ranges[1, ]),
-                     maxs = as.list(ref_ell$ranges[2, ]))
-    }
+  ranges <- if(is.null(cur_ell)){
+    live_ranges
+  } else if(isTRUE(range_dirty()) && !is.null(live_ranges)){
+    live_ranges
+  } else if(!is.null(cur_ell$range_inputs)){
+    list(mins = cur_ell$range_inputs$min,
+         maxs = cur_ell$range_inputs$max)
+  } else {
+    NULL
   }
 
   has_ell <- !is.null(session_data$current_ellipsoid)
@@ -221,10 +225,10 @@ collect_plot_settings <- function(){
     has_ell = has_ell,
     ell = if(has_ell) session_data$current_ellipsoid else NULL,
 
-    show_ell = has_ell && get_input("show_ellipsoid",TRUE),
-    show_centroid = has_ell && get_input("show_centroid", TRUE),
-    show_suitable_espace = has_ell && get_input("show_suitable_espace", TRUE),
-    show_suitable_gspace = has_ell && get_input("show_suitable_gspace", TRUE),
+    show_ell = has_ell && get_input("build_show_ellipsoid",TRUE),
+    show_centroid = has_ell && get_input("build_show_centroid", TRUE),
+    show_suitable_espace = has_ell && get_input("build_show_suitable_espace", TRUE),
+    show_suitable_gspace = has_ell && get_input("build_show_suitable_gspace", TRUE),
 
     pch_val = {
       v <- get_input("build_plot_pch", ".")
@@ -240,7 +244,7 @@ collect_plot_settings <- function(){
     map_bg_col = get_input("build_plot_map_bg_col", "#F0F0F0"),
 
     show_lines = {
-      show <- get_input("show_range_lines", TRUE)
+      show <- get_input("build_show_range_lines", TRUE)
       list(active = show && !is.null(ranges), ranges = ranges)
     },
 
@@ -274,6 +278,13 @@ collect_plot_settings <- function(){
 
 
 # Reactives ---------------------------------------------------------------
+
+# Drives the conditionalPanel that shows the range-line toggle
+output$build_ellipsoid_exists <- reactive({
+  !is.null(session_data$current_ellipsoid)
+})
+outputOptions(output, "build_ellipsoid_exists", suspendWhenHidden = FALSE)
+
 
 # Prediction raster for G-space and Combined tabs only.
 # E-space uses predict() on bg_df directly inside build_draw_espace_panel().
@@ -309,31 +320,24 @@ plot_vars <- reactive({
 
   if(identical(session_data$input_mode, "virtual")) return(NULL)
 
-  all_vars <- if(!is.null(session_data$bg_raster)){
-    names(session_data$bg_raster)
-  } else if(!is.null(session_data$bg_df)){
-    colnames(session_data$bg_df)
-  } else {
-    return(NULL)
-  }
-
-  all_vars <- all_vars[!grepl(SPATIAL_COL_PATTERN, all_vars, ignore.case = TRUE)]
+  all_vars <- available_vars()
+  if(is.null(all_vars)) return(NULL)
 
   n_slots <- min(length(all_vars), MAX_DIMS)
 
   live_active <- vapply(seq_len(n_slots), function(i){
-    val <- input[[paste0("var_active_", i)]]
+    val <- input[[paste0("build_var_active_", i)]]
     if(is.null(val)) TRUE else isTRUE(val)
   }, logical(1))
 
   live_select <- vapply(seq_len(n_slots), function(i){
-    val <- input[[paste0("var_select_", i)]]
+    val <- input[[paste0("build_var_select_", i)]]
     if(is.null(val)) all_vars[i] else val
   }, character(1))
 
-  selected <- live_select[live_active]
+  selected <- unique(live_select[live_active])
 
-  if(length(selected) == 0) return(head(all_vars, 6))
+  if(length(selected) == 0) return(head(all_vars, MAX_DIMS))
 
   selected
 })
@@ -459,46 +463,47 @@ output$build_espace_plot <- renderPlot({
 output$build_gspace_plot_top_options_ui <- renderUI({
 
   req(session_data$bg_raster)
-  req(session_data$vars)
 
-  vars <- session_data$vars
+  vars <- plot_vars()
+  req(vars)
+
   has_ell <- !is.null(session_data$current_ellipsoid)
 
-  if(has_ell){
-    fluidRow(
-      column(width = 4,
-             radioButtons("build_plot_gspace_state",
-                          label = tags$span("Show:", class = "text-widget-title"),
-                          choices = c("All variables" = "build_plot_all",
-                                      "One variable" = "build_plot_one"),
-                          selected = "build_plot_all",
-                          inline = TRUE)),
-      conditionalPanel(
-        "input.plot_gspace_state == 'plot_one'",
-        column(width = 4,
-               selectInput("build_plot_gspace_lyr",
-                           label = NULL,
-                           choices = vars))
-      )
-    )
+  show_choices <- if(has_ell){
+    c("Within range" = "range", "Suitable area" = "suitable")
   } else {
-    fluidRow(
+    c("Within range" = "range")
+  }
+
+  fluidRow(
+    column(width = 4,
+           radioButtons("build_plot_gspace_show",
+                        label = tags$span("Show:", class = "text-widget-title"),
+                        choices = show_choices,
+                        selected = if(has_ell) "suitable" else "range",
+                        inline = TRUE)),
+
+    # Layer controls only apply to the range view, since the suitable area
+    # is a single map for all variables
+    conditionalPanel(
+      "input.build_plot_gspace_show == 'range'",
       column(width = 4,
              radioButtons("build_plot_gspace_state",
-                          label = tags$span("Show:", class = "text-widget-title"),
-                          choices = c("All layers" = "build_plot_all",
-                                      "One layer" = "build_plot_one"),
-                          selected = "build_plot_one",
-                          inline = TRUE)),
-      conditionalPanel(
-        "input.plot_gspace_state == 'plot_one'",
-        column(width = 4,
-               selectInput("build_plot_gspace_lyr",
-                           label = NULL,
-                           choices = vars))
-      )
+                          label = tags$span("Layers:", class = "text-widget-title"),
+                          choices = c("All" = "build_plot_all",
+                                      "One" = "build_plot_one"),
+                          selected = "build_plot_all",
+                          inline = TRUE))
+    ),
+
+    conditionalPanel(
+      "input.build_plot_gspace_show == 'range' && input.build_plot_gspace_state == 'build_plot_one'",
+      column(width = 4,
+             selectInput("build_plot_gspace_lyr",
+                         label = NULL,
+                         choices = vars))
     )
-  }
+  )
 })
 
 output$build_gspace_plot <- renderPlot({
@@ -523,50 +528,86 @@ output$build_gspace_plot <- renderPlot({
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
 
-  has_ell <- s$has_ell && !is.null(s$ell$ranges)
+  has_ell <- s$has_ell
 
+  # Before an ellipsoid exists, show which cells fall inside the current
+  # range inputs. This updates live as the user edits the ranges.
   binarize_by_range <- function(v){
-    r_min <- s$ell$ranges["min", v]
-    r_max <- s$ell$ranges["max", v]
+
+    rng <- s$show_lines$ranges
+
+    if(is.null(rng) || is.null(rng$mins[[v]]) || is.null(rng$maxs[[v]])){
+      return(rast[[v]])
+    }
+
     binary <- terra::classify(rast[[v]],
-                              rcl = matrix(c(-Inf, r_min, NA,
-                                             r_min, r_max, 1,
-                                             r_max, Inf, NA),
+                              rcl = matrix(c(-Inf, rng$mins[[v]], NA,
+                                             rng$mins[[v]], rng$maxs[[v]], 1,
+                                             rng$maxs[[v]], Inf, NA),
                                            ncol = 3, byrow = TRUE),
-                              include.lowest = TRUE,  right = FALSE)
+                              include.lowest = TRUE, right = FALSE)
     names(binary) <- v
     binary
   }
 
-  if(has_ell){
+
+  show_mode <- if(!is.null(input$build_plot_gspace_show)){
+    input$build_plot_gspace_show
+  } else if(s$has_ell){
+    "suitable"
+  } else {
+    "range"
+  }
+
+  if(identical(show_mode, "suitable") && s$has_ell){
+
+    pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
+
+    if(is.null(pred) || !("suitability_trunc" %in% names(pred))){
+      plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
+           xlab = "", ylab = "", main = "G-space")
+      text(0.5, 0.5, "Prediction unavailable for this ellipsoid.",
+           cex = 1, col = "grey50")
+      return(invisible(NULL))
+    }
+
+    binary <- pred[["suitability_trunc"]] > 0
+    names(binary) <- "suitable"
+
+    par(mar = c(4, 4, 2, 4))
+    build_draw_gspace_panel(binary, s,
+                            title = "Suitable area",
+                            col = c(s$unsuitable_col, s$suitable_col))
+
+  } else {
 
     within_col <- c("#D3D3D3", "#E07B39")
     outside_col <- s$map_bg_col
+    has_range <- !is.null(s$show_lines$ranges)
 
     if(state == "build_plot_all"){
       n_cols <- 2L
       n_rows <- ceiling(length(vars) / n_cols)
       par(mfrow = c(n_rows, n_cols), mar = c(3, 3, 2, 3))
       for(v in vars){
-        build_draw_gspace_panel(binarize_by_range(v), s,
-                          title = paste0(v, " (within range)"),
-                          col = c(outside_col, within_col))
+        if(has_range){
+          build_draw_gspace_panel(binarize_by_range(v), s,
+                                  title = paste0(v, " (within range)"),
+                                  col = c(outside_col, within_col))
+        } else {
+          build_draw_gspace_panel(rast[[v]], s, title = v)
+        }
       }
       if(length(vars) %% 2 != 0) plot.new()
     } else {
       par(mar = c(4, 4, 2, 4))
-      build_draw_gspace_panel(binarize_by_range(lyr), s,
-                        title = paste0(lyr, " (within range)"),
-                        col = c(outside_col, within_col))
-    }
-
-  } else {
-
-    if(state == "build_plot_all"){
-      build_draw_gspace_all(vars, s)
-    } else {
-      par(mar = c(4, 4, 2, 4))
-      build_draw_gspace_panel(rast[[lyr]], s, title = lyr)
+      if(has_range){
+        build_draw_gspace_panel(binarize_by_range(lyr), s,
+                                title = paste0(lyr, " (within range)"),
+                                col = c(outside_col, within_col))
+      } else {
+        build_draw_gspace_panel(rast[[lyr]], s, title = lyr)
+      }
     }
 
   }
@@ -618,10 +659,10 @@ output$build_combined_plot <- renderPlot({
   }
 
   build_draw_gspace_panel(gspace_rast, s,
-                    title = "G-space",
-                    col   = if(s$show_suitable_gspace && s$has_ell)
-                      c(s$unsuitable_col, s$suitable_col)
-                    else NULL)
+                          title = "G-space",
+                          col   = if(s$show_suitable_gspace && s$has_ell)
+                            c(s$unsuitable_col, s$suitable_col)
+                          else NULL)
 })
 
 output$build_combined_plot_top_options_ui <- renderUI({
@@ -661,7 +702,7 @@ output$build_combined_plot_bottom_options_ui <- renderUI({
     column(width = 2,
            tags$span("Aspect ratio:", class = "text-widget-title")),
     column(width = 4,
-           radioButtons("build_plot_asp_espace", label = NULL,
+           radioButtons("build_plot_asp_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Fixed", class = "text-widget-inner")
@@ -675,12 +716,13 @@ output$build_combined_plot_bottom_options_ui <- renderUI({
 
 # Ellipsoid library, this shows all version of the base elliposid created
 output$build_ellipsoid_info_ui <- renderUI({
-  req(session_data$current_ellipsoid)
 
-  ell_slot()
+  # Live on purpose: this is a running summary and should track every
+  # slider move, unlike the option panels which must not be torn down.
+  ell <- session_data$current_ellipsoid
+  req(ell)
 
-  ell <- isolate(session_data$current_ellipsoid)
-  ref_ell <- session_data$reference_ellipsoid
+  ref_ell <- ell_reset_target(ell)
   vars <- ell$var_names
   n_vars <- length(vars)
 
@@ -697,6 +739,7 @@ output$build_ellipsoid_info_ui <- renderUI({
   } else {
     0
   }
+
   vol_icon<- if(vol_pct > 0) icon("arrow-trend-up") else if(vol_pct < 0) icon("arrow-trend-down") else icon("minus")
   vol_color <- if(vol_pct > 0) "#097a21" else if(vol_pct < 0) "#e74c3c" else "#888"
 
@@ -751,7 +794,7 @@ output$build_ellipsoid_info_ui <- renderUI({
 
   box(title = tagList(
     tags$span("Ellipsoid summary", class = "text-section-header"),
-    tags$span(paste0(" — ", session_data$current_ellipsoid$ell_name),
+    tags$span(paste0(" — ", ell$ell_name),
               style = "font-size: 12px; color: #888; font-weight: 400; margin-left: 4px;")),
     width = 12,
     collapsible = TRUE,
@@ -772,11 +815,11 @@ output$build_ellipsoid_info_ui <- renderUI({
                tags$p(
                  tags$span(format(round(vol_current, 2), big.mark = ","),
                            style = "font-size: 12px; color: #555;"),
-                 tags$span(
-                   style = paste0("font-size: 11px; color:", vol_color,
-                                  "; margin-left: 6px;"),
-                   vol_icon, " ", abs(vol_pct), "% vs base"
-                 ),
+                 # tags$span(
+                 #   style = paste0("font-size: 11px; color:", vol_color,
+                 #                  "; margin-left: 6px;"),
+                 #   vol_icon, " ", abs(vol_pct), "% vs original"
+                 # ),
                  style = "margin: 2px 0 12px;"
                )
              )
@@ -850,10 +893,10 @@ output$build_plot_settings_ui <- renderUI({
 
     # Range lines
     conditionalPanel(
-      condition = "input.range_method_choice != null && input.range_method_choice != '' || output.ellipsoid_exists",
+      condition = "input.build_range_method_choice != null && input.build_range_method_choice != '' || output.build_ellipsoid_exists",
       fluidRow(
         column(width = 3,
-               checkboxInput("show_range_lines", "Show range lines", value = TRUE)),
+               checkboxInput("build_show_range_lines", "Show range lines", value = TRUE)),
         column(width = 3,
                tags$span("X-line color", class = "text-widget-title"),
                tags$div(style = "display: flex; align-items: center; gap: 8px;",
@@ -887,7 +930,7 @@ output$build_plot_settings_ui <- renderUI({
     if(has_ell) tagList(
       fluidRow(
         column(width = 3,
-               checkboxInput("show_ellipsoid", "Show ellipsoid", value = TRUE)),
+               checkboxInput("build_show_ellipsoid", "Show ellipsoid", value = TRUE)),
         column(width = 3,
                tags$span("Ellipsoid color", class = "text-widget-title"),
                tags$div(
@@ -915,7 +958,7 @@ output$build_plot_settings_ui <- renderUI({
 
       fluidRow(
         column(width = 3,
-               checkboxInput("show_centroid", "Show centroid", value = TRUE)),
+               checkboxInput("build_show_centroid", "Show centroid", value = TRUE)),
         column(width = 3,
                tags$span("Centroid shape (pch)", class = "text-widget-title"),
                selectInput("build_plot_centroid_pch", label = NULL,
@@ -944,10 +987,10 @@ output$build_plot_settings_ui <- renderUI({
 
       fluidRow(
         column(width = 3,
-               checkboxInput("show_suitable_espace",
+               checkboxInput("build_show_suitable_espace",
                              "Show suitable area (E-space)", value = TRUE)),
         column(width = 3,
-               checkboxInput("show_suitable_gspace",
+               checkboxInput("build_show_suitable_gspace",
                              "Show suitable area (G-space)", value = TRUE)),
         column(width = 3,
                tags$span("Suitable area color", class = "text-widget-title"),

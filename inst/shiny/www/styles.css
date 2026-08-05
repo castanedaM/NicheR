@@ -139,3 +139,47 @@
   margin-top: 15px;
 }
 
+/* Library rows: keep every column vertically centred against the others */
+.ell-row {
+  display: flex;
+  align-items: center;
+}
+
+.ell-actions a {
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.ell-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-left: 0;
+}
+
+.ell-actions a:hover {
+  color: #097a21;
+}
+
+.ell-actions a.ell-action-danger {
+  color: #e74c3c;
+}
+
+.ell-actions a.ell-action-danger:hover {
+  color: #c0392b;
+}
+
+/* Narrower gutter between side-by-side boxes */
+.row-tight {
+  margin-left: -4px;
+  margin-right: -4px;
+}
+
+.row-tight > [class*="col-"] {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
