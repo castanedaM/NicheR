@@ -245,9 +245,96 @@ sampling probability) or an inverse effect (decrease sampling probability)."),
 represent sampling bias across the study area, or use the example layers
 provided."),
 
+  bias_skipped = "Bias skipped. Occurrences will be sampled from the
+unbiased prediction.",
+
+  bias_needs_prediction = "Run a prediction on the Predict tab before adding
+sampling bias.",
+
+  bias_prepare = HTML("Assign a direction of effect to each bias layer, then
+combine them into a single composite surface. Direct means higher values
+increase sampling probability, inverse means they decrease it."),
+
+  bias_apply = HTML("Multiply a prediction by the composite bias surface.
+Combinations that already exist are skipped, so you can add layers without
+losing what is already applied."),
+
+  bias_edit_upload = "This removes the current bias layers, the prepared
+surface, and any applied bias. You will need to upload and prepare again.",
+
+  bias_edit_prepare = "This removes the prepared surface and any applied
+bias. The uploaded layers are kept.",
+
+  bias_clear_apply = "This removes every biased surface. The uploaded layers
+and the prepared surface are kept.",
+
+  bias_library = HTML("Ellipsoids saved on the Build tab appear here, with
+whether each has been predicted and biased. To edit an ellipsoid, go back to
+the Build tab."),
+
+  bias_library_empty = "No saved ellipsoids yet.",
+
+  bias_delete_ell = "This will permanently remove the ellipsoid, its
+predictions, its biased predictions, and any occurrences generated from them.",
+
+  bias_mask_na_tooltip = "Union keeps any pixel with at least one valid value
+across layers.
+Intersection keeps only pixels valid in every layer.",
+
+  bias_layer_stats_tooltip = "Mean and standard deviation of non-NA raster values.",
+
+  bias_direction_tooltip = "Direct: higher values increase sampling probability.
+Inverse: higher values decrease sampling probability.",
+
+  bias_layer_tooltip = "Layer must be a suitability surface with values in [0, 1].",
+
+  bias_apply_direction_tooltip = "Direct: prediction x bias.
+Inverse: prediction x (1 - bias).",
+
+  bias_ellipsoid_select_tooltip = "Choose which ellipsoid's prediction to
+apply bias to, or All versions to apply to every one.",
+
 
   # GENERATE TAB -----------------------------------------------------------
 
+  generate_needs_prediction = "Run a prediction on the Predict tab before
+generating occurrences.",
+
+  generate_intro = HTML("Sample virtual occurrence points from a prediction
+surface. Biased layers are shown in orange if bias has been applied."),
+
+  generate_no_surface = "Select at least one prediction layer before generating.",
+
+  generate_mask = "If no mask is provided, sampling covers the full
+prediction extent.",
+
+  generate_library = HTML("Ellipsoids saved on the Build tab appear here,
+with how many occurrences each has generated. To edit an ellipsoid, go back
+to the Build tab."),
+
+  generate_library_empty = "No saved ellipsoids yet.",
+
+  generate_delete_ell = "This will permanently remove the ellipsoid, its
+predictions, its biased predictions, and any occurrences generated from them.",
+
+  generate_sampling_tooltip = "Centroid: higher probability near the niche centre.
+Edge: higher probability near the niche boundary.
+Random: equal probability across all suitable cells.",
+
+  generate_surface_tooltip = "Select one or more prediction layers to sample
+from. Orange layers have bias applied.",
+
+  generate_strict_tooltip = "When True, removes NA and zero-valued cells
+before sampling. Recommended for truncated layers.",
+
+  generate_advanced_tooltip = "Optional sampling mask and the random seed
+used for reproducible draws.",
+
+  generate_seed_tooltip = "Same seed and same settings produce the same
+occurrences. Change it to draw a different replicate.",
+
+  generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
+occurrences from, or All versions to generate for every one.",
 
   # SHARED: PLOT SETTINGS --------------------------------------------------
 

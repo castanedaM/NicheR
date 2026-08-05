@@ -174,12 +174,12 @@
 
 /* Narrower gutter between side-by-side boxes */
 .row-tight {
-  margin-left: -4px;
-  margin-right: -4px;
+  margin-left: -3px;
+  margin-right: -3px;
 }
 
 .row-tight > [class*="col-"] {
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-left: 3px;
+  padding-right: 3px;
 }
 

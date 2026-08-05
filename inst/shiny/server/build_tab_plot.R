@@ -406,12 +406,15 @@ output$build_espace_plot_top_options_ui <- renderUI({
 })
 
 output$build_espace_plot_bottom_options_ui <- renderUI({
-  req(session_data$current_ellipsoid)
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
 
   fluidRow(
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 4,
+    column(width = 3,
            radioButtons("build_plot_zoom_mode", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -420,9 +423,12 @@ output$build_espace_plot_bottom_options_ui <- renderUI({
                         choiceValues = c("auto", "ellipsoid"),
                         selected = "auto",
                         inline = TRUE)),
-    column(width = 3,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
     column(width = 4,
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;")),
+    column(width = 1,
+           tags$span("Aspect:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("build_plot_asp_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -461,13 +467,14 @@ output$build_espace_plot <- renderPlot({
 
 # G-space
 output$build_gspace_plot_top_options_ui <- renderUI({
-
   req(session_data$bg_raster)
+
+  ell_slot()
 
   vars <- plot_vars()
   req(vars)
 
-  has_ell <- !is.null(session_data$current_ellipsoid)
+  has_ell <- !is.null(isolate(session_data$current_ellipsoid))
 
   show_choices <- if(has_ell){
     c("Within range" = "range", "Suitable area" = "suitable")
@@ -645,24 +652,15 @@ output$build_combined_plot <- renderPlot({
   # G-space: binary suitability if ellipsoid exists, else first raster layer
   gspace_rast <- if(s$show_suitable_gspace && s$has_ell){
     pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
-    if(!is.null(pred)){
-      terra::classify(pred[["suitability_trunc"]],
-                      rcl = matrix(c(-Inf, 0,   0,
-                                     0,   Inf,  1),
-                                   ncol = 3, byrow = TRUE),
-                      include.lowest = TRUE)
-    } else {
-      session_data$bg_raster[[1]]
-    }
+    if(!is.null(pred)) pred[["suitability_trunc"]] > 0 else session_data$bg_raster[[1]]
   } else {
     session_data$bg_raster[[1]]
   }
 
   build_draw_gspace_panel(gspace_rast, s,
                           title = "G-space",
-                          col   = if(s$show_suitable_gspace && s$has_ell)
-                            c(s$unsuitable_col, s$suitable_col)
-                          else NULL)
+                          col = if(s$show_suitable_gspace && s$has_ell)
+                            c(s$unsuitable_col, s$suitable_col) else NULL)
 })
 
 output$build_combined_plot_top_options_ui <- renderUI({
@@ -685,12 +683,15 @@ output$build_combined_plot_top_options_ui <- renderUI({
 })
 
 output$build_combined_plot_bottom_options_ui <- renderUI({
-  req(session_data$current_ellipsoid)
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
 
   fluidRow(
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 5,
+    column(width = 3,
            radioButtons("build_plot_zoom_mode", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -699,9 +700,12 @@ output$build_combined_plot_bottom_options_ui <- renderUI({
                         choiceValues = c("auto", "ellipsoid"),
                         selected = "auto",
                         inline = TRUE)),
-    column(width = 2,
-           tags$span("Aspect ratio:", class = "text-widget-title")),
     column(width = 4,
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;")),
+    column(width = 1,
+           tags$span("Aspect:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("build_plot_asp_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -712,7 +716,6 @@ output$build_combined_plot_bottom_options_ui <- renderUI({
                         inline = TRUE))
   )
 })
-
 
 # Ellipsoid library, this shows all version of the base elliposid created
 output$build_ellipsoid_info_ui <- renderUI({
@@ -849,7 +852,11 @@ output$build_ellipsoid_info_ui <- renderUI({
 # Advanced plot settings UI
 output$build_plot_settings_ui <- renderUI({
 
-  has_ell <- !is.null(session_data$current_ellipsoid)
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+
+  has_ell <- !is.null(ell)
   has_raster <- !is.null(session_data$bg_raster)
 
   box(title = tagList(
@@ -883,7 +890,7 @@ output$build_plot_settings_ui <- renderUI({
                style = "display: flex; align-items: center; gap: 8px;",
                tags$input(type = "color",
                           value = "#B3B3B3",
-                          oninput = "Shiny.setInputValue('plot_bg_col', this.value)",
+                          oninput = "Shiny.setInputValue('build_plot_bg_col', this.value)",
                           style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -902,7 +909,7 @@ output$build_plot_settings_ui <- renderUI({
                tags$div(style = "display: flex; align-items: center; gap: 8px;",
                         tags$input(type = "color",
                                    value = "#E10000",
-                                   oninput = "Shiny.setInputValue('plot_xline_col', this.value)",
+                                   oninput = "Shiny.setInputValue('build_plot_xline_col', this.value)",
                                    style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;"))
@@ -913,7 +920,7 @@ output$build_plot_settings_ui <- renderUI({
                  style = "display: flex; align-items: center; gap: 8px;",
                  tags$input(type = "color",
                             value = "#0004D5",
-                            oninput = "Shiny.setInputValue('plot_yline_col', this.value)",
+                            oninput = "Shiny.setInputValue('build_plot_yline_col', this.value)",
                             style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -937,7 +944,7 @@ output$build_plot_settings_ui <- renderUI({
                  style = "display: flex; align-items: center; gap: 8px;",
                  tags$input(type = "color",
                             value = "#000000",
-                            oninput = "Shiny.setInputValue('plot_ell_col', this.value)",
+                            oninput = "Shiny.setInputValue('build_plot_ell_col', this.value)",
                             style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -973,7 +980,7 @@ output$build_plot_settings_ui <- renderUI({
                  style = "display: flex; align-items: center; gap: 8px;",
                  tags$input(type = "color",
                             value = "#000000",
-                            oninput = "Shiny.setInputValue('plot_centroid_col', this.value)",
+                            oninput = "Shiny.setInputValue('build_plot_centroid_col', this.value)",
                             style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -998,7 +1005,7 @@ output$build_plot_settings_ui <- renderUI({
                  style = "display: flex; align-items: center; gap: 8px;",
                  tags$input(type = "color",
                             value = "#097a21",
-                            oninput = "Shiny.setInputValue('plot_suitable_col', this.value)",
+                            oninput = "Shiny.setInputValue('build_plot_suitable_col', this.value)",
                             style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -1011,7 +1018,7 @@ output$build_plot_settings_ui <- renderUI({
                  style = "display: flex; align-items: center; gap: 8px;",
                  tags$input(type = "color",
                             value = "#D3D3D3",
-                            oninput = "Shiny.setInputValue('plot_unsuitable_col', this.value)",
+                            oninput = "Shiny.setInputValue('build_plot_unsuitable_col', this.value)",
                             style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -1045,7 +1052,7 @@ output$build_plot_settings_ui <- renderUI({
                style = "display: flex; align-items: center; gap: 8px;",
                tags$input(type = "color",
                           value = "#F0F0F0",
-                          oninput = "Shiny.setInputValue('plot_map_bg_col', this.value)",
+                          oninput = "Shiny.setInputValue('build_plot_map_bg_col', this.value)",
                           style = "width: 40px; height: 32px; padding: 2px;
  border: 1px solid #ccc; border-radius: 4px;
  cursor: pointer;")
@@ -1066,22 +1073,17 @@ output$build_plot_settings_ui <- renderUI({
 
 # Export Logic ------------------------------------------------------------
 
-build_open_device <- function(file, ext){
+plot_open_device <- function(file, ext, w_val, h_val, unit, res, cex_val){
 
-  unit <- if(!is.null(input$build_export_unit)) input$build_export_unit else "mm"
-  w_val <- if(!is.null(input$build_export_width_val)) input$build_export_width_val else 166
-  h_val <- if(!is.null(input$build_export_height_val)) input$build_export_height_val else 166
-  res <- if(!is.null(input$build_export_res)) input$build_export_res else 300
-  cex_val <- if(!is.null(input$build_export_cex)) input$build_export_cex else 1
+  if(is.null(unit)) unit <- "mm"
+  if(is.null(w_val)) w_val <- 166
+  if(is.null(h_val)) h_val <- 166
+  if(is.null(res)) res <- 300
+  if(is.null(cex_val)) cex_val <- 1
 
-  # Convert to px for png, inches for pdf/svg
   to_inches <- function(val){
-    switch(unit,
-           "mm" = val / 25.4,
-           "in" = val,
-           "px" = val / res)
+    switch(unit, "mm" = val / 25.4, "in" = val, "px" = val / res)
   }
-
   to_px <- function(val){
     switch(unit,
            "mm" = round(val / 25.4 * res),
@@ -1097,7 +1099,7 @@ build_open_device <- function(file, ext){
     svg(file, width = to_inches(w_val), height = to_inches(h_val))
   }
 
-  # Set all cex parameters so they are not overridden by individual plot calls
+  # Set every cex parameter so individual plot calls do not override them
   par(cex = cex_val,
       cex.axis = cex_val,
       cex.lab = cex_val,
@@ -1229,7 +1231,13 @@ output$build_confirm_export <- downloadHandler(
     s <- collect_plot_settings()
     req(s)
 
-    build_open_device(file, ext)
+    plot_open_device(file, ext,
+                     w_val = input$build_export_width_val,
+                     h_val = input$build_export_height_val,
+                     unit = input$build_export_unit,
+                     res = input$build_export_res,
+                     cex_val = input$build_export_cex)
+    on.exit(dev.off())
 
     switch(tab,
            "build_espace_plot_tab" = {
@@ -1245,9 +1253,19 @@ output$build_confirm_export <- downloadHandler(
                     }
              )
            },
-           "build_espace_plot_tab" = {
-             par(mar = c(4, 4, 2, 1))
-             build_draw_gspace_panel(s)
+           "build_gspace_plot_tab" = {
+             req(session_data$bg_raster)
+             vars <- plot_vars()
+             req(vars)
+
+             lyr <- if(!is.null(input$build_plot_gspace_lyr)){
+               input$build_plot_gspace_lyr
+             } else {
+               vars[1]
+             }
+
+             par(mar = c(4, 4, 2, 4))
+             build_draw_gspace_panel(session_data$bg_raster[[lyr]], s, title = lyr)
            },
            "build_combined_plot_tab" = {
              req(input$build_plot_combined_x, input$build_plot_combined_y)
@@ -1255,10 +1273,19 @@ output$build_confirm_export <- downloadHandler(
              mfrow <- if(layout == "col") c(2, 1) else c(1, 2)
              par(mfrow = mfrow, mar = c(4, 4, 2, 1))
              build_draw_espace_panel(input$build_plot_combined_x, input$build_plot_combined_y, s)
-             build_draw_gspace_panel(s, title = "G-space")
+             gspace_rast <- if(s$show_suitable_gspace && s$has_ell){
+               pred <- tryCatch(pred_raster_vis(), error = function(e) NULL)
+               if(!is.null(pred)) pred[["suitability_trunc"]] > 0
+               else session_data$bg_raster[[1]]
+             } else {
+               session_data$bg_raster[[1]]
+             }
+
+             build_draw_gspace_panel(gspace_rast, s,
+                                     title = "G-space",
+                                     col = if(s$show_suitable_gspace && s$has_ell)
+                                       c(s$unsuitable_col, s$suitable_col) else NULL)
            }
     )
-
-    dev.off()
   }
 )

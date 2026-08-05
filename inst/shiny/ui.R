@@ -212,8 +212,8 @@ dashboardPage(
         fluidRow(
           column(width = 12,
                  br(), br(),
-                 tags$div(style = "font-size: 12px; color: #aaa; padding: 10px 0; border-top: 0.5px solid #ddd;
-                             display: flex; gap: 12px; flex-wrap: wrap;",
+                 tags$div(style = "font-size: 12px; color: #aaa; padding: 10px 0;
+                          border-top: 0.5px solid #ddd; display: flex; gap: 12px; flex-wrap: wrap;",
                           tags$span("nicheR v0.1.0"),
                           tags$span("·"),
                           tags$a(href   = "https://github.com/castanedaM/nicheR/blob/main/LICENSE",
@@ -438,6 +438,7 @@ dashboardPage(
                    tabPanel(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "predict_gspace_plot_tab",
+                     uiOutput("predict_gspace_plot_top_options_ui"),
                      plotOutput("predict_gspace_plot")
                    ),
 
@@ -465,13 +466,17 @@ dashboardPage(
                  box(title = tagList(tags$span("Bias", class = "text-tab-title")),
                      width = 12,
                      p(instructions$bias, class = "text-instruction"),
-
+                     fluidRow(column(width = 12,
+                                     uiOutput("bias_skip_ui"))),
+                     br(), br(),
                      fluidRow(uiOutput("bias_upload_ui")),
                      fluidRow(uiOutput("bias_prepare_ui")),
                      fluidRow(uiOutput("bias_apply_ui")),
                      fluidRow(uiOutput("bias_ellipsoid_library_ui")),
                      fluidRow(
-                       column(width = 12, uiOutput("bias_save_ellipsoid_ui"))
+                       column(width = 12,
+                              uiOutput("bias_next_step_ui")
+                       )
                      )
                  )
           ),
