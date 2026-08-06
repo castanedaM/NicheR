@@ -531,8 +531,9 @@ dashboardPage(
                  ),
 
                  fluidRow(
-                   uiOutput("generate_ellipsoid_library_ui")
-                 )
+                   uiOutput("generate_ellipsoid_library_ui"),
+                   uiOutput("generate_occurrence_summary_ui")
+                  )
           ),
 
           column(width = 7,

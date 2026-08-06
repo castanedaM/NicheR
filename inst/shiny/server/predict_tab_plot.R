@@ -231,7 +231,10 @@ predict_binary_layer <- function(pred){
 # Fills a 2x2 block with panel ids, spanning cells when there are fewer
 # than four. One panel fills the block, two give two rows, three or four
 # give a 2x2. Used to lay out each half of the combined plot.
-predict_panel_block <- function(ids){
+# Fills a 2x2 block with panel ids, spanning cells when there are fewer
+# than four. One panel fills the block, two give two rows, three or four
+# give a 2x2. Used to lay out each half of a combined plot.
+plot_panel_block <- function(ids){
 
   n <- length(ids)
 
@@ -797,8 +800,8 @@ output$predict_combined_plot <- renderPlot({
   n_e <- length(e_layers)
   n_g <- length(g_layers)
 
-  e_block <- predict_panel_block(seq_len(n_e))
-  g_block <- predict_panel_block(n_e + seq_len(n_g))
+  e_block <- plot_panel_block(seq_len(n_e))
+  g_block <- plot_panel_block(n_e + seq_len(n_g))
 
   layout_mode <- if(!is.null(input$predict_plot_combined_layout)){
     input$predict_plot_combined_layout
@@ -1204,8 +1207,8 @@ output$predict_confirm_export <- downloadHandler(
              if(length(e_layers) == 0) e_layers <- "binary"
              if(length(g_layers) == 0) g_layers <- "binary"
 
-             e_block <- predict_panel_block(seq_len(length(e_layers)))
-             g_block <- predict_panel_block(length(e_layers) + seq_len(length(g_layers)))
+             e_block <- plot_panel_block(seq_len(length(e_layers)))
+             g_block <- plot_panel_block(length(e_layers) + seq_len(length(g_layers)))
 
              lay <- if(!is.null(input$predict_plot_combined_layout)){
                input$predict_plot_combined_layout

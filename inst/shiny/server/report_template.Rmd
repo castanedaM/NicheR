@@ -11,6 +11,12 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+This is a report that alkd yout through all the desions mad ein the shiny app and describes what has been noene in a methods way. 
+
+
+
+
 ## R Markdown
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.

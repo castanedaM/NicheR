@@ -298,3 +298,120 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 
   results
 }
+
+
+
+# OCCURENCE TAB -----------------------------------------------------------
+
+
+
+# Key for one occurrence set. Includes the seed so the same layer sampled
+# with different seeds accumulates instead of overwriting.
+occ_set_key <- function(layer, seed){
+  paste0(layer, " | seed ", seed)
+}
+
+# Every parameter that defines an occurrence set. Two sets are the same set
+# only if all of these match.
+occ_set_fields <- c("layer", "n_occ", "seed", "sampling", "strict", "mask")
+
+occ_meta <- function(df, field, default = NA){
+  val <- attr(df, field, exact = TRUE)
+  if(is.null(val)) default else val
+}
+
+# Canonical key. Never shown to the user, only used for identity.
+occ_set_signature <- function(attrs){
+  paste(vapply(occ_set_fields,
+               function(f) paste0(f, "=", as.character(attrs[[f]])),
+               character(1)),
+        collapse = "|")
+}
+
+# Display labels for a list of occurrence sets. Always names the layer, then
+# adds only the fields that vary across the sets present, so a run that
+# differs only by seed reads "suitability_trunc, seed 123" rather than
+# repeating parameters every set shares.
+occ_set_labels <- function(occ_list){
+
+  if(length(occ_list) == 0) return(character(0))
+
+  meta <- lapply(occ_list, function(df){
+    setNames(lapply(occ_set_fields,
+                    function(f) as.character(occ_meta(df, f, "NA"))),
+             occ_set_fields)
+  })
+
+  varies <- vapply(occ_set_fields, function(f){
+    length(unique(vapply(meta, function(m) m[[f]], character(1)))) > 1
+  }, logical(1))
+
+  show <- unique(c("layer", occ_set_fields[varies]))
+
+  labs <- vapply(meta, function(m){
+    parts <- vapply(show, function(f){
+      v <- m[[f]]
+      switch(f,
+             "layer" = v,
+             "n_occ" = paste0("n = ", v),
+             "seed" = paste0("seed ", v),
+             "sampling" = v,
+             "strict" = if(identical(v, "TRUE")) "strict" else "not strict",
+             "mask" = if(identical(v, "none")) "no mask" else paste0("mask: ", v),
+             v)
+    }, character(1))
+    paste(parts, collapse = ", ")
+  }, character(1))
+
+
+  # Names are what the user sees, values are the keys
+  setNames(names(occ_list), labs)
+}
+
+# Reads a row of panel-slot dropdowns and returns the chosen sets in slot
+# order, dropping "none" and duplicates. Shared by every plot tab that
+# offers slot-based panel selection.
+plot_read_slots <- function(prefix, n = 4){
+
+  vals <- vapply(seq_len(n), function(i){
+    v <- input[[paste0(prefix, "_", i)]]
+    if(is.null(v)) "none" else v
+  }, character(1))
+
+  vals <- vals[vals != "none"]
+  unique(vals)
+}
+
+# Builds the dropdown row. choices is a named character vector of set names.
+plot_slot_selectors <- function(prefix, choices, n = 4, label = NULL,
+                                default_n = 1){
+
+  # choices arrives already named: names are labels, values are keys
+  opts <- c("None" = "none", choices)
+  vals <- unname(choices)
+
+  slots <- lapply(seq_len(n), function(i){
+
+    cur <- input[[paste0(prefix, "_", i)]]
+
+    sel <- if(!is.null(cur) && cur %in% opts){
+      cur
+    } else if(i <= default_n && i <= length(vals)){
+      vals[i]
+    } else {
+      "none"
+    }
+
+    column(width = 3,
+           selectInput(paste0(prefix, "_", i),
+                       label = if(i == 1 && !is.null(label)){
+                         tags$span(label, class = "text-widget-title")
+                       } else {
+                         NULL
+                       },
+                       choices = opts,
+                       selected = sel))
+  })
+
+  fluidRow(slots)
+}

@@ -336,6 +336,13 @@ occurrences. Change it to draw a different replicate.",
   generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
 occurrences from, or All versions to generate for every one.",
 
+  generate_summary = HTML("Every occurrence set you generate is listed here,
+grouped by ellipsoid. Sets accumulate: generating with a new seed adds a set
+rather than replacing one. Download individual sets, everything for one
+ellipsoid, or all sets at once."),
+
+  generate_summary_empty = "No occurrence sets yet. Generate one to see it here.",
+
   # SHARED: PLOT SETTINGS --------------------------------------------------
 
   plot_settings = HTML("Adjust point shape, size, and colors, toggle range
