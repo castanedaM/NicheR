@@ -29,6 +29,10 @@ output$predict_ellipsoid_selector_ui <- renderUI({
 
   req(length(session_data$ellipsoid_list) > 0)
 
+  if(identical(session_data$input_mode, "virtual")){
+    return(p(instructions$predict_virtual_unavailable, class = "text-instruction"))
+  }
+
   versions <- session_data$ellipsoid_list
 
   ell_choices <- c("All versions" = "all",

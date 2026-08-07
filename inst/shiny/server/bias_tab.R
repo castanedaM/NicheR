@@ -181,6 +181,10 @@ observeEvent(input$bias_confirm_edit_upload_btn, {
 
 output$bias_upload_ui <- renderUI({
 
+  if(identical(session_data$input_mode, "virtual")){
+    return(p(instructions$bias_virtual_unavailable, class = "text-instruction"))
+  }
+
   # Bias is inherently geographic, so it needs a raster study area
   if(is.null(session_data$bg_raster)){
     return(

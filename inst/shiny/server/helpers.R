@@ -425,7 +425,8 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 #' Two sets are the same set only if all of these match.
 #'
 #' @noRd
-occ_set_fields <- c("layer", "n_occ", "seed", "sampling", "strict", "mask")
+occ_set_fields <- c("mode", "layer", "n_occ", "seed", "sampling",
+                    "strict", "mask", "truncate", "effect")
 
 #' Read one metadata attribute from an occurrence set
 #'
@@ -507,6 +508,150 @@ occ_set_labels <- function(occ_list){
   setNames(names(occ_list), labs)
 }
 
+
+#' Sample occurrences for one ellipsoid across several layers
+#'
+#' Each layer is pulled from either the prediction or the biased prediction.
+#' Biased layers go to sample_biased_data(), which already carries the
+#' sampling weights in the surface itself and so takes no sampling strategy
+#' or method. Unbiased layers go to sample_data().
+#'
+#' @param ell_id Ellipsoid id.
+#' @param pred_list Named list of unbiased prediction SpatRasters.
+#' @param biased_list Named list of biased prediction SpatRasters.
+#' @param layers Character vector of layer names to sample from.
+#' @param n_occ Number of occurrences to draw per layer.
+#' @param sampling One of "centroid", "edge", or "random". Unbiased only.
+#' @param strict Logical, or NULL to let the function auto-detect.
+#' @param sampling_mask Optional SpatRaster restricting where points fall.
+#' @param seed Integer random seed.
+#'
+#' @returns A named list of data frames, one per layer that succeeded. Each
+#'   carries a "biased" attribute recording which function produced it.
+#'
+#' @noRd
+generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
+                                 layers, n_occ, sampling,
+                                 strict, sampling_mask, seed = 123L){
+
+  results <- list()
+
+  for(layer in layers){
+
+    pred <- pred_list[[ell_id]]
+    bias <- biased_list[[ell_id]]
+
+    # Biased list checked first, since a biased layer name never appears
+    # in the unbiased stack
+    is_biased <- !is.null(bias) && inherits(bias, "SpatRaster") &&
+      layer %in% names(bias)
+
+    source_rast <- if(is_biased){
+      bias
+    } else if(!is.null(pred) && inherits(pred, "SpatRaster") &&
+              layer %in% names(pred)){
+      pred
+    } else {
+      NULL
+    }
+
+    if(is.null(source_rast)){
+      message("Layer '", layer, "' not found for ", ell_id, ". Skipping.")
+      next
+    }
+
+    occ <- if(is_biased){
+
+      tryCatch(
+        sample_biased_data(n_occ = n_occ,
+                           prediction = source_rast,
+                           prediction_layer = layer,
+                           sampling_mask = sampling_mask,
+                           seed = seed,
+                           strict = strict,
+                           verbose = FALSE),
+        error = function(e){
+          message("Biased generate failed for ", ell_id, " (", layer, "): ", e$message)
+          NULL
+        }
+      )
+
+    } else {
+
+      method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)){
+        "mahalanobis"
+      } else {
+        "suitability"
+      }
+
+      tryCatch(
+        sample_data(n_occ = n_occ,
+                    prediction = source_rast,
+                    prediction_layer = layer,
+                    sampling = sampling,
+                    method = method,
+                    sampling_mask = sampling_mask,
+                    seed = seed,
+                    strict = strict,
+                    verbose = FALSE),
+        error = function(e){
+          message("Generate failed for ", ell_id, " (", layer, "): ", e$message)
+          NULL
+        }
+      )
+    }
+
+    if(!is.null(occ)){
+      out <- occ[, c("x", "y"), drop = FALSE]
+      attr(out, "biased") <- is_biased
+      results[[layer]] <- out
+    }
+  }
+
+  results
+}
+
+#' Sample virtual occurrences directly from an ellipsoid
+#'
+#' Virtual mode has no prediction surface and no geography, so points come
+#' from virtual_data(), which draws from the multivariate normal defined by
+#' the ellipsoid's centroid and covariance. The result is environmental
+#' values only, with no coordinates.
+#'
+#' @param ell A nicheR_ellipsoid object.
+#' @param n Number of points to generate.
+#' @param truncate Logical, constrain points within the confidence limit.
+#' @param effect One of "direct", "inverse", or "uniform". The latter two
+#'   require truncate = TRUE.
+#' @param seed Integer random seed.
+#'
+#' @returns A data frame of environmental values, or NULL on failure.
+#'
+#' @noRd
+generate_virtual_for_ell <- function(ell, n, truncate, effect, seed = 123L){
+
+  # virtual_data enforces this too, but failing here gives a clearer message
+  if(effect %in% c("inverse", "uniform") && !isTRUE(truncate)){
+    message("Effect '", effect, "' requires truncation.")
+    return(NULL)
+  }
+
+  res <- tryCatch(
+    virtual_data(object = ell,
+                 n = n,
+                 truncate = truncate,
+                 effect = effect,
+                 seed = seed),
+    error = function(e){
+      message("Virtual generate failed: ", e$message)
+      NULL
+    }
+  )
+
+  if(is.null(res)) return(NULL)
+
+  as.data.frame(res)
+}
 
 # PLOTTING ----------------------------------------------------------------
 

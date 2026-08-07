@@ -119,6 +119,7 @@ generate_draw_espace_pairs <- function(vars, s){
 
   layout(1)
 }
+
 # One panel per occurrence set, same variable pair, so several sampling
 # runs can be compared side by side
 generate_draw_espace_sets <- function(v1, v2, s, sets){
@@ -177,18 +178,6 @@ generate_set_colors <- function(sets, s){
 
 # Reactives ---------------------------------------------------------------
 
-# Named vector for the selectors: names are short labels, values are keys
-generate_occ_choices <- reactive({
-
-  ell <- session_data$current_ellipsoid
-  if(is.null(ell)) return(character(0))
-
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
-  if(is.null(occ) || length(occ) == 0) return(character(0))
-
-  occ_set_labels(occ)
-})
-
 generate_plot_vars <- reactive({
 
   ell <- session_data$current_ellipsoid
@@ -230,6 +219,10 @@ generate_occ_espace <- reactive({
   lapply(occ, function(df){
 
     if(is.null(df) || nrow(df) == 0) return(NULL)
+
+    # Virtual sets are environmental values already
+    if(identical(occ_meta(df, "mode"), "virtual")) return(df)
+
     if(!all(c("x", "y") %in% names(df))) return(NULL)
 
     vals <- tryCatch(
@@ -327,7 +320,7 @@ output$generate_espace_plot_top_options_ui <- renderUI({
   # summary, so nothing set-related belongs here
   fluidRow(
     column(width = 1, tags$span("Layout:", class = "text-widget-title")),
-    column(width = 4,
+    column(width = 3,
            radioButtons("generate_plot_espace_state",
                         label = NULL,
                         choices = c("Pairs" = "generate_plot_pairs",
@@ -337,7 +330,7 @@ output$generate_espace_plot_top_options_ui <- renderUI({
 
     conditionalPanel(
       "input.generate_plot_espace_state == 'generate_plot_2d'",
-      column(width = 1, tags$span("Variable:", class = "text-widget-title")),
+      column(width = 2, tags$span("Variable:", class = "text-widget-title")),
       column(width = 3,
              selectInput("generate_plot_2d_x", label = NULL, choices = vars,
                          selected = vars[1])),
@@ -533,14 +526,14 @@ output$generate_combined_plot_top_options_ui <- renderUI({
 
   fluidRow(
     column(width = 1, tags$span("Layout:", class = "text-widget-title")),
-    column(width = 4,
+    column(width = 3,
            radioButtons("generate_plot_combined_layout",
                         label = NULL,
                         choices = c("Side by side" = "row",
                                     "Stacked" = "col"),
                         selected = "row",
                         inline = TRUE)),
-    column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+    column(width = 2, tags$span("Variables:", class = "text-widget-title")),
     column(width = 3,
            selectInput("generate_plot_combined_x", label = NULL,
                        choices = vars, selected = vars[1])),

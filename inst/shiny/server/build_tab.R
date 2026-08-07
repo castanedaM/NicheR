@@ -1034,7 +1034,13 @@ output$build_next_step_ui <- renderUI({
 })
 
 observeEvent(input$build_next_step_btn, {
-  updateTabItems(session, "sidebar_menu", selected = "predict_tab")
+  target <- if(identical(session_data$input_mode, "virtual")){
+    "generate_tab"
+  } else {
+    "predict_tab"
+  }
+
+  updateTabItems(session, "sidebar_menu", selected = target)
 })
 
 

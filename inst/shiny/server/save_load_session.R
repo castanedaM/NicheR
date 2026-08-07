@@ -196,4 +196,5 @@ observeEvent(input$build_load_session_btn, {
   } else {
     updateTabItems(session, "sidebar_menu", selected = "build_tab")
   }
+
 })

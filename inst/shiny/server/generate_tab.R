@@ -82,7 +82,41 @@ observeEvent(input$generate_toggle_set, {
 # regenerate without losing what is already there until they confirm.
 generate_show_form <- reactiveVal(FALSE)
 
+# Collapsed state shown once sets exist, in either mode. Factored out so
+# the raster and virtual branches cannot drift.
+generate_summary_box <- function(){
+
+  occ <- session_data$ellipsoid_occurrence_list
+
+  n_sets <- sum(vapply(occ, length, integer(1)))
+  n_pts <- sum(vapply(occ, function(ell_res){
+    sum(vapply(ell_res, function(df){
+      if(is.null(df)) 0L else nrow(df)
+    }, integer(1)))
+  }, integer(1)))
+
+  box(title = tags$span("Generate occurrences", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = TRUE,
+      p(paste0(n_pts, " occurrence(s) across ", n_sets, " set(s) from ",
+               length(occ), " ellipsoid(s)."),
+        class = "text-instruction"),
+      fluidRow(
+        column(width = 12, class = "btn-spaced",
+               actionLink("generate_edit_link",
+                          label = tagList(icon("pen"), "Generate again")))
+      )
+  )
+}
+
 output$generate_controls_ui <- renderUI({
+
+  is_virtual <- identical(session_data$input_mode, "virtual")
+
+  if(is_virtual){
+    return(generate_virtual_controls())
+  }
 
   has_pred <- length(session_data$ellipsoid_prediction_list) > 0
 
@@ -100,29 +134,7 @@ output$generate_controls_ui <- renderUI({
   has_occ <- length(occ) > 0
 
   if(has_occ && !isTRUE(generate_show_form())){
-
-    n_sets <- sum(vapply(occ, length, integer(1)))
-    n_pts <- sum(vapply(occ, function(ell_res){
-      sum(vapply(ell_res, function(df){
-        if(is.null(df)) 0L else nrow(df)
-      }, integer(1)))
-    }, integer(1)))
-
-    return(
-      box(title = tags$span("Generate occurrences", class = "text-section-header"),
-          width = 12,
-          collapsible = TRUE,
-          collapsed = TRUE,
-          p(paste0(n_pts, " occurrence(s) across ", n_sets, " set(s) from ",
-                   length(occ), " ellipsoid(s)."),
-            class = "text-instruction"),
-          fluidRow(
-            column(width = 6, class = "btn-spaced",
-                   actionLink("generate_edit_link",
-                              label = tagList(icon("pen"), "Generate again")))
-          )
-      )
-    )
+    return(generate_summary_box())
   }
 
   box(title = tags$span("Generate occurrences", class = "text-section-header"),
@@ -234,18 +246,26 @@ output$generate_controls_ui <- renderUI({
 
 output$generate_ellipsoid_selector_ui <- renderUI({
 
-  req(length(session_data$ellipsoid_prediction_list) > 0)
+  is_virtual <- identical(session_data$input_mode, "virtual")
+
+  # Virtual mode samples straight from the ellipsoid, so every saved
+  # version is available. Raster mode can only sample what was predicted.
+  ids <- if(is_virtual){
+    names(session_data$ellipsoid_list)
+  } else {
+    names(session_data$ellipsoid_prediction_list)
+  }
+
+  req(length(ids) > 0)
 
   versions <- session_data$ellipsoid_list
-  pred_ids <- names(session_data$ellipsoid_prediction_list)
 
   ell_choices <- c(
     "All versions" = "all",
-    setNames(pred_ids,
-             vapply(pred_ids, function(id){
-               ell <- versions[[id]]
-               if(!is.null(ell) && !is.null(ell$ell_name)) ell$ell_name else id
-             }, character(1)))
+    setNames(ids, vapply(ids, function(id){
+      ell <- versions[[id]]
+      if(!is.null(ell) && !is.null(ell$ell_name)) ell$ell_name else id
+    }, character(1)))
   )
 
   keep <- if(!is.null(input$generate_ellipsoid_selected) &&
@@ -264,6 +284,115 @@ output$generate_ellipsoid_selector_ui <- renderUI({
               ),
               choices = ell_choices,
               selected = keep)
+})
+
+# Virtual mode samples from the ellipsoid directly, so there is no
+# prediction, no layer, no mask, and no sampling strategy.
+generate_virtual_controls <- function(){
+
+  ell <- session_data$current_ellipsoid
+
+  if(is.null(ell)){
+    return(
+      box(title = tags$span("Generate occurrences", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = FALSE,
+          p(instructions$generate_needs_ellipsoid, class = "text-instruction"))
+    )
+  }
+
+  occ <- session_data$ellipsoid_occurrence_list
+  has_occ <- length(occ) > 0
+
+  if(has_occ && !isTRUE(generate_show_form())){
+    return(generate_summary_box())
+  }
+
+  box(title = tags$span("Generate occurrences", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p(instructions$generate_virtual_intro, class = "text-instruction"),
+
+      uiOutput("generate_ellipsoid_selector_ui"),
+
+      fluidRow(
+        column(width = 6,
+               tags$span("Number of points", class = "text-widget-title"),
+               numericInput("generate_n_occ", label = NULL,
+                            value = 100, min = 1, max = 1000000, step = 10)),
+        column(width = 6,
+               tags$div(class = "tooltip-label-row",
+                        tags$span("Random seed", class = "text-widget-title"),
+                        tags$span(icon("circle-info"),
+                                  title = instructions$generate_seed_tooltip,
+                                  class = "tooltip-icon")),
+               numericInput("generate_seed", label = NULL,
+                            value = 123, min = 1, step = 1))
+      ),
+
+      fluidRow(
+        column(width = 12,
+               tags$div(class = "tooltip-label-row",
+                        tags$span("Truncate to the ellipsoid",
+                                  class = "text-widget-title"),
+                        tags$span(icon("circle-info"),
+                                  title = instructions$generate_truncate_tooltip,
+                                  class = "tooltip-icon")),
+               radioButtons("generate_truncate", label = NULL,
+                            choiceNames = list("True", "False"),
+                            choiceValues = c("TRUE", "FALSE"),
+                            selected = "TRUE",
+                            inline = TRUE))
+      ),
+
+      fluidRow(
+        column(width = 12,
+               tags$div(class = "tooltip-label-row",
+                        tags$span("Point distribution", class = "text-widget-title"),
+                        tags$span(icon("circle-info"),
+                                  title = instructions$generate_effect_tooltip,
+                                  class = "tooltip-icon")),
+               uiOutput("generate_effect_ui"))
+      ),
+
+      fluidRow(
+        column(width = 12,
+               div(class = "action-btn-row",
+                   actionButton("generate_run_btn",
+                                tagList(icon("play"), "Generate"),
+                                class = "btn-continue")))
+      )
+  )
+}
+
+# Inverse and uniform need truncation, so they are removed rather than
+# offered and then rejected
+output$generate_effect_ui <- renderUI({
+
+  truncate <- !identical(input$generate_truncate, "FALSE")
+
+  choices <- if(truncate){
+    c("Direct" = "direct", "Inverse" = "inverse", "Uniform" = "uniform")
+  } else {
+    c("Direct" = "direct")
+  }
+
+  keep <- if(!is.null(input$generate_effect) &&
+             input$generate_effect %in% choices){
+    input$generate_effect
+  } else {
+    "direct"
+  }
+
+  tagList(
+    radioButtons("generate_effect", label = NULL,
+                 choices = choices, selected = keep, inline = TRUE),
+    if(!truncate){
+      p(instructions$generate_effect_needs_truncate, class = "text-muted-small")
+    }
+  )
 })
 
 # Picking a specific version loads it into the working slot so the plots
@@ -359,6 +488,95 @@ output$generate_method_msg_ui <- renderUI({
 
 observeEvent(input$generate_run_btn, {
 
+  # VIRTUAL MODE ----------------------------------------------------------
+  # Samples straight from the ellipsoid, so there is no prediction, no
+  # layer, no mask, and no sampling strategy. Handled first because the
+  # req() calls below reference inputs that do not exist here.
+  if(identical(session_data$input_mode, "virtual")){
+
+    req(input$generate_n_occ)
+    req(input$generate_ellipsoid_selected)
+
+    versions <- session_data$ellipsoid_list
+    req(length(versions) > 0)
+
+    selected_ids <- if(identical(input$generate_ellipsoid_selected, "all")){
+      names(versions)
+    } else {
+      input$generate_ellipsoid_selected
+    }
+
+    n <- as.integer(input$generate_n_occ)
+    truncate <- !identical(input$generate_truncate, "FALSE")
+    effect <- if(!is.null(input$generate_effect)) input$generate_effect else "direct"
+
+    seed <- if(!is.null(input$generate_seed) && is.finite(input$generate_seed)){
+      as.integer(input$generate_seed)
+    } else {
+      123L
+    }
+
+    # Same signature for every ellipsoid, which is correct: sets are keyed
+    # within an ellipsoid, so two ellipsoids sharing parameters share a key
+    attrs <- list(mode = "virtual", layer = "virtual", n_occ = n,
+                  seed = seed, sampling = NA, strict = NA, mask = "none",
+                  truncate = truncate, effect = effect)
+
+    key <- occ_set_signature(attrs)
+
+    n_success <- 0L
+
+    for(id in selected_ids){
+
+      ell <- versions[[id]]
+      if(is.null(ell)) next
+
+      df <- generate_virtual_for_ell(ell, n, truncate, effect, seed)
+      if(is.null(df) || nrow(df) == 0) next
+
+      for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
+      attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
+
+      if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
+        session_data$ellipsoid_occurrence_list[[id]] <- list()
+      }
+
+      session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
+
+      # New sets are shown by default, up to the panel limit
+      vis <- occ_visible()
+      vis_key <- occ_vis_key(id, key)
+      same_ell <- grep(paste0("^", id, "::"), vis, value = TRUE)
+
+      if(!vis_key %in% vis && length(same_ell) < OCC_MAX_VISIBLE){
+        occ_visible(c(vis, vis_key))
+      }
+
+      n_success <- n_success + 1L
+    }
+
+    if(n_success == 0L){
+      showNotification("Virtual generation failed for all selected ellipsoids.",
+                       type = "error", duration = 5)
+      return()
+    }
+
+    generate_show_form(FALSE)
+
+    msg <- if(length(selected_ids) > 1){
+      paste0("Virtual points generated for ", n_success, " of ",
+             length(selected_ids), " ellipsoids.")
+    } else {
+      paste0(n, " virtual points generated.")
+    }
+
+    showNotification(msg, type = "message", duration = 4)
+    return()
+  }
+
+
+  # RASTER MODE -----------------------------------------------------------
+
   req(input$generate_ellipsoid_selected)
   req(input$generate_n_occ)
   req(input$generate_sampling)
@@ -444,7 +662,10 @@ observeEvent(input$generate_run_btn, {
                     seed = seed,
                     sampling = sampling,
                     strict = strict,
-                    mask = mask_name)
+                    mask = mask_name,
+                    mode = "raster",
+                    truncate = NA,
+                    effect = NA)
 
       for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
       attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")

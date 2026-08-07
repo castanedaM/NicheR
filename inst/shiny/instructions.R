@@ -239,6 +239,12 @@ predictions, and any biased predictions derived from them.",
   predict_ellipsoid_select_tooltip = "Choose which saved ellipsoid to predict
 with, or All versions to predict with every one at once.",
 
+  predict_virtual_unavailable = HTML("Prediction needs raster layers, so it
+is unavailable in virtual mode. Go straight to Generate, which samples
+directly from the ellipsoid."),
+
+  bias_virtual_unavailable = HTML("Sampling bias is geographic, so it is
+unavailable in virtual mode."),
   # BIAS TAB ---------------------------------------------------------------
 
   bias = HTML("Bias input adds controlled sampling bias to a prediction
@@ -356,6 +362,22 @@ before showing another.",
   generate_summary = HTML("Every occurrence set you generate is listed here.
 Sets accumulate: changing any parameter adds a set rather than replacing one.
 Use the eye to choose which appear in the plots, up to four at a time."),
+
+  generate_virtual_intro = HTML("Virtual mode samples directly from the
+ellipsoid's multivariate normal distribution. There is no prediction surface
+and no geography, so the points are environmental values only."),
+
+  generate_needs_ellipsoid = "Build an ellipsoid before generating points.",
+
+  generate_truncate_tooltip = "When true, points are constrained inside the
+ellipsoid's confidence limit. When false, they follow the unbounded normal
+distribution and some will fall outside.",
+
+  generate_effect_tooltip = "Direct concentrates points near the centroid.
+Inverse pushes them toward the edges. Uniform spreads them evenly through
+the ellipsoid volume.",
+
+  generate_effect_needs_truncate = "Inverse and uniform require truncation.",
 
   # SHARED: PLOT SETTINGS --------------------------------------------------
 
