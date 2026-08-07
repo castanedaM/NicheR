@@ -29,7 +29,7 @@ Launch the app with:
 
 ```{r}
 library(nicheR)
-run_nicheR()
+run_app()
 ```
 
 ## The About page

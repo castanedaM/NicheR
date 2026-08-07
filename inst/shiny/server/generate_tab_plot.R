@@ -4,7 +4,7 @@
 # Mirrors predict_tab_plot.R, with generated occurrences drawn over the
 # surface they were sampled from.
 
-# Date last updated: 08/05/2026
+# Date last updated: 08/06/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -36,6 +36,26 @@ generate_draw_espace_panel <- function(v1, v2, s, set = NULL, title = NULL){
          main = ttl)
   }
 
+  # Occurrences drawn first so they sit under the background and ellipsoid
+  draw_sets <- if(!is.null(set)) set else s$occ_set
+
+  if(!is.null(draw_sets) && length(draw_sets) > 0){
+
+    cols <- generate_set_colors(draw_sets, s)
+
+    for(nm in draw_sets){
+
+      occ <- s$occ_espace[[nm]]
+      if(is.null(occ)) next
+      if(!all(c(v1, v2) %in% names(occ))) next
+
+      points(occ[[v1]], occ[[v2]],
+             pch = s$occ_pch,
+             col = cols[[nm]],
+             cex = s$occ_cex)
+    }
+  }
+
   if(s$show_ell && s$has_ell){
     idx <- match(c(v1, v2), s$ell$var_names)
     add_ellipsoid(s$ell, dim = idx,
@@ -50,20 +70,6 @@ generate_draw_espace_panel <- function(v1, v2, s, set = NULL, title = NULL){
            pch = s$centroid_pch, col = s$centroid_col, cex = s$centroid_cex)
   }
 
-  # Occurrences drawn last so they sit above the background and ellipsoid
-  nm <- if(!is.null(set)) set else s$occ_set
-
-  if(!is.null(nm) && !is.null(s$occ_espace[[nm]])){
-
-    occ <- s$occ_espace[[nm]]
-
-    if(all(c(v1, v2) %in% names(occ))){
-      points(occ[[v1]], occ[[v2]],
-             pch = s$occ_pch,
-             col = s$occ_col,
-             cex = s$occ_cex)
-    }
-  }
 }
 
 generate_draw_espace_pairs <- function(vars, s){
@@ -73,13 +79,46 @@ generate_draw_espace_pairs <- function(vars, s){
   n_cols <- ceiling(sqrt(n_pairs))
   n_rows <- ceiling(n_pairs / n_cols)
 
-  par(mfrow = c(n_rows, n_cols), mar = c(4, 4, 2, 1))
+  draw_sets <- s$occ_set
+  show_key <- length(draw_sets) > 1
+
+  if(show_key){
+    cells <- c(seq_len(n_pairs), rep(0L, n_rows * n_cols - n_pairs))
+    m <- matrix(cells, nrow = n_rows, ncol = n_cols, byrow = TRUE)
+    m <- rbind(m, rep(n_pairs + 1L, n_cols))
+    layout(m, heights = c(rep(1, n_rows), 0.28))
+  } else {
+    par(mfrow = c(n_rows, n_cols))
+  }
+
+  par(mar = c(4, 4, 2, 1))
 
   for(i in seq_len(n_pairs)){
     generate_draw_espace_panel(vars[pairs[i, 1]], vars[pairs[i, 2]], s)
   }
-}
 
+  if(show_key){
+
+    cols <- generate_set_colors(draw_sets, s)
+    labs <- vapply(draw_sets, function(nm){
+      lab <- s$occ_labels[[nm]]
+      if(is.null(lab)) nm else lab
+    }, character(1))
+
+    par(mar = c(0, 1, 0, 1))
+    plot.new()
+    legend("center",
+           legend = labs,
+           col = unname(cols),
+           pch = s$occ_pch,
+           pt.cex = 1.2,
+           cex = 0.75,
+           horiz = length(draw_sets) <= 3,
+           bty = "n")
+  }
+
+  layout(1)
+}
 # One panel per occurrence set, same variable pair, so several sampling
 # runs can be compared side by side
 generate_draw_espace_sets <- function(v1, v2, s, sets){
@@ -114,7 +153,7 @@ generate_draw_gspace_panel <- function(rast, s, title = NULL, set = NULL,
               xlab = "Longitude",
               ylab = "Latitude")
 
-  nm <- if(!is.null(set)) set else s$occ_set
+  nm <- if(!is.null(set)) set[1] else s$occ_set[1]
 
   if(!is.null(nm)){
     occ <- session_data$ellipsoid_occurrence_list[[s$ell$ell_id]][[nm]]
@@ -127,6 +166,14 @@ generate_draw_gspace_panel <- function(rast, s, title = NULL, set = NULL,
   }
 }
 
+# Distinct colours when several sets share a panel. Falls back to the
+# single configured occurrence colour when only one is drawn.
+generate_set_colors <- function(sets, s){
+
+  if(length(sets) <= 1) return(setNames(s$occ_col, sets))
+
+  setNames(pred_palette("Dark 3", n = length(sets)), sets)
+}
 
 # Reactives ---------------------------------------------------------------
 
@@ -259,7 +306,10 @@ generate_collect_plot_settings <- function(){
 
     zoom_mode = get_input("generate_plot_zoom_mode", "auto"),
     asp_espace = get_input("generate_plot_asp_espace", "auto"),
-    asp_combined = get_input("generate_plot_asp_combined", "auto")
+    asp_combined = get_input("generate_plot_asp_combined", "auto"),
+
+    export_cex = get_input("generate_export_cex", 1)
+
   )
 }
 
@@ -273,52 +323,28 @@ output$generate_espace_plot_top_options_ui <- renderUI({
   vars <- generate_plot_vars()
   req(vars)
 
-  sets <- generate_occ_sets()
+  # Which sets appear is chosen with the eye icons in the occurrence
+  # summary, so nothing set-related belongs here
+  fluidRow(
+    column(width = 1, tags$span("Layout:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("generate_plot_espace_state",
+                        label = NULL,
+                        choices = c("Pairs" = "generate_plot_pairs",
+                                    "2D" = "generate_plot_2d"),
+                        selected = "generate_plot_pairs",
+                        inline = TRUE)),
 
-  tagList(
-
-    fluidRow(
-      column(width = 4,
-             radioButtons("generate_plot_espace_state",
-                          label = tags$span("View:", class = "text-widget-title"),
-                          choices = c("Pairs" = "generate_plot_pairs",
-                                      "2D" = "generate_plot_2d"),
-                          selected = "generate_plot_pairs",
-                          inline = TRUE)),
-
-      conditionalPanel(
-        "input.generate_plot_espace_state == 'generate_plot_2d'",
-        column(width = 2,
-               selectInput("generate_plot_2d_x", label = NULL, choices = vars,
-                           selected = vars[1])),
-        column(width = 2,
-               selectInput("generate_plot_2d_y", label = NULL, choices = vars,
-                           selected = vars[min(2, length(vars))]))
-      ),
-
-      # Pairs view draws one set across every variable pair, so a single
-      # dropdown is enough there
-      if(length(sets) > 0){
-        conditionalPanel(
-          "input.generate_plot_espace_state == 'generate_plot_pairs'",
-          column(width = 4,
-                 selectInput("generate_occ_set",
-                             label = NULL,
-                             choices = c(generate_occ_choices(),
-                                         "No occurrences" = "none"),
-                             selected = unname(generate_occ_choices())[1]))
-        )
-      }
-    ),
-
-    # 2D view gives one panel per set, so it gets the slot row
-    if(length(sets) > 0){
-      conditionalPanel(
-        "input.generate_plot_espace_state == 'generate_plot_2d'",
-        plot_slot_selectors("generate_espace_slot", sets,
-                            n = 4, label = "Panels:", default_n = 1)
-      )
-    }
+    conditionalPanel(
+      "input.generate_plot_espace_state == 'generate_plot_2d'",
+      column(width = 1, tags$span("Variable:", class = "text-widget-title")),
+      column(width = 3,
+             selectInput("generate_plot_2d_x", label = NULL, choices = vars,
+                         selected = vars[1])),
+      column(width = 3,
+             selectInput("generate_plot_2d_y", label = NULL, choices = vars,
+                         selected = vars[min(2, length(vars))]))
+    )
   )
 })
 
@@ -337,9 +363,11 @@ output$generate_espace_plot <- renderPlot({
   s <- generate_collect_plot_settings()
   req(s)
 
-  if(identical(s$occ_set, "none")) s$occ_set <- NULL
+  show_sets <- generate_visible_sets()
 
-  sets <- generate_occ_choices()
+  # Pairs view overlays every visible set on the same panels, colour-coded.
+  # 2D view gives each its own panel.
+  s$occ_set <- show_sets
 
   state <- if(!is.null(input$generate_plot_espace_state)){
     input$generate_plot_espace_state
@@ -358,10 +386,7 @@ output$generate_espace_plot <- renderPlot({
 
     req(input$generate_plot_2d_x, input$generate_plot_2d_y)
 
-    if(length(sets) > 0){
-
-      show_sets <- plot_read_slots("generate_espace_slot")
-      if(length(show_sets) == 0) show_sets <- sets[1]
+    if(length(show_sets) > 0){
 
       generate_draw_espace_sets(input$generate_plot_2d_x,
                                 input$generate_plot_2d_y,
@@ -383,12 +408,9 @@ output$generate_espace_plot_bottom_options_ui <- renderUI({
   req(ell)
 
   fluidRow(
-    class = "ell-row",
-    column(width = 2,
-           class = "label-tight",
+    column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
-    column(width = 4,
-           class = "label-tight",
+    column(width = 3,
            radioButtons("generate_plot_zoom_mode", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -397,11 +419,12 @@ output$generate_espace_plot_bottom_options_ui <- renderUI({
                         choiceValues = c("auto", "ellipsoid"),
                         selected = "auto",
                         inline = TRUE)),
-    column(width = 2,
-           class = "label-tight",
-           tags$span("Aspect ratio:", class = "text-widget-title")),
     column(width = 4,
-           class = "label-tight",
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;")),
+    column(width = 1,
+           tags$span("Aspect:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("generate_plot_asp_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -416,17 +439,10 @@ output$generate_espace_plot_bottom_options_ui <- renderUI({
 
 # G-SPACE -----------------------------------------------------------------
 
+# Panel choice lives in the occurrence summary, so this row is empty. Kept
+# as an output so the uiOutput in ui.R still resolves.
 output$generate_gspace_plot_top_options_ui <- renderUI({
-
-  ell_slot()
-
-  req(session_data$bg_raster)
-
-  sets <- generate_occ_choices()
-  req(length(sets) > 0)
-
-  plot_slot_selectors("generate_gspace_slot", sets,
-                      n = 4, label = "Panels:", default_n = 1)
+  NULL
 })
 
 output$generate_gspace_plot <- renderPlot({
@@ -460,7 +476,7 @@ output$generate_gspace_plot <- renderPlot({
     return(invisible(NULL))
   }
 
-  show_sets <- plot_read_slots("generate_gspace_slot")
+  show_sets <- generate_visible_sets()
 
   if(length(show_sets) == 0) show_sets <- sets[1]
 
@@ -489,6 +505,20 @@ output$generate_gspace_plot <- renderPlot({
   if(n > 1 && n %% 2 != 0) plot.new()
 })
 
+output$generate_gspace_plot_bottom_options_ui <- renderUI({
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
+
+  fluidRow(class = "ell-row",
+           column(width = 12,
+                  tags$span(ell$ell_name, class = "text-center",
+                            style = "font-size: 12px; color: #888; font-weight: 400;"))
+  )
+
+})
+
 
 # COMBINED ----------------------------------------------------------------
 
@@ -501,29 +531,22 @@ output$generate_combined_plot_top_options_ui <- renderUI({
   vars <- generate_plot_vars()
   req(vars)
 
-  sets <- generate_occ_choices()
-  req(length(sets) > 0)
-
-  tagList(
-    fluidRow(
-      column(width = 4,
-             radioButtons("generate_plot_combined_layout",
-                          label = tags$span("Layout:", class = "text-widget-title"),
-                          choices = c("Side by side" = "row",
-                                      "Stacked" = "col"),
-                          selected = "row",
-                          inline = TRUE)),
-      column(width = 4,
-             selectInput("generate_plot_combined_x", label = NULL,
-                         choices = vars, selected = vars[1])),
-      column(width = 4,
-             selectInput("generate_plot_combined_y", label = NULL,
-                         choices = vars, selected = vars[min(2, length(vars))]))
-    ),
-    plot_slot_selectors("generate_combined_e_slot", sets,
-                        n = 4, label = "E-space panels:", default_n = 1),
-    plot_slot_selectors("generate_combined_g_slot", sets,
-                        n = 4, label = "G-space panels:", default_n = 1)
+  fluidRow(
+    column(width = 1, tags$span("Layout:", class = "text-widget-title")),
+    column(width = 4,
+           radioButtons("generate_plot_combined_layout",
+                        label = NULL,
+                        choices = c("Side by side" = "row",
+                                    "Stacked" = "col"),
+                        selected = "row",
+                        inline = TRUE)),
+    column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+    column(width = 3,
+           selectInput("generate_plot_combined_x", label = NULL,
+                       choices = vars, selected = vars[1])),
+    column(width = 3,
+           selectInput("generate_plot_combined_y", label = NULL,
+                       choices = vars, selected = vars[min(2, length(vars))]))
   )
 })
 
@@ -553,8 +576,9 @@ output$generate_combined_plot <- renderPlot({
   s <- generate_collect_plot_settings()
   s$asp_espace <- s$asp_combined
 
-  e_sets <- plot_read_slots("generate_combined_e_slot")
-  g_sets <- plot_read_slots("generate_combined_g_slot")
+  # Both halves show the same sets, chosen with the eye icons
+  e_sets <- generate_visible_sets()
+  g_sets <- e_sets
 
   if(length(e_sets) == 0) e_sets <- sets[1]
   if(length(g_sets) == 0) g_sets <- sets[1]
@@ -625,12 +649,23 @@ output$generate_combined_plot_bottom_options_ui <- renderUI({
   req(session_data$bg_raster)
 
   fluidRow(
-    class = "ell-row",
-    column(width = 2,
-           class = "label-tight",
-           tags$span("Aspect ratio:", class = "text-widget-title")),
+    column(width = 1,
+           tags$span("Zoom:", class = "text-widget-title")),
+    column(width = 3,
+           radioButtons("generate_plot_zoom_mode", label = NULL,
+                        choiceNames = list(
+                          tags$span("Auto", class = "text-widget-inner"),
+                          tags$span("Zoom in", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("auto", "ellipsoid"),
+                        selected = "auto",
+                        inline = TRUE)),
     column(width = 4,
-           class = "label-tight",
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;")),
+    column(width = 1,
+           tags$span("Aspect:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("generate_plot_asp_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -909,7 +944,7 @@ output$generate_confirm_export <- downloadHandler(
     s <- generate_collect_plot_settings()
     req(s)
 
-    if(identical(s$occ_set, "none")) s$occ_set <- NULL
+    s$occ_set <- generate_visible_sets()
 
     vars <- generate_plot_vars()
     req(vars)
@@ -932,8 +967,7 @@ output$generate_confirm_export <- downloadHandler(
              if(identical(state, "generate_plot_pairs")){
                generate_draw_espace_pairs(vars, s)
              } else if(length(sets) > 0){
-               show_sets <- plot_read_slots("generate_espace_slot")
-               if(length(show_sets) == 0) show_sets <- sets[1]
+               show_sets <- generate_visible_sets()
                generate_draw_espace_sets(input$generate_plot_2d_x,
                                          input$generate_plot_2d_y, s, show_sets)
              } else {
@@ -947,18 +981,8 @@ output$generate_confirm_export <- downloadHandler(
 
              req(length(sets) > 0)
 
-             state <- if(!is.null(input$generate_plot_gspace_state)){
-               input$generate_plot_gspace_state
-             } else {
-               "generate_plot_all"
-             }
-
-             show_sets <- if(identical(state, "generate_plot_one")){
-               sel <- input$generate_gspace_set
-               if(!is.null(sel) && sel %in% sets) sel else sets[1]
-             } else {
-               sets
-             }
+             show_sets <- generate_visible_sets()
+             if(length(show_sets) == 0) show_sets <- unname(sets)[1]
 
              n <- length(show_sets)
              n_cols <- if(n <= 1) 1L else 2L
@@ -983,10 +1007,10 @@ output$generate_confirm_export <- downloadHandler(
 
              s$asp_espace <- s$asp_combined
 
-             e_sets <- head(intersect(input$generate_combined_espace_sets, sets), 4)
-             g_sets <- head(intersect(input$generate_combined_gspace_sets, sets), 4)
-             if(length(e_sets) == 0) e_sets <- sets[1]
-             if(length(g_sets) == 0) g_sets <- sets[1]
+             e_sets <- generate_visible_sets()
+             g_sets <- e_sets
+             if(length(e_sets) == 0) e_sets <- unname(sets)[1]
+             if(length(g_sets) == 0) g_sets <- unname(sets)[1]
 
              e_block <- plot_panel_block(seq_len(length(e_sets)))
              g_block <- plot_panel_block(length(e_sets) + seq_len(length(g_sets)))

@@ -381,28 +381,30 @@ output$build_espace_plot_top_options_ui <- renderUI({
 
   fluidRow(
     column(width = 12,
-           column(width = 4,
+           column(width = 1, tags$span("Layout:", class = "text-widget-title")),
+           column(width = 3,
                   radioButtons("build_plot_espace_state",
-                               label = tags$span("Plot type:",
-                                                 class = "text-widget-title"),
+                               label = NULL,
                                choices = c("All pairs" = "build_plot_pairs",
                                            "2D" = "build_plot_2d"),
                                selected = "build_plot_pairs",
                                inline = TRUE)),
 
            conditionalPanel(
-             "input.plot_espace_state == 'build_plot_2d'",
-             column(width = 4,
+             "input.build_plot_espace_state == 'build_plot_2d'",
+             column(width = 2, tags$span("Variables:", class = "text-widget-title")),
+             column(width = 3,
                     selectInput("build_plot_2d_x",
                                 label = NULL,
                                 choices = character(0))),
-             column(width = 4,
+             column(width = 3,
                     selectInput("build_plot_2d_y",
                                 label = NULL,
                                 choices = character(0)))
            )
     )
   )
+
 })
 
 output$build_espace_plot_bottom_options_ui <- renderUI({
@@ -483,28 +485,31 @@ output$build_gspace_plot_top_options_ui <- renderUI({
   }
 
   fluidRow(
-    column(width = 4,
+    column(width = 1, tags$span("Show:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("build_plot_gspace_show",
-                        label = tags$span("Show:", class = "text-widget-title"),
+                        label = NULL,
                         choices = show_choices,
                         selected = if(has_ell) "suitable" else "range",
-                        inline = TRUE)),
+                        inline = FALSE)),
 
     # Layer controls only apply to the range view, since the suitable area
     # is a single map for all variables
     conditionalPanel(
       "input.build_plot_gspace_show == 'range'",
-      column(width = 4,
+      column(width = 1, tags$span("Layer:", class = "text-widget-title")),
+      column(width = 1,
              radioButtons("build_plot_gspace_state",
-                          label = tags$span("Layers:", class = "text-widget-title"),
+                          label = NULL,
                           choices = c("All" = "build_plot_all",
                                       "One" = "build_plot_one"),
                           selected = "build_plot_all",
-                          inline = TRUE))
+                          inline = FALSE))
     ),
 
     conditionalPanel(
       "input.build_plot_gspace_show == 'range' && input.build_plot_gspace_state == 'build_plot_one'",
+      column(width = 2, tags$span("Variable:", class = "text-widget-title")),
       column(width = 4,
              selectInput("build_plot_gspace_lyr",
                          label = NULL,
@@ -620,6 +625,21 @@ output$build_gspace_plot <- renderPlot({
   }
 })
 
+output$build_gspace_plot_bottom_options_ui <- renderUI({
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
+
+  fluidRow(class = "ell-row",
+    column(width = 12,
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;"))
+  )
+
+})
+
+
 # Combined
 output$build_combined_plot <- renderPlot({
 
@@ -669,15 +689,17 @@ output$build_combined_plot_top_options_ui <- renderUI({
   req(vars)
 
   fluidRow(
-    column(width = 4,
+    column(width = 1, tags$span("Layout:", class = "text-widget-title")),
+    column(width = 3,
            radioButtons("build_plot_combined_layout",
-                        label = tags$span("Layout:", class = "text-widget-title"),
+                        label = NULL,
                         choices = c("Stacked" = "col", "Side by side" = "row"),
                         selected = "col",
-                        inline = TRUE)),
-    column(width = 4,
+                        inline = FALSE)),
+    column(width = 2, tags$span("Variables:", class = "text-widget-title")),
+    column(width = 3,
            selectInput("build_plot_combined_x", label = NULL, choices = character(0))),
-    column(width = 4,
+    column(width = 3,
            selectInput("build_plot_combined_y", label = NULL, choices = character(0)))
   )
 })

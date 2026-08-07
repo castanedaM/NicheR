@@ -4,7 +4,76 @@
 # points from a prediction surface, biased or unbiased, for one or more
 # saved ellipsoids.
 
-# Date Last Updated: 08/05/2026
+# Date Last Updated: 08/06/2026
+
+
+# OCCURRENCE SET VISIBILITY -----------------------------------------------
+
+# Occurrence sets currently drawn in the plots. Keys are prefixed with the
+# ellipsoid id, since two ellipsoids can produce sets with identical
+# parameter signatures.
+occ_visible <- reactiveVal(character(0))
+
+# Builds a visibility key. Kept as a function so the separator lives in
+# one place.
+occ_vis_key <- function(ell_id, set) paste0(ell_id, "::", set)
+
+# Panels stay readable up to a 2x2 grid
+OCC_MAX_VISIBLE <- 4L
+
+# Sets the user has toggled visible for the current ellipsoid, in the order
+# they were toggled. Falls back to the first set so the plots are never
+# blank when occurrences exist.
+generate_visible_sets <- reactive({
+
+  ell <- session_data$current_ellipsoid
+  if(is.null(ell)) return(character(0))
+
+  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  if(is.null(occ) || length(occ) == 0) return(character(0))
+
+  prefix <- paste0(ell$ell_id, "::")
+
+  keys <- grep(prefix, occ_visible(), value = TRUE, fixed = TRUE)
+  sets <- sub(prefix, "", keys, fixed = TRUE)
+
+  sets <- sets[sets %in% names(occ)]
+
+  if(length(sets) == 0) return(names(occ)[1])
+
+  sets
+})
+
+observeEvent(input$generate_toggle_set, {
+
+  idx <- generate_occ_index()
+  req(idx)
+
+  i <- as.integer(input$generate_toggle_set)
+  req(i >= 1, i <= nrow(idx))
+
+  r <- idx[i, ]
+  key <- occ_vis_key(r$ell_id, r$set)
+
+  cur <- occ_visible()
+
+  if(key %in% cur){
+    occ_visible(setdiff(cur, key))
+    return()
+  }
+
+  # Count only the sets visible for this ellipsoid, so other ellipsoids'
+  # selections do not eat the budget
+  same_ell <- grep(paste0("^", r$ell_id, "::"), cur, value = TRUE)
+
+  if(length(same_ell) >= OCC_MAX_VISIBLE){
+    showNotification(instructions$generate_max_visible,
+                     type = "warning", duration = 4)
+    return()
+  }
+
+  occ_visible(c(cur, key))
+})
 
 
 # CONTROLS ----------------------------------------------------------------
@@ -341,6 +410,12 @@ observeEvent(input$generate_run_btn, {
   n_success <- 0L
   n_attempted <- 0L
 
+  mask_name <- if(!is.null(input$generate_mask_file)){
+    input$generate_mask_file$name
+  } else {
+    "none"
+  }
+
   # Assigned per id rather than replacing the whole list, so one failed
   # ellipsoid does not discard occurrences that already succeeded
   for(id in selected_ids){
@@ -364,20 +439,32 @@ observeEvent(input$generate_run_btn, {
 
       # Metadata travels with the set so the summary can report how it was
       # made, and so the source raster can still be found from the layer
-      attr(df, "layer") <- layer
-      attr(df, "seed") <- seed
-      attr(df, "n_occ") <- n_occ
-      attr(df, "sampling") <- sampling
-      attr(df, "strict") <- strict
+      attrs <- list(layer = layer,
+                    n_occ = n_occ,
+                    seed = seed,
+                    sampling = sampling,
+                    strict = strict,
+                    mask = mask_name)
+
+      for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
       attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
-      key <- occ_set_key(layer, seed)
+      key <- occ_set_signature(attrs)
 
       if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
         session_data$ellipsoid_occurrence_list[[id]] <- list()
       }
 
       session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
+      # New sets are shown by default, up to the panel limit
+      vis <- occ_visible()
+      vis_key <- occ_vis_key(id, key)
+      same_ell <- grep(paste0("^", id, "::"), vis, value = TRUE)
+
+      if(!vis_key %in% vis && length(same_ell) < OCC_MAX_VISIBLE){
+        occ_visible(c(vis, vis_key))
+      }
+
       n_success <- n_success + 1L
     }
   }
@@ -402,42 +489,46 @@ observeEvent(input$generate_edit_link, {
   generate_show_form(TRUE)
 })
 
-# Flattens every occurrence set into one long-format table, so a single
-# download covers all ellipsoids and layers
-output$generate_download_btn <- downloadHandler(
+# OCCURRENCE SETS ---------------------------------------------------------
 
-  filename = function(){
-    paste0("nicheR_occurrences_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
-  },
+# Flat index of every occurrence set, so the summary can render rows and
+# the download handlers can be created against stable numeric ids.
+generate_occ_index <- reactive({
 
-  content = function(file){
+  ell <- session_data$current_ellipsoid
+  if(is.null(ell)) return(NULL)
 
-    occ <- session_data$ellipsoid_occurrence_list
-    req(length(occ) > 0)
+  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  if(is.null(occ) || length(occ) == 0) return(NULL)
 
-    versions <- session_data$ellipsoid_list
+  labs <- occ_set_labels(occ)
+  lab_of <- setNames(names(labs), unname(labs))
 
-    rows <- lapply(names(occ), function(id){
+  rows <- lapply(names(occ), function(nm){
 
-      ell_name <- if(!is.null(versions[[id]])) versions[[id]]$ell_name else id
+    df <- occ[[nm]]
+    if(is.null(df)) return(NULL)
 
-      lapply(names(occ[[id]]), function(layer){
-        df <- occ[[id]][[layer]]
-        if(is.null(df) || nrow(df) == 0) return(NULL)
-        data.frame(ell_id = id,
-                   ell_name = ell_name,
-                   layer = layer,
-                   df,
-                   stringsAsFactors = FALSE)
-      })
-    })
+    data.frame(
+      ell_id = ell$ell_id,
+      ell_name = ell$ell_name,
+      set = nm,
+      label = lab_of[[nm]],
+      layer = occ_meta(df, "layer", nm),
+      n = nrow(df),
+      seed = occ_meta(df, "seed"),
+      n_occ = occ_meta(df, "n_occ"),
+      sampling = occ_meta(df, "sampling", ""),
+      stringsAsFactors = FALSE
+    )
+  })
 
-    out <- do.call(rbind, unlist(rows, recursive = FALSE))
-    req(!is.null(out))
+  rows <- Filter(Negate(is.null), rows)
+  if(length(rows) == 0) return(NULL)
 
-    write.csv(out, file, row.names = FALSE)
-  }
-)
+  do.call(rbind, rows)
+})
+
 
 # One flattening function, used by all three download scopes
 generate_occ_table <- function(idx_rows){
@@ -473,7 +564,8 @@ observe({
       output[[paste0("generate_dl_set_", my_i)]] <- downloadHandler(
         filename = function(){
           r <- generate_occ_index()[my_i, ]
-          nm <- gsub("[^A-Za-z0-9_-]", "_", paste0(r$ell_name, "_", r$layer, "_seed", r$seed))
+          nm <- gsub("[^A-Za-z0-9_-]", "_",
+                     paste0(r$ell_name, "_", r$layer, "_n", r$n_occ, "_seed", r$seed))
           paste0(nm, ".csv")
         },
         content = function(file){
@@ -483,38 +575,52 @@ observe({
       )
     })
   })
-
-  ell_ids <- unique(idx$ell_id)
-
-  lapply(seq_along(ell_ids), function(k){
-    local({
-      my_k <- k
-      output[[paste0("generate_dl_ell_", my_k)]] <- downloadHandler(
-        filename = function(){
-          idx <- generate_occ_index()
-          id <- unique(idx$ell_id)[my_k]
-          nm <- gsub("[^A-Za-z0-9_-]", "_", idx$ell_name[idx$ell_id == id][1])
-          paste0(nm, "_occurrences.csv")
-        },
-        content = function(file){
-          idx <- generate_occ_index()
-          id <- unique(idx$ell_id)[my_k]
-          write.csv(generate_occ_table(idx[idx$ell_id == id, , drop = FALSE]),
-                    file, row.names = FALSE)
-        }
-      )
-    })
-  })
 })
 
-output$generate_dl_all <- downloadHandler(
+output$generate_dl_ell <- downloadHandler(
   filename = function(){
-    paste0("nicheR_occurrences_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+    idx <- generate_occ_index()
+    nm <- gsub("[^A-Za-z0-9_-]", "_", idx$ell_name[1])
+    paste0(nm, "_occurrences.csv")
   },
   content = function(file){
     idx <- generate_occ_index()
     req(idx)
     write.csv(generate_occ_table(idx), file, row.names = FALSE)
+  }
+)
+
+output$generate_dl_all <- downloadHandler(
+
+  filename = function(){
+    paste0("nicheR_occurrences_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+  },
+  content = function(file){
+
+    occ <- session_data$ellipsoid_occurrence_list
+    req(length(occ) > 0)
+
+    versions <- session_data$ellipsoid_list
+
+    parts <- lapply(names(occ), function(id){
+      lapply(names(occ[[id]]), function(nm){
+        df <- occ[[id]][[nm]]
+        if(is.null(df) || nrow(df) == 0) return(NULL)
+        data.frame(ell_id = id,
+                   ell_name = if(!is.null(versions[[id]])) versions[[id]]$ell_name else id,
+                   layer = occ_meta(df, "layer", nm),
+                   n_occ = occ_meta(df, "n_occ"),
+                   seed = occ_meta(df, "seed"),
+                   sampling = occ_meta(df, "sampling", ""),
+                   df,
+                   stringsAsFactors = FALSE)
+      })
+    })
+
+    out <- do.call(rbind, unlist(parts, recursive = FALSE))
+    req(!is.null(out))
+
+    write.csv(out, file, row.names = FALSE)
   }
 )
 
@@ -536,6 +642,8 @@ observeEvent(input$generate_delete_set, {
     session_data$ellipsoid_occurrence_list[[r$ell_id]] <- NULL
   }
 
+  occ_visible(setdiff(occ_visible(), occ_vis_key(r$ell_id, r$set)))
+
   showNotification(paste0("Set removed: ", r$layer, " (seed ", r$seed, ")."),
                    type = "message", duration = 3)
 })
@@ -544,46 +652,11 @@ observeEvent(input$generate_new_set_link, {
   generate_show_form(TRUE)
 })
 
-# Flat index of every occurrence set, so the summary can render rows and
-# the download handlers can be created against stable numeric ids.
-generate_occ_index <- reactive({
-
-  occ <- session_data$ellipsoid_occurrence_list
-  if(length(occ) == 0) return(NULL)
-
-  versions <- session_data$ellipsoid_list
-
-  rows <- list()
-
-  for(id in names(occ)){
-    for(nm in names(occ[[id]])){
-
-      df <- occ[[id]][[nm]]
-      if(is.null(df)) next
-
-      labs <- occ_set_labels(occ[[id]])
-      lab_of <- setNames(names(labs), unname(labs))
-
-      rows[[length(rows) + 1L]] <- data.frame(
-        ell_id = id,
-        ell_name = if(!is.null(versions[[id]])) versions[[id]]$ell_name else id,
-        set = nm,
-        label = lab_of[[nm]],
-        layer = occ_meta(df, "layer", nm),
-        n = nrow(df),
-        seed = occ_meta(df, "seed"),
-        sampling = occ_meta(df, "sampling", ""),
-        stringsAsFactors = FALSE
-      )
-    }
-  }
-
-  if(length(rows) == 0) return(NULL)
-
-  do.call(rbind, rows)
-})
+# OCCURRENCE SUMMARY ------------------------------------------------------
 
 output$generate_occurrence_summary_ui <- renderUI({
+
+  ell <- session_data$current_ellipsoid
 
   idx <- generate_occ_index()
 
@@ -597,89 +670,79 @@ output$generate_occurrence_summary_ui <- renderUI({
     )
   }
 
-  biased_lookup <- function(ell_id, layer){
-    b <- session_data$ellipsoid_prediction_list_biased[[ell_id]]
-    inherits(b, "SpatRaster") && layer %in% names(b)
+  biased <- session_data$ellipsoid_prediction_list_biased[[ell$ell_id]]
+
+  is_biased <- function(layer){
+    inherits(biased, "SpatRaster") && layer %in% names(biased)
   }
 
-  ell_ids <- unique(idx$ell_id)
+  rows <- lapply(seq_len(nrow(idx)), function(i){
 
-  groups <- lapply(seq_along(ell_ids), function(k){
+    r <- idx[i, ]
+    shown <- occ_vis_key(r$ell_id, r$set) %in% occ_visible()
 
-    id <- ell_ids[k]
-    sub <- idx[idx$ell_id == id, , drop = FALSE]
-
-    header <- fluidRow(
+    fluidRow(
       class = "ell-row",
-      style = "border-top: 1px solid #eee; padding: 6px 0 2px;",
-      column(width = 9,
-             tags$span(sub$ell_name[1], class = "text-widget-title",
-                       style = "color: #097a21;"),
-             tags$span(paste0(" (", sum(sub$n), " points)"),
-                       style = "font-size: 11px; color: #aaa;")),
+      style = "padding: 2px 0;",
+      column(width = 5,
+             tags$span(r$label, class = "text-widget-inner",
+                       style = if(is_biased(r$layer)) "color: #c47c16;" else "")),
+      column(width = 4,
+             tags$span(paste0(r$n, " points"), class = "text-widget-inner"),
+             if(!is.na(r$n_occ) && r$n != r$n_occ){
+               tagList(tags$br(),
+                       tags$span(paste0("requested ", r$n_occ),
+                                 style = "font-size: 10px; color: #bbb;"))
+             }),
       column(width = 3,
              class = "ell-actions",
-             downloadLink(paste0("generate_dl_ell_", k),
-                          label = tagList(icon("download"),
-                                          tags$span("All",
-                                                    style = "font-size: 11px;"))))
+             tags$a(href = "#",
+                    onclick = sprintf("Shiny.setInputValue('generate_toggle_set', %d, {priority: 'event'}); return false;", i),
+                    title = if(shown) "Hide from plots" else "Show in plots",
+                    style = if(shown) "color: #097a21;" else "color: #ccc;",
+                    icon(if(shown) "eye" else "eye-slash")),
+             downloadLink(paste0("generate_dl_set_", i),
+                          label = icon("download")),
+             tags$a(href = "#",
+                    class = "ell-action-danger",
+                    onclick = sprintf("Shiny.setInputValue('generate_delete_set', %d, {priority: 'event'}); return false;", i),
+                    title = "Delete this set",
+                    icon("trash-can")))
     )
-
-    rows <- lapply(seq_len(nrow(sub)), function(j){
-
-      r <- sub[j, ]
-      i <- which(idx$ell_id == r$ell_id & idx$set == r$set)[1]
-      is_biased <- biased_lookup(r$ell_id, r$layer)
-
-      fluidRow(
-        class = "ell-row",
-        style = "padding: 2px 0;",
-        column(width = 5,
-               tags$span(r$layer, class = "text-widget-inner",
-                         style = if(is_biased) "color: #c47c16;" else ""),
-               tags$br(),
-               tags$span(paste0(r$sampling, " sampling"),
-                         style = "font-size: 10px; color: #bbb;")),
-        column(width = 4,
-               tags$span(paste0(r$n, " points"), class = "text-widget-inner"),
-               tags$br(),
-               tags$span(paste0("seed ", r$seed),
-                         style = "font-size: 10px; color: #bbb;")),
-        column(width = 3,
-               class = "ell-actions",
-               downloadLink(paste0("generate_dl_set_", i),
-                            label = icon("download")),
-               tags$a(href = "#",
-                      class = "ell-action-danger",
-                      onclick = sprintf("Shiny.setInputValue('generate_delete_set', %d, {priority: 'event'}); return false;", i),
-                      title = paste0("Delete ", r$set),
-                      icon("trash-can")))
-      )
-    })
-
-    tagList(header, tagList(rows))
   })
 
-  box(title = tags$span("Occurrence sets", class = "text-section-header"),
+  box(title = tags$span(paste0("Occurrence sets: ", idx$ell_name[1]),
+                        class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
       p(instructions$generate_summary, class = "text-instruction"),
 
       fluidRow(
-        column(width = 6, class = "btn-spaced",
+        column(width = 4, class = "btn-spaced",
                actionLink("generate_new_set_link",
                           label = tagList(icon("circle-plus"), "New set"))),
-        column(width = 6, class = "btn-spaced",
+        column(width = 4, class = "btn-spaced",
+               downloadLink("generate_dl_ell",
+                            label = tagList(icon("download"), "This ellipsoid"))),
+        column(width = 4, class = "btn-spaced",
                downloadLink("generate_dl_all",
-                            label = tagList(icon("download"), "Download all"))),
-        br(), br()
+                            label = tagList(icon("download"), "All ellipsoids")))
       ),
 
-      tagList(groups)
+      br(),
+
+      fluidRow(
+        class = "ell-row",
+        style = "padding: 4px 0; border-top: 1px solid #eee;",
+        column(width = 5, tags$span("Set", class = "text-widget-title")),
+        column(width = 4, tags$span("Points", class = "text-widget-title")),
+        column(width = 3, tags$span("Actions", class = "text-widget-title"))
+      ),
+
+      tagList(rows)
   )
 })
-
 
 # ELLIPSOID LIBRARY -------------------------------------------------------
 
@@ -767,6 +830,8 @@ output$generate_ellipsoid_library_ui <- renderUI({
       if(!is.null(cur_ell)){
         tagList(working_row, tags$hr(style = "margin: 8px 0;"))
       },
+
+      br(),
 
       if(length(ids) > 0){
         tagList(
@@ -869,6 +934,9 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
     cur$parent_id <- NULL
     session_data$current_ellipsoid <- cur
   }
+
+  occ_visible(grep(paste0("^", id, "::"), occ_visible(),
+                   value = TRUE, invert = TRUE))
 
   showNotification(paste0(nm, " deleted."),
                    type = "message", duration = 3)

@@ -228,26 +228,6 @@ predict_binary_layer <- function(pred){
 }
 
 
-# Fills a 2x2 block with panel ids, spanning cells when there are fewer
-# than four. One panel fills the block, two give two rows, three or four
-# give a 2x2. Used to lay out each half of the combined plot.
-# Fills a 2x2 block with panel ids, spanning cells when there are fewer
-# than four. One panel fills the block, two give two rows, three or four
-# give a 2x2. Used to lay out each half of a combined plot.
-plot_panel_block <- function(ids){
-
-  n <- length(ids)
-
-  if(n <= 0) return(matrix(0L, 2, 2))
-  if(n == 1) return(matrix(ids[1], 2, 2))
-  if(n == 2) return(matrix(c(ids[1], ids[1],
-                             ids[2], ids[2]), 2, 2, byrow = TRUE))
-  if(n == 3) return(matrix(c(ids[1], ids[2],
-                             ids[3], 0L), 2, 2, byrow = TRUE))
-
-  matrix(ids[1:4], 2, 2, byrow = TRUE)
-}
-
 # Reactives ---------------------------------------------------------------
 
 # On-the-fly suitability for G-space, used only until a real prediction
@@ -429,7 +409,7 @@ observeEvent(ell_slot(), {
 }, ignoreInit = TRUE)
 
 
-# E-SPACE -----------------------------------------------------------------
+# E-SPACE and G-SPACE -----------------------------------------------------------------
 
 output$predict_espace_plot_top_options_ui <- renderUI({
 
@@ -451,9 +431,11 @@ output$predict_espace_plot_top_options_ui <- renderUI({
   }
 
   fluidRow(
+
+    column(width = 1, tags$span("Layout:", class = "text-widget-title")),
     column(width = 4,
            radioButtons("predict_plot_espace_state",
-                        label = tags$span("View:", class = "text-widget-title"),
+                        label = NULL,
                         choices = c("Pairs" = "predict_plot_pairs",
                                     "2D" = "predict_plot_2d"),
                         selected = "predict_plot_pairs",
@@ -461,10 +443,11 @@ output$predict_espace_plot_top_options_ui <- renderUI({
 
     conditionalPanel(
       "input.predict_plot_espace_state == 'predict_plot_2d'",
-      column(width = 2,
+      column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+      column(width = 3,
              selectInput("predict_plot_2d_x", label = NULL, choices = vars,
                          selected = vars[1])),
-      column(width = 2,
+      column(width = 3,
              selectInput("predict_plot_2d_y", label = NULL, choices = vars,
                          selected = vars[min(2, length(vars))]))
     ),
@@ -474,6 +457,7 @@ output$predict_espace_plot_top_options_ui <- renderUI({
       # only applies to the pairs view
       conditionalPanel(
         "input.predict_plot_espace_state == 'predict_plot_pairs'",
+        column(width = 2, tags$span("Prediction:", class = "text-widget-title")),
         column(width = 4,
                selectInput("predict_espace_layer",
                            label = NULL,
@@ -596,9 +580,10 @@ output$predict_gspace_plot_top_options_ui <- renderUI({
   if(has_binary) choices <- c(choices, "Suitable area" = "binary")
 
   fluidRow(
-    column(width = 5,
+    column(width = 1, tags$span("Show:", class = "text-widget-title")),
+    column(width = 6,
            radioButtons("predict_plot_gspace_show",
-                        label = tags$span("Show:", class = "text-widget-title"),
+                        label = NULL,
                         choices = choices,
                         selected = "layers",
                         inline = TRUE))
@@ -701,6 +686,20 @@ output$predict_gspace_plot <- renderPlot({
   if(n > 1 && n %% 2 != 0) plot.new()
 })
 
+output$predict_gspace_plot_bottom_options_ui <- renderUI({
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
+
+  fluidRow(class = "ell-row",
+           column(width = 12,
+           tags$span(ell$ell_name, class = "text-center",
+                     style = "font-size: 12px; color: #888; font-weight: 400;"))
+  )
+
+})
+
 output$predict_combined_plot_top_options_ui <- renderUI({
 
   ell_slot()
@@ -722,20 +721,24 @@ output$predict_combined_plot_top_options_ui <- renderUI({
 
   tagList(
     fluidRow(
+      column(width = 1, tags$span("Layout:", class = "text-widget-title")),
       column(width = 4,
              radioButtons("predict_plot_combined_layout",
-                          label = tags$span("Layout:", class = "text-widget-title"),
+                          label = NULL,
                           choices = c("Side by side" = "row",
                                       "Stacked" = "col"),
                           selected = "row",
-                          inline = TRUE)),
-      column(width = 4,
+                          inline = FALSE)),
+
+      column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+      column(width = 3,
              selectInput("predict_plot_combined_x", label = NULL,
                          choices = vars, selected = vars[1])),
-      column(width = 4,
+      column(width = 3,
              selectInput("predict_plot_combined_y", label = NULL,
                          choices = vars, selected = vars[min(2, length(vars))]))
     ),
+
     fluidRow(
       column(width = 6,
              checkboxGroupInput("predict_combined_espace_layers",

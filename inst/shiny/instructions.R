@@ -213,6 +213,13 @@ ellipsoid was built or copied from. Point it at any saved version to compare
 against that instead. Changing it only affects the summary, it does not move
 your ellipsoid."),
 
+  build_session_loaded = "Session loaded successfully.",
+
+  build_session_invalid = "That file is not a nicheR session file.",
+
+  build_session_old_version = HTML("This session was saved by an older
+version of the app. It has been loaded, but bias layers may be missing and
+ellipsoid ids may need checking."),
 
   # PREDICT TAB ------------------------------------------------------------
 
@@ -310,7 +317,7 @@ prediction extent.",
 
   generate_library = HTML("Ellipsoids saved on the Build tab appear here,
 with how many occurrences each has generated. To edit an ellipsoid, go back
-to the Build tab."),
+to the Build tab. To view the gnerated set of occurences press on view (eye)"),
 
   generate_library_empty = "No saved ellipsoids yet.",
 
@@ -342,6 +349,13 @@ rather than replacing one. Download individual sets, everything for one
 ellipsoid, or all sets at once."),
 
   generate_summary_empty = "No occurrence sets yet. Generate one to see it here.",
+
+  generate_max_visible = "Up to four sets can be shown at once. Hide one
+before showing another.",
+
+  generate_summary = HTML("Every occurrence set you generate is listed here.
+Sets accumulate: changing any parameter adds a set rather than replacing one.
+Use the eye to choose which appear in the plots, up to four at a time."),
 
   # SHARED: PLOT SETTINGS --------------------------------------------------
 

@@ -307,7 +307,9 @@ dashboardPage(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "build_gspace_plot_tab",
                      uiOutput("build_gspace_plot_top_options_ui"),
-                     plotOutput("build_gspace_plot")
+                     plotOutput("build_gspace_plot"),
+                     br(),
+                     uiOutput("build_gspace_plot_bottom_options_ui")
                    ),
 
                    tabPanel(
@@ -330,7 +332,7 @@ dashboardPage(
 
       tabItem(
         tabName = "predict_tab",
-        fluidRow(
+        fluidRow(class = "row-tight",
           column(width = 5,
                  box(width = 12,
                      title = tags$span("Prediction",
@@ -439,7 +441,9 @@ dashboardPage(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "predict_gspace_plot_tab",
                      uiOutput("predict_gspace_plot_top_options_ui"),
-                     plotOutput("predict_gspace_plot")
+                     plotOutput("predict_gspace_plot"),
+                     br(),
+                     uiOutput("predict_gspace_plot_bottom_options_ui")
                    ),
 
                    tabPanel(
@@ -461,7 +465,7 @@ dashboardPage(
 
       tabItem(
         tabName = "bias_tab",
-        fluidRow(
+        fluidRow(class = "row-tight",
           column(width = 5,
                  box(title = tagList(tags$span("Bias", class = "text-tab-title")),
                      width = 12,
@@ -505,12 +509,10 @@ dashboardPage(
                      title = tags$span("Pred and Biased G-space",
                                        class = "text-tab-title"),
                      value = "bias_gspace_plot_tab",
-                     fluidRow(
-                       column(width = 6,
-                              uiOutput("bias_gspace_plot_layer_select_ui"))
-                     ),
+                     uiOutput("bias_gspace_plot_layer_select_ui"),
+                     plotOutput("bias_gspace_plot"),
+                     uiOutput("bias_gspace_plot_bottom_options_ui")
 
-                     plotOutput("bias_gspace_plot")
                    )
 
                  ),
@@ -524,7 +526,7 @@ dashboardPage(
 
       tabItem(
         tabName = "generate_tab",
-        fluidRow(
+        fluidRow(class = "row-tight",
           column(width = 5,
                  fluidRow(
                    uiOutput("generate_controls_ui")
@@ -554,7 +556,8 @@ dashboardPage(
                      title = tags$span("G-space", class = "text-tab-title"),
                      value = "generate_gspace_plot_tab",
                      uiOutput("generate_gspace_plot_top_options_ui"),
-                     plotOutput("generate_gspace_plot")
+                     plotOutput("generate_gspace_plot"),
+                     uiOutput("generate_gspace_plot_bottom_options_ui")
                    ),
 
                    tabPanel(

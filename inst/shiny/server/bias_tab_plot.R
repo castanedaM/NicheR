@@ -133,13 +133,28 @@ output$bias_gspace_plot_layer_select_ui <- renderUI({
   }
 
   fluidRow(
+    column(width = 3, tags$span("Prediction layer:",
+                                class = "text-widget-title")),
     column(width = 6,
            selectInput("bias_gspace_layer",
-                       label = tags$span("Prediction layer",
-                                         class = "text-widget-title"),
+                       label = NULL,
                        choices = layer_choices,
                        selected = keep))
   )
+})
+
+output$bias_gspace_plot_bottom_options_ui <- renderUI({
+  ell_slot()
+
+  ell <- isolate(session_data$current_ellipsoid)
+  req(ell)
+
+  fluidRow(class = "ell-row",
+           column(width = 12,
+                  tags$span(ell$ell_name, class = "text-center",
+                            style = "font-size: 12px; color: #888; font-weight: 400;"))
+  )
+
 })
 
 # The apply-bias selector drives the working slot, the same way the Predict

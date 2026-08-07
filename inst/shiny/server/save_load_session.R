@@ -1,130 +1,199 @@
 # Title: Save and Load Session Logic
-# Description: all the logic to load and save the session, separate for ease later
-# Date last updated: 07/21/2026
+
+# Description: Serialises the whole session to an .rds file and restores it.
+# terra objects are C++ pointers and cannot be saved directly, so every
+# raster is wrapped on the way out and unwrapped on the way in.
+
+# Date last updated: 08/06/2026
 
 
-# Load previous session
-observeEvent(input$load_session, {
-  req(input$session_file)
-  req(is.data.frame(input$session_file))
-  req(file.exists(input$session_file$datapath))
+# Bumped when the saved structure changes in a way older files cannot
+# satisfy. Load warns rather than failing silently on a mismatch.
+SESSION_VERSION <- 2L
+
+# Every session_data field that holds rasters, and how deep they sit.
+# "single" is one raster, "list" is a named list of rasters.
+SESSION_RASTER_FIELDS <- list(
+  bg_raster = "single",
+  bias_raster = "single",
+  sampling_mask = "single",
+  ellipsoid_prediction_list = "list",
+  ellipsoid_prediction_list_biased = "list"
+)
+
+
+# HELPERS -----------------------------------------------------------------
+
+# Wraps or unwraps every raster in the session list. `fun` is terra::wrap
+# or terra::unwrap. Failures leave the object untouched rather than
+# dropping it, so a partial restore is still inspectable.
+session_convert_rasters <- function(session_list, fun){
+
+  for(nm in names(SESSION_RASTER_FIELDS)){
+
+    obj <- session_list[[nm]]
+    if(is.null(obj)) next
+
+    if(identical(SESSION_RASTER_FIELDS[[nm]], "single")){
+      session_list[[nm]] <- tryCatch(fun(obj), error = function(e) obj)
+      next
+    }
+
+    if(length(obj) == 0) next
+
+    session_list[[nm]] <- lapply(obj, function(r){
+      tryCatch(fun(r), error = function(e) r)
+    })
+  }
+
+  # prepared_bias holds two rasters inside a plain list
+  pb <- session_list$prepared_bias
+
+  if(!is.null(pb)){
+    session_list$prepared_bias <- list(
+      combination_formula = pb$combination_formula,
+      composite_surface = tryCatch(fun(pb$composite_surface),
+                                   error = function(e) pb$composite_surface),
+      processed_layers = tryCatch(fun(pb$processed_layers),
+                                  error = function(e) pb$processed_layers)
+    )
+  }
+
+  session_list
+}
+
+# Fields that describe the current UI state rather than the user's work.
+# Excluded from the save so a reloaded session starts clean.
+SESSION_SKIP_FIELDS <- c("pending_ell_delete", "file_type")
+
+
+# SAVE --------------------------------------------------------------------
+
+output$save_session_btn <- downloadHandler(
+
+  filename = function(){
+    paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
+  },
+
+  content = function(file){
+
+    session_list <- reactiveValuesToList(session_data)
+
+    for(nm in SESSION_SKIP_FIELDS) session_list[[nm]] <- NULL
+
+    # The ellipsoid id counter lives outside session_data. Without it, ids
+    # restart at E1 after a reload and collide with restored ellipsoids.
+    session_list$.ell_id_counter <- ell_id_counter()
+    session_list$.session_version <- SESSION_VERSION
+    session_list$.saved_at <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+
+    session_list <- session_convert_rasters(session_list, terra::wrap)
+
+    tryCatch(
+      saveRDS(session_list, file),
+      error = function(e){
+        showNotification(paste("Failed to save session:", e$message),
+                         type = "error", duration = 5)
+      }
+    )
+  }
+)
+
+
+# LOAD --------------------------------------------------------------------
+
+observeEvent(input$build_load_session_btn, {
+
+  req(input$build_session_file)
+  req(is.data.frame(input$build_session_file))
+  req(file.exists(input$build_session_file$datapath))
 
   session_list <- tryCatch(
-    readRDS(input$session_file$datapath),
+    readRDS(input$build_session_file$datapath),
     error = function(e){
-      showNotification(paste("Could not load session:", e$message),
-                       type = "error", duration = 4)
+      showNotification(paste("Could not read session file:", e$message),
+                       type = "error", duration = 5)
       NULL
     }
   )
 
   req(session_list)
 
-  if(!is.null(session_list$bg_raster)){
-    session_list$bg_raster <- tryCatch(
-      terra::unwrap(session_list$bg_raster),
-      error = function(e){
-        showNotification("Could not restore raster from session file.",
-                         type = "warning", duration = 4)
-        NULL
-      }
-    )
+  if(!is.list(session_list)){
+    showNotification(instructions$build_session_invalid,
+                     type = "error", duration = 5)
+    return()
   }
 
-  # Unwrap predictions
-  if(length(session_list$ellipsoid_prediction_list) > 0){
-    session_list$ellipsoid_prediction_list <- lapply(
-      session_list$ellipsoid_prediction_list,
-      function(p) tryCatch(terra::unwrap(p), error = function(e) p)
-    )
+  saved_version <- session_list$.session_version
+
+  if(is.null(saved_version) || saved_version < SESSION_VERSION){
+    showNotification(instructions$build_session_old_version,
+                     type = "warning", duration = 8)
   }
 
-  # Unwrap prepared_bias
-  if(!is.null(session_list$prepared_bias)){
-    session_list$prepared_bias <- list(
-      combination_formula = session_list$prepared_bias$combination_formula,
-      composite_surface   = tryCatch(
-        terra::unwrap(session_list$prepared_bias$composite_surface),
-        error = function(e) NULL),
-      processed_layers    = tryCatch(
-        terra::unwrap(session_list$prepared_bias$processed_layers),
-        error = function(e) NULL)
-    )
+  session_list <- session_convert_rasters(session_list, terra::unwrap)
+
+  # Restore the id counter before anything else, so any ellipsoid built
+  # after loading gets a fresh id rather than reusing a restored one
+  restored_counter <- session_list$.ell_id_counter
+
+  if(!is.null(restored_counter) && is.finite(restored_counter)){
+    ell_id_counter(as.integer(restored_counter))
+  } else {
+    # Older file, or a corrupted counter: derive from the highest id present
+    ids <- names(session_list$ellipsoid_list)
+    nums <- suppressWarnings(as.integer(sub("^E([0-9]+)_.*$", "\\1", ids)))
+    nums <- nums[is.finite(nums)]
+    ell_id_counter(if(length(nums) > 0) max(nums) else 0L)
   }
 
-  # Unwrap ellipsoid_prediction_list_biased
-  session_list$ellipsoid_prediction_list_biased <- lapply(
-    session_list$ellipsoid_prediction_list_biased,
-    function(p) tryCatch(terra::unwrap(p), error = function(e) p)
-  )
+  # Private fields are not part of session_data
+  session_list$.ell_id_counter <- NULL
+  session_list$.session_version <- NULL
+  session_list$.saved_at <- NULL
 
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
   }
 
-  if(!is.null(session_data$ellipsoid_list[["base"]])){
-    session_data$current_ellipsoid <- session_data$ellipsoid_list[["base"]]
-  }
+  # State that lives outside session_data has to be reset by hand
+  session_data$pending_ell_delete <- NULL
+  session_data$file_type <- NULL
 
-  if(!is.null(session_data$current_ellipsoid)){
+  ell_mode("edit")
+  covariance_set(FALSE)
+  centroid_set(FALSE)
+
+  # Nothing in the restored list is the working slot, so pick one: the
+  # first saved ellipsoid, or nothing if the session had none
+  ids <- names(session_data$ellipsoid_list)
+
+  if(length(ids) > 0){
+    session_data$current_ellipsoid <- session_data$ellipsoid_list[[ids[1]]]
     session_data$vars <- session_data$current_ellipsoid$var_names
+    session_data$session_range <- session_data$current_ellipsoid$range_inputs
+  } else {
+    session_data$current_ellipsoid <- NULL
   }
 
-  showNotification("Session loaded successfully.", type = "message", duration = 4)
+  # Forces every isolated panel to rebuild against the restored state
+  ell_slot(ell_slot() + 1L)
 
-  if(length(session_data$ellipsoid_prediction_list) > 0){
-    updateTabItems(session, "sidebarMenu", selected = "bias_tab")
+  showNotification(instructions$build_session_loaded,
+                   type = "message", duration = 4)
+
+  # Land on the furthest step the restored session actually reached
+  if(length(session_data$ellipsoid_occurrence_list) > 0){
+    updateTabItems(session, "sidebar_menu", selected = "generate_tab")
+  } else if(length(session_data$ellipsoid_prediction_list_biased) > 0){
+    updateTabItems(session, "sidebar_menu", selected = "bias_tab")
+  } else if(length(session_data$ellipsoid_prediction_list) > 0){
+    updateTabItems(session, "sidebar_menu", selected = "predict_tab")
+  } else if(length(ids) > 0){
+    updateTabItems(session, "sidebar_menu", selected = "build_tab")
+    updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
   } else {
-    updateTabsetPanel(session, "tabpanel-build", selected = "range")
+    updateTabItems(session, "sidebar_menu", selected = "build_tab")
   }
 })
-
-
-output$save_session_btn <- downloadHandler(
-  filename = function(){
-    paste0("nicheR_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
-  },
-  content = function(file){
-
-    # Must convert to plain list before saving
-    session_list <- reactiveValuesToList(session_data)
-    session_list$input_mode <- c(session_list$input_mode, "prev_session")
-
-    if(!is.null(session_list$bg_raster)){
-      session_list$bg_raster <- terra::wrap(session_list$bg_raster)
-    }
-
-    pred_list <- session_data$ellipsoid_prediction_list
-
-    if(length(pred_list) > 0){
-      pred_list <- lapply(pred_list, function(p){
-        if(inherits(p, "SpatRaster")) terra::wrap(p) else p
-      })
-    }
-
-    session_list$ellipsoid_prediction_list <- pred_list
-
-    tryCatch({
-      saveRDS(session_list, file)
-    }, error = function(e){
-      showNotification(paste("Failed to save session:", e$message),
-                       type = "error", duration = 4)
-    })
-
-    # Wrap prepared_bias
-    if(!is.null(session_list$prepared_bias)){
-      session_list$prepared_bias <- list(
-        combination_formula = session_list$prepared_bias$combination_formula,
-        composite_surface = terra::wrap(session_list$prepared_bias$composite_surface),
-        processed_layers = terra::wrap(session_list$prepared_bias$processed_layers)
-      )
-    }
-
-    # Wrap ellipsoid_prediction_list_biased
-    session_list$ellipsoid_prediction_list_biased <- lapply(
-      session_list$ellipsoid_prediction_list_biased,
-      function(rast) if(inherits(rast, "SpatRaster")) terra::wrap(rast) else rast
-    )
-
-  }
-)
