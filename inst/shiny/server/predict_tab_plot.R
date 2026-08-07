@@ -530,10 +530,8 @@ output$predict_espace_plot_bottom_options_ui <- renderUI({
   fluidRow(
     class = "ell-row",
     column(width = 1,
-           class = "label-tight",
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           class = "label-tight",
            radioButtons("predict_plot_zoom_mode", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -546,10 +544,8 @@ output$predict_espace_plot_bottom_options_ui <- renderUI({
            tags$span(ell$ell_name, class = "text-center",
                      style = "font-size: 12px; color: #888; font-weight: 400;")),
     column(width = 1,
-           class = "label-tight",
            tags$span("Aspect:", class = "text-widget-title")),
     column(width = 3,
-           class = "label-tight",
            radioButtons("predict_plot_asp_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
@@ -722,7 +718,7 @@ output$predict_combined_plot_top_options_ui <- renderUI({
   tagList(
     fluidRow(
       column(width = 1, tags$span("Layout:", class = "text-widget-title")),
-      column(width = 4,
+      column(width = 3,
              radioButtons("predict_plot_combined_layout",
                           label = NULL,
                           choices = c("Side by side" = "row",
@@ -730,7 +726,7 @@ output$predict_combined_plot_top_options_ui <- renderUI({
                           selected = "row",
                           inline = FALSE)),
 
-      column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+      column(width = 2, tags$span("Variables:", class = "text-widget-title")),
       column(width = 3,
              selectInput("predict_plot_combined_x", label = NULL,
                          choices = vars, selected = vars[1])),
