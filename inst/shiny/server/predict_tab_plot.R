@@ -354,7 +354,9 @@ predict_collect_plot_settings <- function(){
     centroid_col = get_input("predict_plot_centroid_col", "#000000"),
     centroid_cex = get_input("predict_plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("predict_plot_zoom_mode", "auto"),
+    zoom_mode_espace = get_input("predict_plot_zoom_mode_espace", "auto"),
+    zoom_mode_combined = get_input("predict_plot_zoom_mode_combined", "auto"),
+
     asp_espace = get_input("predict_plot_asp_espace", "auto"),
     asp_combined = get_input("predict_plot_asp_combined", "auto")
   )
@@ -528,11 +530,10 @@ output$predict_espace_plot_bottom_options_ui <- renderUI({
   req(ell)
 
   fluidRow(
-    class = "ell-row",
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("predict_plot_zoom_mode", label = NULL,
+           radioButtons("predict_plot_zoom_mode_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -777,6 +778,7 @@ output$predict_combined_plot <- renderPlot({
 
   s <- predict_collect_plot_settings()
   s$asp_espace <- s$asp_combined
+  s$zoom_mode_espace <- s$zoom_mode_combined
 
   pred <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
 
@@ -862,7 +864,7 @@ output$predict_combined_plot_bottom_options_ui <- renderUI({
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("predict_plot_zoom_mode", label = NULL,
+           radioButtons("predict_plot_zoom_mode_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -1200,6 +1202,7 @@ output$predict_confirm_export <- downloadHandler(
              req(input$predict_plot_combined_x, input$predict_plot_combined_y)
 
              s$asp_espace <- s$asp_combined
+             s$zoom_mode_espace <- s$zoom_mode_combined
 
              e_layers <- head(input$predict_combined_espace_layers, 4)
              g_layers <- head(input$predict_combined_gspace_layers, 4)

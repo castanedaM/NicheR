@@ -100,10 +100,7 @@ generate_draw_espace_pairs <- function(vars, s){
   if(show_key){
 
     cols <- generate_set_colors(draw_sets, s)
-    labs <- vapply(draw_sets, function(nm){
-      lab <- s$occ_labels[[nm]]
-      if(is.null(lab)) nm else lab
-    }, character(1))
+    labs <- vapply(draw_sets, generate_set_label, character(1), s = s)
 
     par(mar = c(0, 1, 0, 1))
     plot.new()
@@ -133,7 +130,7 @@ generate_draw_espace_sets <- function(v1, v2, s, sets){
   for(nm in sets){
     n_pts <- if(!is.null(s$occ_espace[[nm]])) nrow(s$occ_espace[[nm]]) else 0L
     generate_draw_espace_panel(v1, v2, s, set = nm,
-                               title = paste0(nm, " (n = ", n_pts, ")"))
+                               title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"))
   }
 
   if(n > 1 && n %% 2 != 0) plot.new()
@@ -200,6 +197,25 @@ generate_occ_sets <- reactive({
   names(occ)
 })
 
+# Set key to display label. occ_set_labels() returns the inverse mapping,
+# which suits a selectInput but not a lookup by key.
+generate_occ_label_map <- reactive({
+
+  ell <- session_data$current_ellipsoid
+  if(is.null(ell)) return(character(0))
+
+  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  if(is.null(occ) || length(occ) == 0) return(character(0))
+
+  labs <- occ_set_labels(occ)
+  setNames(names(labs), unname(labs))
+})
+
+generate_set_label <- function(nm, s){
+  lab <- s$occ_labels[nm]
+  if(is.na(lab)) nm else unname(lab)
+}
+
 # Environmental values at the occurrence coordinates. generate_occ_for_ell()
 # returns x and y only, so the values have to be extracted before the points
 # can be drawn in environmental space. Cached per ellipsoid.
@@ -212,18 +228,18 @@ generate_occ_espace <- reactive({
   if(is.null(occ) || length(occ) == 0) return(NULL)
 
   rast <- session_data$bg_raster
-  if(is.null(rast)) return(NULL)
-
   vars <- ell$var_names
 
   lapply(occ, function(df){
 
     if(is.null(df) || nrow(df) == 0) return(NULL)
 
-    # Virtual sets are environmental values already
-    if(identical(occ_meta(df, "mode"), "virtual")) return(df)
+    # Sets with no coordinates are environmental values already. Detected by
+    # structure rather than by the mode attribute, so this also covers the
+    # non-spatial CSV case and any set written before mode was recorded.
+    if(!all(c("x", "y") %in% names(df))) return(df)
 
-    if(!all(c("x", "y") %in% names(df))) return(NULL)
+    if(is.null(rast)) return(NULL)
 
     vals <- tryCatch(
       terra::extract(terra::subset(rast, vars), df[, c("x", "y")], ID = FALSE),
@@ -235,7 +251,6 @@ generate_occ_espace <- reactive({
     cbind(df[, c("x", "y")], vals)
   })
 })
-
 # The raster an occurrence set was sampled from. Checks the biased list
 # first, since a biased layer name never appears in the unbiased stack.
 generate_source_raster <- function(ell_id, set){
@@ -271,6 +286,7 @@ generate_collect_plot_settings <- function(){
     show_centroid = has_ell && get_input("generate_show_centroid", TRUE),
 
     occ_espace = generate_occ_espace(),
+    occ_labels = generate_occ_label_map(),
     occ_set = get_input("generate_occ_set", NULL),
 
     occ_pch = as.numeric(get_input("generate_occ_pch", "16")),
@@ -297,7 +313,8 @@ generate_collect_plot_settings <- function(){
     centroid_col = get_input("generate_plot_centroid_col", "#000000"),
     centroid_cex = get_input("generate_plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("generate_plot_zoom_mode", "auto"),
+    zoom_mode_espace = get_input("generate_plot_zoom_mode_espace", "auto"),
+    zoom_mode_combined = get_input("generate_plot_zoom_mode_combined", "auto"),
     asp_espace = get_input("generate_plot_asp_espace", "auto"),
     asp_combined = get_input("generate_plot_asp_combined", "auto"),
 
@@ -310,8 +327,6 @@ generate_collect_plot_settings <- function(){
 # E-SPACE -----------------------------------------------------------------
 
 output$generate_espace_plot_top_options_ui <- renderUI({
-
-  ell_slot()
 
   vars <- generate_plot_vars()
   req(vars)
@@ -404,7 +419,7 @@ output$generate_espace_plot_bottom_options_ui <- renderUI({
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("generate_plot_zoom_mode", label = NULL,
+           radioButtons("generate_plot_zoom_mode_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -454,7 +469,7 @@ output$generate_gspace_plot <- renderPlot({
   ell <- session_data$current_ellipsoid
   req(ell)
 
-  sets <- generate_occ_choices()
+  sets <- generate_occ_sets()
 
   s <- generate_collect_plot_settings()
 
@@ -491,7 +506,7 @@ output$generate_gspace_plot <- renderPlot({
     n_pts <- nrow(session_data$ellipsoid_occurrence_list[[ell$ell_id]][[nm]])
 
     generate_draw_gspace_panel(src, s,
-                               title = paste0(nm, " (n = ", n_pts, ")"),
+                               title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
                                set = nm)
   }
 
@@ -563,11 +578,12 @@ output$generate_combined_plot <- renderPlot({
   req(vars, length(vars) >= 2)
   req(input$generate_plot_combined_x, input$generate_plot_combined_y)
 
-  sets <- generate_occ_choices()
+  sets <- generate_occ_sets()
   req(length(sets) > 0)
 
   s <- generate_collect_plot_settings()
   s$asp_espace <- s$asp_combined
+  s$zoom_mode_espace <- s$zoom_mode_combined
 
   # Both halves show the same sets, chosen with the eye icons
   e_sets <- generate_visible_sets()
@@ -610,7 +626,7 @@ output$generate_combined_plot <- renderPlot({
                                input$generate_plot_combined_y,
                                s,
                                set = nm,
-                               title = paste0(nm, " (n = ", n_pts, ")"))
+                               title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"))
   }
 
   # G-space, one panel per selected set, each over the surface it came from
@@ -628,7 +644,7 @@ output$generate_combined_plot <- renderPlot({
     n_pts <- if(!is.null(occ_list[[nm]])) nrow(occ_list[[nm]]) else 0L
 
     generate_draw_gspace_panel(src, s,
-                               title = paste0(nm, " (n = ", n_pts, ")"),
+                               title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
                                set = nm)
   }
 })
@@ -645,7 +661,7 @@ output$generate_combined_plot_bottom_options_ui <- renderUI({
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("generate_plot_zoom_mode", label = NULL,
+           radioButtons("generate_plot_zoom_mode_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -945,7 +961,7 @@ output$generate_confirm_export <- downloadHandler(
     ell <- session_data$current_ellipsoid
     req(ell)
 
-    sets <- generate_occ_choices()
+    sets <- generate_occ_sets()
 
     switch(tab,
 
@@ -986,7 +1002,7 @@ output$generate_confirm_export <- downloadHandler(
                if(is.null(src)){ plot.new(); next }
                n_pts <- nrow(session_data$ellipsoid_occurrence_list[[ell$ell_id]][[nm]])
                generate_draw_gspace_panel(src, s,
-                                          title = paste0(nm, " (n = ", n_pts, ")"),
+                                          title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
                                           set = nm)
              }
 
@@ -999,6 +1015,7 @@ output$generate_confirm_export <- downloadHandler(
              req(input$generate_plot_combined_x, input$generate_plot_combined_y)
 
              s$asp_espace <- s$asp_combined
+             s$zoom_mode_espace <- s$zoom_mode_combined
 
              e_sets <- generate_visible_sets()
              g_sets <- e_sets
@@ -1025,7 +1042,7 @@ output$generate_confirm_export <- downloadHandler(
                generate_draw_espace_panel(input$generate_plot_combined_x,
                                           input$generate_plot_combined_y, s,
                                           set = nm,
-                                          title = paste0(nm, " (n = ", n_pts, ")"))
+                                          title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"))
              }
 
              par(mar = c(3, 3, 2.5, 5))
@@ -1034,7 +1051,7 @@ output$generate_confirm_export <- downloadHandler(
                if(is.null(src)){ plot.new(); next }
                n_pts <- if(!is.null(occ_list[[nm]])) nrow(occ_list[[nm]]) else 0L
                generate_draw_gspace_panel(src, s,
-                                          title = paste0(nm, " (n = ", n_pts, ")"),
+                                          title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
                                           set = nm)
              }
 

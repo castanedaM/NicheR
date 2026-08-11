@@ -722,8 +722,7 @@ generate_occ_index <- reactive({
   occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(NULL)
 
-  labs <- occ_set_labels(occ)
-  lab_of <- setNames(names(labs), unname(labs))
+  lab_of <- generate_occ_label_map()
 
   rows <- lapply(names(occ), function(nm){
 
@@ -1003,9 +1002,6 @@ output$generate_ellipsoid_library_ui <- renderUI({
     ell <- versions[[id]]
 
     status <- if(id %in% generated){
-      n <- sum(vapply(session_data$ellipsoid_occurrence_list[[id]],
-                      function(df) if(is.null(df)) 0L else nrow(df),
-                      integer(1)))
       list(txt = "occurrences generated", col = "#097a21")
     } else if(id %in% biased){
       list(txt = "biased, not generated", col = "#aaa")
@@ -1144,6 +1140,9 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
 
   cur <- session_data$current_ellipsoid
 
+  occ_visible(grep(paste0("^", id, "::"), occ_visible(),
+                   value = TRUE, invert = TRUE))
+
   if(identical(cur$ell_id, id)){
     clear_working_ellipsoid()
     showNotification(paste0(nm, " deleted. Go back to Build to create a new ellipsoid."),
@@ -1156,8 +1155,6 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
     session_data$current_ellipsoid <- cur
   }
 
-  occ_visible(grep(paste0("^", id, "::"), occ_visible(),
-                   value = TRUE, invert = TRUE))
 
   showNotification(paste0(nm, " deleted."),
                    type = "message", duration = 3)

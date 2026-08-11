@@ -344,81 +344,6 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
 
 # GENERATE TAB ------------------------------------------------------------
 
-#' Sample occurrences for one ellipsoid across several layers
-#'
-#' Each layer is pulled from either the prediction or the biased prediction,
-#' whichever contains it. The sampling method is inferred from the layer name.
-#'
-#' @param ell_id Ellipsoid id.
-#' @param pred_list Named list of unbiased prediction SpatRasters.
-#' @param biased_list Named list of biased prediction SpatRasters.
-#' @param layers Character vector of layer names to sample from.
-#' @param n_occ Number of occurrences to draw per layer.
-#' @param sampling One of "centroid", "edge", or "random".
-#' @param strict Logical, drop NA and zero cells before sampling.
-#' @param sampling_mask Optional SpatRaster restricting where points fall.
-#' @param seed Integer random seed.
-#'
-#' @returns A named list of data frames, one per layer that succeeded.
-#'
-#' @noRd
-generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
-                                 layers, n_occ, sampling,
-                                 strict, sampling_mask, seed = 123L){
-
-  results <- list()
-
-  for(layer in layers){
-
-    pred <- pred_list[[ell_id]]
-    bias <- biased_list[[ell_id]]
-
-    # Determine which raster contains this layer
-    source_rast <- NULL
-
-    if(!is.null(pred) && inherits(pred, "SpatRaster") && layer %in% names(pred)){
-      source_rast <- pred
-    } else if(!is.null(bias) && inherits(bias, "SpatRaster") && layer %in% names(bias)){
-      source_rast <- bias
-    }
-
-    if(is.null(source_rast)){
-      message("Layer '", layer, "' not found for ", ell_id, ". Skipping.")
-      next
-    }
-
-    method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)){
-      "mahalanobis"
-    } else {
-      "suitability"
-    }
-
-    occ <- tryCatch(
-      sample_data(n_occ = n_occ,
-                  prediction = source_rast,
-                  prediction_layer = layer,
-                  sampling = sampling,
-                  method = method,
-                  sampling_mask = sampling_mask,
-                  seed = seed,
-                  strict = strict,
-                  verbose = FALSE),
-      error = function(e){
-        message("Generate failed for ", ell_id, " (", layer, "): ", e$message)
-        NULL
-      }
-    )
-
-    if(!is.null(occ)){
-      results[[layer]] <- occ[, c("x", "y"), drop = FALSE]
-    }
-  }
-
-  results
-}
-
-
-# OCCURRENCE SETS ---------------------------------------------------------
 
 #' Parameters that define an occurrence set
 #'
@@ -610,6 +535,7 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 
   results
 }
+
 
 #' Sample virtual occurrences directly from an ellipsoid
 #'

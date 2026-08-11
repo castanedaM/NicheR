@@ -10,7 +10,7 @@ compute_lims <- function(v1, v2, s){
     !is.null(s$ell$cov_matrix) &&
     all(is.finite(s$ell$cov_matrix))
 
-  if(s$zoom_mode == "ellipsoid" && ell_valid){
+  if(s$zoom_mode_espace == "ellipsoid" && ell_valid){
     idx <- match(c(v1, v2), s$ell$var_names)
     if(any(is.na(idx))) return(list(xlim = c(0, 1), ylim = c(0, 1), asp = NA))
     ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
@@ -260,7 +260,8 @@ collect_plot_settings <- function(){
     centroid_col = get_input("build_plot_centroid_col", "#000000"),
     centroid_cex = get_input("build_plot_centroid_cex", 1.5),
 
-    zoom_mode = get_input("build_plot_zoom_mode","auto"),
+    zoom_mode_espace = get_input("build_plot_zoom_mode_espace","auto"),
+    zoom_mode_combined = get_input("build_plot_zoom_mode_combined","auto"),
 
     asp_espace = get_input("build_plot_asp_espace", "auto"),
     asp_combined = get_input("build_plot_asp_combined", "auto"),
@@ -417,7 +418,7 @@ output$build_espace_plot_bottom_options_ui <- renderUI({
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("build_plot_zoom_mode", label = NULL,
+           radioButtons("build_plot_zoom_mode_espace", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
@@ -659,6 +660,7 @@ output$build_combined_plot <- renderPlot({
 
   s <- collect_plot_settings()
   s$asp_espace <- s$asp_combined
+  s$zoom_mode_espace <- s$zoom_mode_combined
 
   layout <- if(!is.null(input$build_plot_combined_layout)) input$build_plot_combined_layout else "col"
   mfrow  <- if(layout == "col") c(2, 1) else c(1, 2)
@@ -714,7 +716,7 @@ output$build_combined_plot_bottom_options_ui <- renderUI({
     column(width = 1,
            tags$span("Zoom:", class = "text-widget-title")),
     column(width = 3,
-           radioButtons("build_plot_zoom_mode", label = NULL,
+           radioButtons("build_plot_zoom_mode_combined", label = NULL,
                         choiceNames = list(
                           tags$span("Auto", class = "text-widget-inner"),
                           tags$span("Zoom in", class = "text-widget-inner")
