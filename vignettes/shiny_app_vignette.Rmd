@@ -275,7 +275,7 @@ library the button reads **Update ellipsoid** and overwrites it.
 
 ### Lineage
 
-The **Built from** column records where each ellipsoid came from. A copy shows
+The **Details** column records where each ellipsoid came from. A copy shows
 the name of its parent; an ellipsoid built directly from ranges shows **root**.
 
 Lineage is broken deliberately when the geometry changes. If you load a version,
@@ -563,7 +563,7 @@ A typical use: build an ellipsoid from published tolerances, copy it, widen the
 ranges on the copy to represent uncertainty in those tolerances, and copy again
 with a rotated covariance to represent correlated variables. Predict all three
 in one pass, apply the same bias surface to all three, and generate occurrences
-from each. The **Built from** column keeps track of which came from which, and
+from each. The **Details** column keeps track of which came from which, and
 every plot tab lets you switch between them without losing anything.
 
 Save the session at any point and the whole structure, including lineage, comes

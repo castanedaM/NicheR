@@ -242,7 +242,7 @@ dashboardPage(
                    width = 12,
 
                    tabPanel(
-                     tags$span("Inputs", class = "text-tab-title"),
+                     tags$span("Input", class = "text-tab-title"),
                      value = "build_data_tab",
                      fluidRow(
                        column(width = 12,

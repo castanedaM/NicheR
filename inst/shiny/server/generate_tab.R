@@ -189,7 +189,7 @@ output$generate_controls_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$div(class = "tooltip-label-row",
-                        tags$span("Prediction surface", class = "text-widget-title"),
+                        tags$span("Surface", class = "text-widget-title"),
                         tags$span(icon("circle-info"),
                                   title = instructions$generate_surface_tooltip,
                                   class = "tooltip-icon")),
@@ -294,7 +294,7 @@ generate_virtual_controls <- function(){
 
   if(is.null(ell)){
     return(
-      box(title = tags$span("Generate occurrences", class = "text-section-header"),
+      box(title = tags$span("Generate data", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = FALSE,

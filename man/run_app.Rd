@@ -2,10 +2,41 @@
 % Please edit documentation in R/run_app.R
 \name{run_app}
 \alias{run_app}
-\title{nicheR Shiny App}
+\title{Launch the nicheR Shiny application}
 \usage{
-run_app()
+run_app( )
+}
+\value{
+Invisibly returns `NULL`. Called for its side effect of running
+the application.
 }
 \description{
-nicheR Shiny App
+Opens a graphical interface to the nicheR workflow: building ellipsoids
+from environmental ranges, predicting suitability across a study area,
+preparing and applying sampling bias, and generating virtual occurrences.
+}
+\details{
+The app is an interface to the package functions, not a separate
+implementation. Every control maps onto a call that can be made directly
+from the console, and sessions can be saved and reloaded as `.rds` files.
+Environmental data can be supplied as rasters or as a table, or defined
+directly in environmental space with no geographic component.
+
+The app runs in the current R session and blocks the console until it is
+closed.
+
+Uploaded rasters and tables are held in memory for the duration of
+the session and are not written to disk unless a session or a figure is
+explicitly saved. For a walkthrough of the interface, see
+`vignette("shiny_app", package = "nicheR")`.
+}
+\examples{
+\dontrun{
+run_app()
+}
+
+}
+\seealso{
+[build_ellipsoid()], [predict()], [prepare_bias()],
+[sample_data()]
 }

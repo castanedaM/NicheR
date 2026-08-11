@@ -93,17 +93,14 @@
 #'                     suitability_truncated = TRUE)
 #' colnames(pred_all)
 #'
-#' nicheR::plot_ellipsoid(object = ell, prediction = pred_all)
-#'#' nicheR::plot_ellipsoid(object = ell, prediction = pred_all, col_layer = "suitability")
-#'
-#' # Raster input: returns a SpatRaster
+#' # Raster input: returns a list of single-layer SpatRasters, one per output
 #' pred_rast <- predict(ell,
 #'                      newdata = ma_bios[[ell$var_names]],
 #'                      include_suitability = TRUE,
 #'                      suitability_truncated = TRUE)
-#' pred_rast
+#' names(pred_rast)
 #'
-#'terra::plot(pred_rast)
+#' terra::plot(pred_rast$suitability)
 #'
 #' # Adjust truncation level without refitting
 #' pred_80 <- predict(ell,

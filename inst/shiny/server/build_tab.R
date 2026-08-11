@@ -789,7 +789,7 @@ output$build_ellipsoid_library_ui <- renderUI({
             class = "ell-row",
             style = "padding: 2px 0;",
             column(width = 4, tags$span("Name", class = "text-widget-title text-center")),
-            column(width = 4, tags$span("Built from", class = "text-widget-title text-center")),
+            column(width = 4, tags$span("Details", class = "text-widget-title text-center")),
             column(width = 4, tags$span("Actions", class = "text-widget-title text-center"))
           ),
           tagList(rows)

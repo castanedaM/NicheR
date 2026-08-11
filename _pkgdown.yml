@@ -35,6 +35,8 @@ navbar:
          href: articles/virtual_communities.html
       -  text: "6. Plotting"
          href: articles/plotting_vignette.html
+      -  text: "7. Shiny App"
+         href: articles/shiny_app_vignette.html
   components:
     home: ~
 
