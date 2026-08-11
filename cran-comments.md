@@ -39,7 +39,15 @@ In this version the following changes were made:
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 2 notes
+
+* Installed size is 9.2Mb, of which 6.5Mb is `doc/`. The vignettes document a
+  workflow that is inherently visual, and the figures are needed to show what
+  the ellipsoids and predictions look like. Figure resolution has been reduced
+  to keep the total down.
+
+* The note "unable to verify current time" reflects a network issue on the
+  submitting machine and is unrelated to the package.
 
 ## Downstream dependencies
 
