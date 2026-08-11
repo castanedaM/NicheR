@@ -722,16 +722,15 @@ ellipse_3d
 <br>
 
 ```{r pred_3d}
-suit_3d <- predict(example_sp_4,
-                   newdata = ma_bios[[example_sp_4$var_names]],
-                   include_mahalanobis   = TRUE,
-                   include_suitability   = TRUE,
+suit_3d <- predict(object = ellipse_3d,
+                   newdata = ma_bios[[ellipse_3d$var_names]],
+                   include_mahalanobis = TRUE,
+                   include_suitability = TRUE,
                    suitability_truncated = TRUE,
-                   verbose = FALSE,
+                   verbose = TRUE,
                    keep_data = TRUE)
 
-colnames(suit_3d)
-head(suit_3d)
+suit_3d
 ```
 
 <br>

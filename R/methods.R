@@ -303,14 +303,15 @@ predict.nicheR_ellipsoid <- function(object,
 
 
     out_rast <- if(isTRUE(keep_data)){
-      c(newdata, do.call(c, out_rast))
+      terra::rast(c(list(newdata), out_rast))
     } else {
-      do.call(c, out_rast)
+      terra::rast(out_rast)
     }
 
     verbose_message(verbose,
                     "Done: Prediction completed successfully. Returned raster layers: ",
                     paste(names(out_rast), collapse = ", "), "\n")
+
     return(out_rast)
   }
 
