@@ -70,6 +70,7 @@ report_preamble <- function(){
 report_rmd <- function(){
   paste(c(report_preamble(),
           report_build_section(),
+          report_predict_section(),
           report_citation(),
           "## Session information", "",
           "The versions below are those used when this report was generated.",

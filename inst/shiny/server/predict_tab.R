@@ -89,8 +89,10 @@ observeEvent(input$predict_run_btn, {
 
   trunc_val <- input$predict_adjust_trunc
 
-  # Each ellipsoid predicts on its own variables rather than on
-  # session_data$vars, so a version built from a different set still works
+  # Guarded for length because an empty numeric input gives numeric(0), which
+  # makes the && chain return NA and if() throw
+  use_trunc <- length(trunc_val) == 1 && is.finite(trunc_val)
+
   predict_one <- function(ell){
 
     newdata <- if(has_raster){
@@ -98,9 +100,6 @@ observeEvent(input$predict_run_btn, {
     } else {
       session_data$bg_df[, ell$var_names, drop = FALSE]
     }
-
-    use_trunc <- !is.null(trunc_val) && is.finite(trunc_val) &&
-      !isTRUE(all.equal(trunc_val, ell$cl))
 
     tryCatch(
       predict(ell,
@@ -139,11 +138,14 @@ observeEvent(input$predict_run_btn, {
 
     # Always a single stacked SpatRaster, which is the shape every
     # downstream tab checks for
-    session_data$ellipsoid_prediction_list[[id]] <- if(has_raster){
-      Reduce(c, pred)
-    } else {
-      pred
-    }
+    session_data$ellipsoid_prediction_list[[id]] <- pred
+
+    # predict() arguments that cannot be recovered from the returned layers.
+    # Two predictions at different truncation levels are identical in name and
+    # shape, so the report has no way to tell them apart without this.
+    session_data$prediction_settings[[id]] <- list(
+      adjust_truncation_level = if(use_trunc) trunc_val else NULL,
+      keep_data = TRUE)
 
     # A new prediction invalidates anything derived from the old one
     session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
@@ -312,6 +314,7 @@ observeEvent(input$predict_confirm_ell_delete_btn, {
 
   session_data$ellipsoid_list[[id]] <- NULL
   session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
   session_data$ellipsoid_occurrence_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL

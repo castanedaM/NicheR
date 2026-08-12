@@ -27,6 +27,7 @@ function(input, output, session){
 
     # Prediction
     ellipsoid_prediction_list = list(),
+    prediction_settings = list(),
 
     # Bias
     bias_raster = NULL,

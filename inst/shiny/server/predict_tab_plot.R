@@ -276,7 +276,11 @@ predict_pred_layers <- reactive({
   pred <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
   if(is.null(pred)) return(character(0))
 
-  if(inherits(pred, "SpatRaster")) return(names(pred))
+  # keep_data = TRUE means predict() stacks the predictor layers in front of
+  # the outputs, so they are stripped here exactly as in the data frame branch
+  if(inherits(pred, "SpatRaster")){
+    return(setdiff(names(pred), ell$var_names))
+  }
 
   if(is.data.frame(pred)){
     return(setdiff(names(pred), c("x", "y", ell$var_names)))
@@ -668,7 +672,7 @@ output$predict_gspace_plot <- renderPlot({
 
   # One panel per predicted layer, each with its own legend since the
   # scales differ between suitability and Mahalanobis
-  lyrs <- names(pred)
+  lyrs <- predict_pred_layers()
   n <- length(lyrs)
 
   n_cols <- if(n <= 1) 1L else 2L
@@ -1189,7 +1193,7 @@ output$predict_confirm_export <- downloadHandler(
                                          col = c(s$unsuitable_col, s$suitable_col),
                                          legend = FALSE)
              } else {
-               lyrs <- names(pred)
+               lyrs <- predict_pred_layers()
                n_cols <- if(length(lyrs) <= 1) 1L else 2L
                par(mfrow = c(ceiling(length(lyrs) / n_cols), n_cols),
                    mar = c(3, 3, 2, 4))
