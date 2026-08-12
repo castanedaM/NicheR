@@ -8,49 +8,6 @@
 # Date last updated: 08/06/2026
 
 
-# DEBUG -------------------------------------------------------------------
-
-#' Debug tracing switch
-#'
-#' Set to FALSE to silence every dbg() and dbgc() call without removing them.
-#'
-#' @noRd
-BUILD_DEBUG <- FALSE
-
-#' Print a covariance trace message
-#'
-#' @param ... Parts of the message, pasted together.
-#'
-#' @returns Invisibly NULL. Called for the message side effect.
-#'
-#' @noRd
-dbg <- function(...){
-  if(isTRUE(BUILD_DEBUG)) message("[cov] ", ...)
-}
-
-#' Print a centroid trace message
-#'
-#' @param ... Parts of the message, pasted together.
-#'
-#' @returns Invisibly NULL. Called for the message side effect.
-#'
-#' @noRd
-dbgc <- function(...){
-  if(isTRUE(BUILD_DEBUG)) message("[cen] ", ...)
-}
-
-#' Format a numeric vector or list for a trace message
-#'
-#' @param x A numeric vector, list, or NULL.
-#'
-#' @returns A single comma-separated string, or "NULL".
-#'
-#' @noRd
-fmt <- function(x){
-  if(is.null(x)) return("NULL")
-  paste(round(unlist(x), 3), collapse = ", ")
-}
-
 #' Pairwise covariances as a flat named vector
 #'
 #' Values are ordered to match the covariance sliders.

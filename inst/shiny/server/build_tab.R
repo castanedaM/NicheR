@@ -11,25 +11,25 @@
 
 
 # DEBUG -------------------------------------------------------------------
-#
-# # Which ellipsoid the covariance sliders currently on screen belong to.
-# # Set when they render, checked before any slider value is applied.
-# cov_owner <- reactiveVal(NULL)
-#
-# # Debug message for covariance
-#
-# # Which ellipsoid the centroid sliders currently on screen belong to
-# centroid_owner <- reactiveVal(NULL)
-#
-# # Pairwise covariances as a flat named vector, in the same order as the
-# # sliders. Useful beyond debugging.
-# cov_upper <- function(ell){
-#   if(is.null(ell)) return(NULL)
-#   pairs <- t(combn(ell$var_names, 2))
-#   setNames(sapply(seq_len(nrow(pairs)),
-#                   function(i) ell$cov_matrix[pairs[i, 1], pairs[i, 2]]),
-#            apply(pairs, 1, paste, collapse = "-"))
-# }
+
+# Which ellipsoid the covariance sliders currently on screen belong to.
+# Set when they render, checked before any slider value is applied.
+cov_owner <- reactiveVal(NULL)
+
+# Debug message for covariance
+
+# Which ellipsoid the centroid sliders currently on screen belong to
+centroid_owner <- reactiveVal(NULL)
+
+# Pairwise covariances as a flat named vector, in the same order as the
+# sliders.
+cov_upper <- function(ell){
+  if(is.null(ell)) return(NULL)
+  pairs <- t(combn(ell$var_names, 2))
+  setNames(sapply(seq_len(nrow(pairs)),
+                  function(i) ell$cov_matrix[pairs[i, 1], pairs[i, 2]]),
+           apply(pairs, 1, paste, collapse = "-"))
+}
 
 # REACTIVE VALUES ---------------------------------------------------------
 
@@ -1369,7 +1369,8 @@ output$build_centroid_sliders_ui <- renderUI({
     min_val <- min(min_val, round(centroid[v], 2), round(target_centroid[v], 2))
     max_val <- max(max_val, round(centroid[v], 2), round(target_centroid[v], 2))
 
-    step <- round((max_val - min_val) / 100, 2)
+    step <- (max_val - min_val) / 100
+    step <- signif(step, 2)
 
     fluidRow(
       column(width = 12,
@@ -1421,13 +1422,24 @@ observeEvent({
   centroid_vals <- setNames(unlist(centroid_list), vars)
   current_centroid <- setNames(sapply(vars, function(v) ell$centroid[v]), vars)
 
-  if(all(abs(centroid_vals - current_centroid) < 1e-8)){
+  # The sliders are drawn with the centroid rounded to two decimals, so on
+  # first render they report values that differ from the stored centroid by up
+  # to half a step. Comparing against the rounded value makes the untouched
+  # case exact instead of relying on a tolerance.
+  changed <- centroid_vals != round(current_centroid, 2)
+
+  if(!any(changed)){
     return()
   }
 
+  # Only the variables the user moved are taken from the sliders. Taking all of
+  # them would round the untouched ones to two decimals on every move.
+  new_centroid <- current_centroid
+  new_centroid[changed] <- centroid_vals[changed]
+
   updated_ell <- tryCatch(
     update_ellipsoid_centroid(ell,
-                              new_centroid = centroid_vals,
+                              new_centroid = new_centroid,
                               verbose = FALSE),
     error = function(e){
       showNotification(paste("Centroid update failed:", e$message),

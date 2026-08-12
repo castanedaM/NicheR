@@ -87,10 +87,14 @@ update_ellipsoid_centroid <- function(ell, new_centroid, verbose = FALSE){
   old_centroid <- ell$centroid
   delta <- new_centroid - old_centroid
 
-  # Shift ranges by the same delta so the ellipsoid translates rigidly
+  # Shift ranges by the same delta so the ellipsoid translates rigidly. Indexed
+  # by column, since ranges built outside the app may not carry row names, and
+  # sorted so the row names describe the values rather than assert an order.
   new_ranges <- ell$ranges
-  new_ranges["min", ] <- new_ranges["min", ] + delta
-  new_ranges["max", ] <- new_ranges["max", ] + delta
+  for(v in vars){
+    new_ranges[, v] <- sort(new_ranges[, v] + delta[[v]])
+  }
+  rownames(new_ranges) <- c("min", "max")
 
   ell$centroid <- new_centroid
   ell$ranges <- new_ranges
