@@ -11,41 +11,25 @@
 
 
 # DEBUG -------------------------------------------------------------------
-
-# For Debugging, set to FALSE to stop messages printing
-BUILD_DEBUG <- FALSE
-
-# Which ellipsoid the covariance sliders currently on screen belong to.
-# Set when they render, checked before any slider value is applied.
-cov_owner <- reactiveVal(NULL)
-
-# Debug message for covariance
-dbg <- function(...){
-  if(isTRUE(BUILD_DEBUG)) message("[cov] ", ...)
-}
-
-# Which ellipsoid the centroid sliders currently on screen belong to
-centroid_owner <- reactiveVal(NULL)
-
-# Debug message for centroid
-dbgc <- function(...){
-  if(isTRUE(BUILD_DEBUG)) message("[cen] ", ...)
-}
-
-# Pairwise covariances as a flat named vector, in the same order as the
-# sliders. Useful beyond debugging.
-cov_upper <- function(ell){
-  if(is.null(ell)) return(NULL)
-  pairs <- t(combn(ell$var_names, 2))
-  setNames(sapply(seq_len(nrow(pairs)),
-                  function(i) ell$cov_matrix[pairs[i, 1], pairs[i, 2]]),
-           apply(pairs, 1, paste, collapse = "-"))
-}
-
-fmt <- function(x){
-  if(is.null(x)) return("NULL")
-  paste(round(unlist(x), 3), collapse = ", ")
-}
+#
+# # Which ellipsoid the covariance sliders currently on screen belong to.
+# # Set when they render, checked before any slider value is applied.
+# cov_owner <- reactiveVal(NULL)
+#
+# # Debug message for covariance
+#
+# # Which ellipsoid the centroid sliders currently on screen belong to
+# centroid_owner <- reactiveVal(NULL)
+#
+# # Pairwise covariances as a flat named vector, in the same order as the
+# # sliders. Useful beyond debugging.
+# cov_upper <- function(ell){
+#   if(is.null(ell)) return(NULL)
+#   pairs <- t(combn(ell$var_names, 2))
+#   setNames(sapply(seq_len(nrow(pairs)),
+#                   function(i) ell$cov_matrix[pairs[i, 1], pairs[i, 2]]),
+#            apply(pairs, 1, paste, collapse = "-"))
+# }
 
 # REACTIVE VALUES ---------------------------------------------------------
 
@@ -63,10 +47,6 @@ ell_slot <- reactiveVal(0L)
 # Bumping ell_slot is what makes the isolated panels rebuild.
 set_working_ellipsoid <- function(ell, mode = "edit"){
 
-  dbg("SLOT  <- ", ell$ell_id, "  parent=", if(is.null(ell$parent_id)) "none" else ell$parent_id,
-      "  cov=", fmt(cov_upper(ell)))
-
-
   session_data$current_ellipsoid <- ell
   ell_mode(mode)
 
@@ -80,8 +60,6 @@ set_working_ellipsoid <- function(ell, mode = "edit"){
 # Empties the working slot. Separate from the above so every caller goes
 # through one of the two and ell_slot can never be missed.
 clear_working_ellipsoid <- function(){
-
-  dbg("SLOT  <- empty")
 
   session_data$current_ellipsoid <- NULL
   ell_mode("edit")
@@ -846,14 +824,8 @@ observeEvent(input$build_ell_add, {
   ell <- session_data$ellipsoid_list[[input$build_ell_add]]
   req(ell)
 
-  dbg("ADD   source=", ell$ell_name, "  cov=", fmt(cov_upper(ell)))
-  dbgc("ADD   source=", ell$ell_name, "  centroid=", fmt(ell$centroid))
-
   new_ell <- tag_ellipsoid(ell)
   new_ell$parent_id <- ell$ell_id
-
-  dbg("ADD   copy=", new_ell$ell_id, "  cov=", fmt(cov_upper(new_ell)))
-  dbgc("ADD   copy=", new_ell$ell_id, "  centroid=", fmt(new_ell$centroid))
 
   if(!is.null(ell$range_inputs)){
     session_data$session_range <- ell$range_inputs
@@ -921,9 +893,6 @@ observeEvent(input$build_confirm_ell_delete_btn, {
     e
   })
 
-  dbg("DELETE ", id, "  reparented to root: ",
-      if(length(orphaned) == 0) "none" else paste(orphaned, collapse = ", "))
-
   cur <- session_data$current_ellipsoid
 
 
@@ -937,7 +906,6 @@ observeEvent(input$build_confirm_ell_delete_btn, {
   if(identical(cur$parent_id, id)){
     cur$parent_id <- NULL
     session_data$current_ellipsoid <- cur
-    dbg("DELETE working copy ", cur$ell_id, " reparented to root")
   }
 
   showNotification(paste0(nm, " deleted."),
@@ -1121,8 +1089,6 @@ output$build_covariance_sliders_ui <- renderUI({
   ell <- isolate(session_data$current_ellipsoid)
   req(ell)
 
-  dbg("RENDER sliders for ", ell$ell_id, "  cov=", fmt(cov_upper(ell)))
-
   cov_owner(ell$ell_id)
 
   vars <- ell$var_names
@@ -1181,8 +1147,6 @@ observeEvent({
   # values describe that one, not this one, so applying them would
   # overwrite the copy we just made.
   if(!identical(cov_owner(), ell$ell_id)){
-    dbg("OBS   -> exit, sliders still owned by ",
-        if(is.null(cov_owner())) "nothing" else cov_owner())
     return()
   }
 
@@ -1192,12 +1156,7 @@ observeEvent({
   cov_list <- lapply(seq_along(pair_names),
                      function(i) input[[paste0("build_cov_", i)]])
 
-  dbg("OBS   fired for ", ell$ell_id)
-  dbg("OBS   sliders say = ", fmt(cov_list))
-  dbg("OBS   ellipsoid has = ", fmt(cov_upper(ell)))
-
   if(any(vapply(cov_list, is.null, logical(1)))){
-    dbg("OBS   -> exit, sliders not rendered yet")
     return()
   }
 
@@ -1212,11 +1171,8 @@ observeEvent({
 
 
   if(all(abs(cov_vals - current_cov) < 1e-8)){
-    dbg("OBS   -> exit, no change")
     return()
   }
-
-  dbg("OBS   -> APPLYING update, overwriting ellipsoid with slider values")
 
   if(all(abs(cov_vals - current_cov) < 1e-8)) return()
 
@@ -1267,8 +1223,6 @@ observeEvent(input$build_cov_reset_pair, {
   ell <- session_data$current_ellipsoid
   req(ell)
 
-  dbg("RESET pair ", i)
-
   i <- as.integer(input$build_cov_reset_pair)
   pair_names <- apply(t(combn(ell$var_names, 2)), 1,
                       function(p) paste(p, collapse = "-"))
@@ -1291,8 +1245,6 @@ observeEvent(input$build_cov_reset_all, {
 
   ell <- session_data$current_ellipsoid
   req(ell)
-
-  dbg("RESET all pairs to zero")
 
   pair_names <- apply(t(combn(ell$var_names, 2)), 1,
                       function(p) paste(p, collapse = "-"))
@@ -1389,9 +1341,6 @@ output$build_centroid_sliders_ui <- renderUI({
   ell <- isolate(session_data$current_ellipsoid)
   req(ell)
 
-  dbgc("RENDER sliders for ", ell$ell_id,
-       "  centroid=", fmt(ell$centroid))
-
   centroid_owner(ell$ell_id)
 
   vars <- ell$var_names
@@ -1457,8 +1406,6 @@ observeEvent({
   # The sliders on screen still belong to a previous ellipsoid, so their
   # values describe that one and must not be applied to this one
   if(!identical(centroid_owner(), ell$ell_id)){
-    dbgc("OBS   -> exit, sliders still owned by ",
-         if(is.null(centroid_owner())) "nothing" else centroid_owner())
     return()
   }
 
@@ -1467,12 +1414,7 @@ observeEvent({
   centroid_list <- lapply(seq_along(vars),
                           function(j) input[[paste0("build_centroid_", j)]])
 
-  dbgc("OBS   fired for ", ell$ell_id)
-  dbgc("OBS   sliders say = ", fmt(centroid_list))
-  dbgc("OBS   ellipsoid has = ", fmt(ell$centroid))
-
   if(any(vapply(centroid_list, is.null, logical(1)))){
-    dbgc("OBS   -> exit, sliders not rendered yet")
     return()
   }
 
@@ -1480,12 +1422,8 @@ observeEvent({
   current_centroid <- setNames(sapply(vars, function(v) ell$centroid[v]), vars)
 
   if(all(abs(centroid_vals - current_centroid) < 1e-8)){
-    dbgc("OBS   -> exit, no change")
     return()
   }
-
-  dbgc("OBS   -> APPLYING update, overwriting ellipsoid with slider values")
-
 
   updated_ell <- tryCatch(
     update_ellipsoid_centroid(ell,
@@ -1521,9 +1459,6 @@ observeEvent(input$build_centroid_reset_all, {
 
   ell <- session_data$current_ellipsoid
   req(ell)
-
-  dbgc("RESET centroid to ",
-       if(is.null(ell_parent(ell))) "own ranges" else ell_parent(ell)$ell_name)
 
   target <- ell_reset_target(ell)
 
