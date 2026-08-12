@@ -161,6 +161,16 @@ report_citation <- function(){
     "`citation(\"nicheR\")`.", "")
 }
 
+#' Name the emitted script gives the background data
+#'
+#' @returns A single string.
+#'
+#' @noRd
+report_data_object <- function(){
+  if(identical(session_data$file_type, "df") &&
+     is.null(session_data$bg_raster)) "bg" else "bios"
+}
+
 # DATA --------------------------------------------------------------------
 
 #' Whether the emitted script can run at report time
@@ -356,6 +366,7 @@ report_cov_pairs <- function(ell){
   out[out != 0]
 }
 
+
 #' Centroid an ellipsoid had when it was built from its ranges
 #'
 #' Derived from range_inputs rather than stored, since build_ellipsoid() places
@@ -524,6 +535,7 @@ report_build_section <- function(){
 
   obj <- report_obj_names(vapply(ells, function(e) e$ell_name, character(1)),
                           prefix = "ellipsoid")
+
   names(obj) <- vapply(ells, function(e) e$ell_id, character(1))
 
   # Ranges are deduplicated on the code they produce, so two ellipsoids share
@@ -733,5 +745,258 @@ report_ell_prose <- function(ell, parent_obj = NULL){
     if(!is.null(report_centroid_prose(ell))) "")
 }
 
+
+
+
+# predict section ---------------------------------------------------------
+
+
+# ARGUMENTS ---------------------------------------------------------------
+
+#' Predict arguments implied by a stored prediction
+#'
+#' The app does not record which arguments were passed, so they are recovered
+#' from the layers that came back. This is exact for the truncated layers,
+#' which appear only when asked for.
+#'
+#' @param pred A stored prediction, SpatRaster or data frame.
+#' @param ell The ellipsoid it belongs to, used to drop predictor columns.
+#'
+#' @returns A named list of logicals.
+#'
+#' @noRd
+report_pred_layers <- function(pred, ell){
+  nms <- if(inherits(pred, "SpatRaster")) names(pred) else colnames(pred)
+  nms <- setdiff(nms, c("x", "y", ell$var_names))
+  list(include_mahalanobis = "Mahalanobis" %in% nms,
+       include_suitability = "suitability" %in% nms,
+       mahalanobis_truncated = "Mahalanobis_trunc" %in% nms,
+       suitability_truncated = "suitability_trunc" %in% nms)
+}
+
+
+#' Signature grouping ellipsoids predicted the same way
+#'
+#' @param pred A stored prediction.
+#' @param ell The ellipsoid it belongs to.
+#'
+#' @returns A single string.
+#'
+#' @noRd
+report_pred_signature <- function(pred, ell){
+  paste(unlist(report_pred_layers(pred, ell)), collapse = "|")
+}
+
+
+#' Code that predicts a group of ellipsoids
+#'
+#' @param ells The ellipsoids in the group.
+#' @param objs Their object names in the emitted script.
+#' @param pred One stored prediction from the group, used for the arguments.
+#' @param out Name to give the resulting list.
+#'
+#' @returns A character vector of code lines.
+#'
+#' @noRd
+report_pred_code <- function(ells, objs, pred, out){
+
+  args <- report_pred_layers(pred, ells[[1]])
+  arg_lines <- paste0("                  ", names(args), " = ",
+                      ifelse(unlist(args), "TRUE", "FALSE"), ",")
+
+  c(paste0(out, "_ellipsoids <- list(",
+           paste0(objs, " = ", objs, collapse = ", "), ")"),
+    "",
+    paste0(out, " <- lapply(", out, "_ellipsoids, function(e){"),
+    paste0("  predict(e,"),
+    paste0("          newdata = ", report_data_object(), ","),
+    sub("^ {18}", "          ", arg_lines),
+    "          verbose = FALSE)",
+    "})")
+}
+
+
+# SUMMARY -----------------------------------------------------------------
+
+#' Proportion of the study area a prediction marks as suitable
+#'
+#' Read from the truncated suitability layer where it exists, since that is the
+#' layer with a hard niche boundary. Returns NA when no such layer was
+#' produced, rather than inventing a threshold on the continuous surface.
+#'
+#' @param pred A stored prediction.
+#'
+#' @returns A single numeric between 0 and 1, or NA.
+#'
+#' @noRd
+report_pred_suitable <- function(pred){
+
+  if(!inherits(pred, "SpatRaster")) return(NA_real_)
+  if(!"suitability_trunc" %in% names(pred)) return(NA_real_)
+
+  r <- pred[["suitability_trunc"]]
+  tot <- terra::global(!is.na(r), "sum", na.rm = TRUE)[1, 1]
+  if(is.na(tot) || tot == 0) return(NA_real_)
+
+  terra::global(r > 0, "sum", na.rm = TRUE)[1, 1] / tot
+}
+
+
+#' Table of what each ellipsoid was predicted to
+#'
+#' @param ells The predicted ellipsoids.
+#' @param preds Their stored predictions.
+#'
+#' @returns A character vector of markdown lines.
+#'
+#' @noRd
+report_pred_table <- function(ells, preds){
+
+  rows <- vapply(seq_along(ells), function(i){
+
+    nms <- if(inherits(preds[[i]], "SpatRaster")){
+      names(preds[[i]])
+    } else {
+      colnames(preds[[i]])
+    }
+    nms <- setdiff(nms, c("x", "y", ells[[i]]$var_names))
+
+    p <- report_pred_suitable(preds[[i]])
+    p_txt <- if(is.na(p)) "not calculated" else paste0(report_num(round(p * 100, 1)), "%")
+
+    paste0("| ", ells[[i]]$ell_name, " | ", paste(nms, collapse = ", "),
+           " | ", p_txt, " |")
+  }, character(1))
+
+  c("| Niche | Layers produced | Study area within the niche |",
+    "|---|---|---|",
+    rows, "")
+}
+
+
+# PROSE -------------------------------------------------------------------
+
+#' Paragraphs introducing the predict step
+#'
+#' @param ells The predicted ellipsoids.
+#' @param preds Their stored predictions.
+#' @param n_group Number of distinct argument groups.
+#'
+#' @returns A character vector of markdown lines.
+#'
+#' @noRd
+report_predict_prose <- function(ells, preds, n_group){
+
+  n <- length(ells)
+  spatial <- inherits(preds[[1]], "SpatRaster")
+  where <- if(spatial) "across the study area" else "for each row of the background data"
+
+  out <- c(paste0("Each of the ", n, " niche", if(n == 1) "" else "s",
+                  " defined above was projected ", where,
+                  ". For every ", if(spatial) "cell" else "record",
+                  ", the environmental values are compared against the ",
+                  "ellipsoid to give a measure of how close those conditions ",
+                  "sit to the centre of the niche.",
+                  if(n_group > 1){
+                    paste0(" Not every niche was projected with the same ",
+                           "outputs requested, so the calls below are grouped ",
+                           "by what was asked for.")
+                  } else {
+                    ""
+                  }))
+
+  layers <- unique(unlist(lapply(seq_along(ells), function(i){
+    nms <- if(spatial) names(preds[[i]]) else colnames(preds[[i]])
+    setdiff(nms, c("x", "y", ells[[i]]$var_names))
+  })))
+
+  meanings <- c(
+    "Mahalanobis" = paste0("**Mahalanobis** is the distance from the centre ",
+                           "of the niche, measured in units that account for ",
+                           "the spread and correlation of the variables. ",
+                           "Larger values are further from the conditions the ",
+                           "niche describes."),
+    "suitability" = paste0("**suitability** rescales that distance to run ",
+                           "from 1 at the centre toward 0 further out. It is ",
+                           "continuous everywhere, so conditions outside the ",
+                           "niche boundary still receive a small non-zero ",
+                           "value."),
+    "Mahalanobis_trunc" = paste0("**Mahalanobis_trunc** is the same distance ",
+                                 "with everything beyond the niche boundary ",
+                                 "set to `NA`, so only conditions inside the ",
+                                 "niche carry a value."),
+    "suitability_trunc" = paste0("**suitability_trunc** is the suitability ",
+                                 "surface with everything beyond the boundary ",
+                                 "set to zero. This is the layer with a hard ",
+                                 "edge, and the one to use when the question ",
+                                 "is whether conditions fall inside the niche ",
+                                 "rather than how close to its centre they ",
+                                 "sit."))
+
+  have <- meanings[names(meanings) %in% layers]
+
+  c(out, "",
+    "The outputs produced were:", "",
+    paste0("- ", unname(have)), "",
+    report_pred_table(ells, preds))
+}
+
+
+# SECTION -----------------------------------------------------------------
+
+#' Rmd source for the Predict section
+#'
+#' Reads session_data from the enclosing server environment.
+#'
+#' @returns A character vector of Rmd lines.
+#'
+#' @noRd
+report_predict_section <- function(){
+
+  preds <- session_data$ellipsoid_prediction_list
+
+  # Virtual sessions never reach this step, and a session can be saved before
+  # anything has been predicted
+  if(identical(session_data$input_mode, "virtual") || length(preds) == 0){
+    return(character(0))
+  }
+
+  ids <- names(preds)
+  ells <- session_data$ellipsoid_list[ids]
+  keep <- !vapply(ells, is.null, logical(1))
+  ids <- ids[keep]
+  ells <- ells[keep]
+  preds <- preds[ids]
+
+  if(length(ells) == 0) return(character(0))
+
+  all_obj <- report_obj_names(vapply(session_data$ellipsoid_list,
+                                     function(e) e$ell_name, character(1)),
+                              prefix = "ellipsoid")
+  names(all_obj) <- names(session_data$ellipsoid_list)
+  objs <- unname(all_obj[ids])
+
+  keys <- vapply(seq_along(ells), function(i){
+    report_pred_signature(preds[[i]], ells[[i]])
+  }, character(1))
+  uniq <- unique(keys)
+
+  # One lapply per group of ellipsoids that were predicted with the same
+  # arguments. With a single group, which is the usual case, this is one call.
+  blocks <- unlist(lapply(seq_along(uniq), function(g){
+    sel <- which(keys == uniq[g])
+    out <- if(length(uniq) == 1) "predictions" else paste0("predictions_", g)
+    report_chunk(report_pred_code(ells[sel], objs[sel], preds[[sel[1]]], out),
+                 label = paste0("predict-", g), eval = report_can_eval())
+  }))
+
+  c("## Projecting the niches", "",
+    report_predict_prose(ells, preds, length(uniq)),
+    blocks,
+    paste0("Each element of `predictions` is named after the niche it came ",
+           "from, so a single surface can be pulled out with, for example, ",
+           "`predictions[[\"", objs[1], "\"]][[\"suitability\"]]`."),
+    "")
+}
 
 

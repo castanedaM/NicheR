@@ -41,8 +41,8 @@ function(input, output, session){
 
   source("server/helpers.R", local = TRUE)
   source("server/save_load_session.R", local = TRUE)
-  source("server/report.R", local = TRUE)
-  source("server/report_build.R", local = TRUE)
+  source("server/report_main.R", local = TRUE)
+  source("server/report_builder.R", local = TRUE)
 
   source("server/data_tab.R", local = TRUE)
   source("server/build_tab.R", local = TRUE)
