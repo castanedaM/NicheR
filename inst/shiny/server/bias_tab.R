@@ -123,7 +123,9 @@ observeEvent(input$bias_upload_btn, {
   }
 
   session_data$bias_raster <- rast
+  session_data$bias_source <- input$bias_raster_file$name
   session_data$prepared_bias <- NULL
+  session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
 
   showNotification(paste0(terra::nlyr(rast), " bias layer(s) loaded successfully."),
@@ -144,7 +146,9 @@ observeEvent(input$bias_example_btn, {
   req(rast)
 
   session_data$bias_raster <- rast
+  session_data$bias_source <- "example"
   session_data$prepared_bias <- NULL
+  session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
 
   showNotification("Example bias raster loaded.", type = "message", duration = 4)
@@ -170,9 +174,10 @@ observeEvent(input$bias_confirm_edit_upload_btn, {
   removeModal()
 
   session_data$bias_raster <- NULL
+  session_data$bias_source <- NULL
   session_data$prepared_bias <- NULL
+  session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
-
   shinyjs::reset("bias_raster_file")
 
   showNotification("Bias raster cleared. Upload a new file.",
@@ -331,12 +336,14 @@ observeEvent(input$bias_prepare_btn, {
 
   names(effect_direction) <- lyrs
 
+  mask_na <- isTRUE(input$bias_mask_na == "TRUE")
+
   result <- tryCatch(
     prepare_bias(bias_surface = session_data$bias_raster,
                  effect_direction = effect_direction,
                  include_composite = TRUE,
                  include_processed_layers = TRUE,
-                 mask_na = isTRUE(input$bias_mask_na == "TRUE"),
+                 mask_na = mask_na,
                  verbose = FALSE),
     error = function(e){
       showNotification(paste("Bias preparation failed:", e$message),
@@ -348,6 +355,12 @@ observeEvent(input$bias_prepare_btn, {
   req(result)
 
   session_data$prepared_bias <- result
+
+  # mask_na leaves no trace in the returned object, and the per layer
+  # directions survive only as a string that has to be parsed back apart, so
+  # both are recorded here for the session report
+  session_data$bias_settings <- list(effect_direction = effect_direction,
+                                     mask_na = mask_na)
   session_data$ellipsoid_prediction_list_biased <- list()
 
   showNotification("Bias prepared successfully.", type = "message", duration = 4)
@@ -373,6 +386,7 @@ observeEvent(input$bias_confirm_edit_prepare_btn, {
   removeModal()
 
   session_data$prepared_bias <- NULL
+  session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
 
   showNotification("Bias preparation cleared. Adjust settings and re-prepare.",
@@ -457,12 +471,9 @@ output$bias_ellipsoid_selector_ui <- renderUI({
              }, character(1)))
   )
 
-  keep <- if(!is.null(input$bias_ellipsoid_selected) &&
-             input$bias_ellipsoid_selected %in% ell_choices){
-    input$bias_ellipsoid_selected
-  } else {
-    "all"
-  }
+  sel <- isolate(input$bias_ellipsoid_selected)
+
+  keep <- if(!is.null(sel) && sel %in% ell_choices) sel else "all"
 
   selectInput(inputId = "bias_ellipsoid_selected",
               label = tagList(
@@ -506,10 +517,6 @@ output$bias_apply_ui <- renderUI({
     )
   }
 
-  pred_ids <- names(session_data$ellipsoid_prediction_list)
-  first_pred <- session_data$ellipsoid_prediction_list[[pred_ids[1]]]
-  layers <- if(inherits(first_pred, "SpatRaster")) names(first_pred) else character(0)
-
   box(title = tags$span("Apply bias", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
@@ -518,25 +525,7 @@ output$bias_apply_ui <- renderUI({
 
       uiOutput("bias_ellipsoid_selector_ui"),
 
-      if(length(layers) > 0) fluidRow(
-        column(width = 12,
-               tags$div(class = "tooltip-label-row",
-                        tags$span("Prediction layer", class = "text-widget-title"),
-                        tags$span(icon("circle-info"),
-                                  title = instructions$bias_layer_select_tooltip,
-                                  class = "tooltip-icon")),
-               selectInput("bias_prediction_layer",
-                           label = NULL,
-                           choices = c("All prediction layers" = "all_pred",
-                                       layers),
-                           selected = if("suitability_trunc" %in% layers){
-                             "suitability_trunc"
-                           } else if("suitability" %in% layers){
-                             "suitability"
-                           } else {
-                             layers[1]
-                           }))
-      ),
+      uiOutput("bias_layer_selector_ui"),
 
       fluidRow(
         column(width = 12,
@@ -564,6 +553,60 @@ output$bias_apply_ui <- renderUI({
                             label = "Apply bias",
                             class = "btn-continue"))
       )
+  )
+})
+# Layers offered depend on which version is selected, so this is a separate
+# output. Reading the version input inside bias_apply_ui would rebuild the
+# whole box, and the direction radio with it, on every version change.
+output$bias_layer_selector_ui <- renderUI({
+
+  pred_list <- session_data$ellipsoid_prediction_list
+  req(length(pred_list) > 0)
+
+  sel_ell <- input$bias_ellipsoid_selected
+  if(is.null(sel_ell)) sel_ell <- "all"
+
+  ids <- if(identical(sel_ell, "all")) names(pred_list) else sel_ell
+
+  # The union across the selected versions rather than the first one's layers,
+  # since versions can be predicted with different layer sets. A layer a given
+  # version does not carry is skipped for that version at apply time.
+  layers <- unique(unlist(lapply(ids, function(id){
+    p <- pred_list[[id]]
+    ell <- session_data$ellipsoid_list[[id]]
+    if(!inherits(p, "SpatRaster") || is.null(ell)) return(character(0))
+    report_pred_layer_names(p, ell)
+  })))
+
+  if(length(layers) == 0) return(NULL)
+
+  choices <- c("All prediction layers" = "all_pred", setNames(layers, layers))
+
+  # Isolated, since this is read only to keep a still-valid choice across a
+  # re-render and not to make the output depend on the input it creates
+  prev <- isolate(input$bias_prediction_layer)
+
+  keep <- if(!is.null(prev) && prev %in% choices){
+    prev
+  } else if("suitability_trunc" %in% layers){
+    "suitability_trunc"
+  } else if("suitability" %in% layers){
+    "suitability"
+  } else {
+    layers[1]
+  }
+
+  fluidRow(
+    column(width = 12,
+           tags$div(class = "tooltip-label-row",
+                    tags$span("Prediction layer", class = "text-widget-title"),
+                    tags$span(icon("circle-info"),
+                              title = instructions$bias_layer_select_tooltip,
+                              class = "tooltip-icon")),
+           selectInput("bias_prediction_layer",
+                       label = NULL,
+                       choices = choices,
+                       selected = keep))
   )
 })
 

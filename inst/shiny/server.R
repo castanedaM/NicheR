@@ -30,9 +30,11 @@ function(input, output, session){
     prediction_settings = list(),
 
     # Bias
+    bias_source = NULL,
     bias_raster = NULL,
     prepared_bias = NULL,
     ellipsoid_prediction_list_biased = list(),
+    bias_settings = list(),
 
     # Generate
     sampling_mask = NULL,

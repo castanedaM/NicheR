@@ -159,7 +159,7 @@ sample_data <- function(n_occ,
       }
     }
 
-    df <- terra::as.data.frame(prediction, xy = TRUE)
+    df <- terra::as.data.frame(r, xy = TRUE, na.rm = TRUE)
 
     if(nrow(df) == 0L){
       stop("No cells available after extracting the prediction surface.")

@@ -660,7 +660,7 @@ observeEvent(input$generate_run_btn, {
       attrs <- list(layer = layer,
                     n_occ = n_occ,
                     seed = seed,
-                    sampling = sampling,
+                    sampling = if(biased) NA else sampling,
                     strict = strict,
                     mask = mask_name,
                     mode = "raster",
@@ -668,6 +668,7 @@ observeEvent(input$generate_run_btn, {
                     effect = NA)
 
       for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
+
       attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
       key <- occ_set_signature(attrs)
