@@ -95,7 +95,7 @@ generate_summary_box <- function(){
     }, integer(1)))
   }, integer(1)))
 
-  box(title = tags$span("Generate occurrences", class = "text-section-header"),
+  box(title = tags$span("4. Generate data", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = TRUE,
@@ -122,7 +122,7 @@ output$generate_controls_ui <- renderUI({
 
   if(!has_pred){
     return(
-      box(title = tags$span("Generate occurrences", class = "text-section-header"),
+      box(title = tags$span("4. Generate data", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = FALSE,
@@ -137,7 +137,7 @@ output$generate_controls_ui <- renderUI({
     return(generate_summary_box())
   }
 
-  box(title = tags$span("Generate occurrences", class = "text-section-header"),
+  box(title = tags$span("4. Generate data", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,
@@ -177,9 +177,9 @@ output$generate_controls_ui <- renderUI({
                radioButtons("generate_sampling",
                             label = NULL,
                             choiceNames = list(
-                              tags$span("Centroid", class = "text-widget-inner"),
-                              tags$span("Edge", class = "text-widget-inner"),
-                              tags$span("Random", class = "text-widget-inner")
+                              tags$span("Direct", class = "text-widget-inner"),
+                              tags$span("Inverse", class = "text-widget-inner"),
+                              tags$span("Uniform", class = "text-widget-inner")
                             ),
                             choiceValues = c("centroid", "edge", "random"),
                             selected = "centroid",
@@ -309,7 +309,7 @@ generate_virtual_controls <- function(){
     return(generate_summary_box())
   }
 
-  box(title = tags$span("Generate occurrences", class = "text-section-header"),
+  box(title = tags$span("4. Generate data", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = FALSE,

@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Last Updated: 08/03/2026
+# Last Updated: 08/14/2026
 
 dashboardPage(
   dashboardHeader(
@@ -38,7 +38,7 @@ dashboardPage(
       menuItem("3. Bias",
                tabName = "bias_tab",
                icon = icon("table", style = "margin-right: 4px")),
-      menuItem("4. Generate occurrences",
+      menuItem("4. Generate data",
                tabName = "generate_tab",
                icon = icon("eye-dropper", style = "margin-right: 4px"))
     ),
@@ -158,7 +158,7 @@ dashboardPage(
 
           column(width = 4,
                  box(title = tagList(icon("eye-dropper"),
-                                     tags$span("4. Generate occurrences",
+                                     tags$span("4. Generate data",
                                                class = "text-widget-title")),
                      width = 12,
                      collapsible = TRUE,

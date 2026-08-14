@@ -1,19 +1,49 @@
 ---
-title: "Using the nicheR Shiny app"
+title: "Using the shiny app"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using the nicheR Shiny app}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Using the shiny app}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  fig.width = 7,
+  fig.height = 7,
+  dpi = 100,
+  out.width = "95%",
   eval = FALSE
 )
-```
+``` 
+
+## Summary
+-   [Overview](#overview)
+-   [The About page](#the-about-page)
+-   [Step 1: Build](#step-1-build)
+    -   [Providing data](#providing-data)
+    -   [Selecting variables](#selecting-variables)
+    -   [Setting ranges](#setting-ranges)
+    -   [Covariance](#covariance)
+    -   [Moving the centroid](#moving-the-centroid)
+    -   [The ellipsoid library](#the-ellipsoid-library)
+    -   [Lineage](#lineage)
+    -   [The Build plots](#the-build-plots)
+-   [Step 2: Predict](#step-2-predict)
+    -   [The Predict plots](#the-predict-plots)
+-   [Step 3: Bias (optional)](#step-3-bias-optional)
+    -   [The Bias plots](#the-bias-plots)
+-   [Step 4: Generate](#step-4-generate)
+    -   [Sampling from a prediction](#sampling-from-a-prediction)
+    -   [Sampling in virtual mode](#sampling-in-virtual-mode)
+    -   [Occurrence sets](#occurrence-sets)
+-   [Working with several ellipsoids](#working-with-several-ellipsoids)
+-   [Where to go next](#where-to-go-next)
+<hr>
 
 ## Overview
 
@@ -57,6 +87,8 @@ scripted batch runs. For those, see the
 [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) vignette and work in
 the console.
 
+br()
+
 ## The About page
 
 The app opens on the About page. Each of the four numbered boxes describes one
@@ -76,6 +108,8 @@ Two buttons sit in the header and are available from every page:
 - **Report** writes an HTML and `.rmd`  summary of the current session.
 
 Click **START** at the bottom of the About page to move to step 1.
+
+br()
 
 # Step 1: Build
 
@@ -127,6 +161,8 @@ fastest way to see the whole workflow.
 # The example data the app loads
 bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 ```
+
+br()
 
 ## Selecting variables
 
@@ -325,6 +361,8 @@ width='100%'/>
 
 Click **Continue** to move to Prediction.
 
+br()
+
 # Step 2: Predict
 
 Prediction projects a saved ellipsoid onto your background data to produce
@@ -407,6 +445,8 @@ width='100%'/>
 
 The library on this tab is view-only. Editing happens on the Build tab.
 
+br()
+
 # Step 3: Bias (optional)
 
 Sampling bias weights occurrence generation toward areas with more detection
@@ -461,6 +501,8 @@ align='center'
 height='100%' 
 width='100%'/>
 
+br()
+
 # Step 4: Generate
 
 The final step draws virtual occurrence points. Which controls you see depends
@@ -468,7 +510,7 @@ on how you started, because the app calls a different function in each case.
 
 | How you started | Function used | Points carry |
 |---|---|---|
-| Prediction, no bias applied | `sample_data()` | coordinates |
+| Prediction, no bias applied | `sample_data()` | coordinates or environmental values only |
 | Prediction with bias applied | `sample_biased_data()` | coordinates |
 | Virtual mode | `virtual_data()` | environmental values only |
 
@@ -477,6 +519,8 @@ on how you started, because the app calls a different function in each case.
 align='center' 
 height='100%' 
 width='100%'/>
+
+br() 
 
 ## Sampling from a prediction
 
@@ -554,6 +598,8 @@ align='center'
 height='100%' 
 width='100%'/>
 
+br()
+
 # Working with several ellipsoids
 
 The library, lineage, and per-ellipsoid storage exist so you can carry more than
@@ -574,6 +620,8 @@ programmatically. If your ellipsoids differ by a rule rather than by hand,
 `random_ellipses()`, `nested_ellipses()`, and `conserved_ellipses()` generate
 them for you and scale past the handful the library is designed for. See the
 [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) vignette.
+
+br()
 
 # Where to go next
 

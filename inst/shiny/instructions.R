@@ -175,7 +175,7 @@ slider to reset that pair back to zero. Click Set Covariances when ready."),
 
   build_covariance_reset_tooltip = "Reset this pair's covariance back to zero.",
 
-  build_cov_set = "Covariances have been set for this ellipsoid.",
+  build_cov_set = "Covariances have been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to zero or to those values of their root",
 
 
   # BUILD TAB: CENTROID ----------------------------------------------------
@@ -185,7 +185,7 @@ without changing its shape or size. Each slider shifts the centroid along one
 variable, and the ellipsoid follows. Use Reset all to return to the centroid
 this version started from."),
 
-  build_centroid_set = "Centroid has been set for this ellipsoid.",
+  build_centroid_set = "Centroid has been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to original values or those of their root",
 
 
   # BUILD TAB: LIBRARY -----------------------------------------------------
@@ -313,8 +313,8 @@ apply bias to, or All versions to apply to every one.",
   generate_needs_prediction = "Run a prediction on the Predict tab before
 generating occurrences.",
 
-  generate_intro = HTML("Sample virtual occurrence points from a prediction
-surface. Biased layers are shown in orange if bias has been applied."),
+  generate_intro = HTML("Sample virtual data from a prediction surface.
+                        Biased layers are shown in orange if bias has been applied."),
 
   generate_no_surface = "Select at least one prediction layer before generating.",
 
@@ -330,9 +330,9 @@ to the Build tab. To view the gnerated set of occurences press on view (eye)"),
   generate_delete_ell = "This will permanently remove the ellipsoid, its
 predictions, its biased predictions, and any occurrences generated from them.",
 
-  generate_sampling_tooltip = "Centroid: higher probability near the niche centre.
-Edge: higher probability near the niche boundary.
-Random: equal probability across all suitable cells.",
+  generate_sampling_tooltip = "Direct: higher probability near the niche centroid.
+  Inverse: higher probability near the niche edge.
+  Uniform: random uniform probability across all suitable cells.",
 
   generate_surface_tooltip = "Select one or more prediction layers to sample
 from. Orange layers have bias applied.",
@@ -347,7 +347,7 @@ used for reproducible draws.",
 occurrences. Change it to draw a different replicate.",
 
   generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
-occurrences from, or All versions to generate for every one.",
+data from, or 'All versions' to generate for every one.",
 
   generate_summary = HTML("Every occurrence set you generate is listed here,
 grouped by ellipsoid. Sets accumulate: generating with a new seed adds a set
