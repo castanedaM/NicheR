@@ -131,22 +131,19 @@ output$build_range_method_choice_ui <- renderUI({
       collapsed = !is.null(ell),
       p(instructions$build_range_choice, class = "text-instruction"),
       radioButtons("build_range_method_choice",
-                   label = tags$span("Select how to define the ranges for your ellipsoid:",
-                                     class = "text-widget-title"),
-                   choiceNames = list(
-                     tagList("Manual",
-                             tags$span(icon("circle-info"),
-                                       title = instructions$build_range_manual_tooltip,
-                                       class = "tooltip-icon")),
-                     tagList("From Data",
-                             tags$span(icon("circle-info"),
-                                       title = instructions$build_range_data_tooltip,
-                                       class = "tooltip-icon")),
-                     tagList("From Stats",
-                             tags$span(icon("circle-info"),
-                                       title = instructions$build_range_stats_tooltip,
-                                       class = "tooltip-icon"))
-                   ),
+                   label = tagList(tags$span("Select how to define the ranges for your ellipsoid ",
+                                             class = "text-widget-title"),
+                                   tags$span(icon("circle-info"),
+                                             title = paste0("Manual: ",
+                                                            instructions$build_range_manual_tooltip, "\n",
+                                                            "Stats: ",
+                                                            instructions$build_range_stats_tooltip, "\n",
+                                                            "Data: ",
+                                                            instructions$build_range_data_tooltip),
+                                             class = "tooltip-icon")),
+                   choiceNames = list(tags$span("Manual", class = "text-widget-inner"),
+                                      tags$span("From Data", class = "text-widget-inner"),
+                                      tags$span("From Stats", class = "text-widget-inner")),
                    choiceValues = c("man", "df", "stats"),
                    selected = character(0)),
       uiOutput("build_range_method_ui")
@@ -188,15 +185,15 @@ output$build_range_method_ui <- renderUI({
 
   build_btn <- fluidRow(
     column(width = 12,
-           class = "btn-spaced",
+           div(class = "action-btn-row",
            actionButton("build_init_ell_btn",
                         build_label,
-                        class = "btn-primary"))
+                        class = "btn-continue"))
+           )
   )
 
   reset_btn <- fluidRow(
     column(width = 12,
-           class = "btn-spaced",
            actionLink("build_reset_ranges_link",
                       label = tagList(icon("rotate-left"), "Reset to defaults")))
   )
@@ -702,15 +699,15 @@ output$build_ellipsoid_library_ui <- renderUI({
              if(is_view){
                actionButton("build_exit_view_btn",
                             "Edit",
-                            class = "btn-default")
+                            class = "btn-continue")
              } else if(is_saved){
                actionButton("build_update_ell_btn",
                             "Update",
-                            class = "btn-default")
+                            class = "btn-continue")
              } else {
                actionButton("build_save_ell_btn",
                             "Save",
-                            class = "btn-default")
+                            class = "btn-continue")
              })
     )
   }
@@ -965,7 +962,7 @@ observeEvent(input$build_confirm_save_ell_btn, {
       div(class = "action-btn-row",
           actionButton("build_next_done_btn",
                        label = "Done",
-                       class = "btn-back"))
+                       class = "btn-save"))
     ),
     easyClose = FALSE
   ))
@@ -994,8 +991,7 @@ output$build_next_step_ui <- renderUI({
 
   div(class = "action-btn-row",
       actionButton(inputId = "build_next_step_btn",
-                   label = tagList(tags$span("Continue",
-                                             class = "text-widget-title"),
+                   label = tagList("Continue",
                                    icon("arrow-right")),
                    class = "btn-save")
   )
@@ -1056,7 +1052,7 @@ output$build_covariance_ui <- renderUI({
           collapsed = TRUE,
           p(instructions$build_cov_set, class = "text-instruction"),
           fluidRow(
-            column(width = 12, class = "btn-spaced",
+            column(width = 12,
                    actionLink("build_edit_cov_link",
                               label = tagList(icon("pen"), "Edit covariances")))
           )
@@ -1072,10 +1068,11 @@ output$build_covariance_ui <- renderUI({
       uiOutput("build_covariance_sliders_ui"),
       br(),
       fluidRow(
-        column(width = 6,
-               actionButton("build_set_cov_btn",
-                            "Set Covariances",
-                            class = "btn-continue"))
+        column(width = 12,
+               div(class = "action-btn-row",
+                   actionButton("build_set_cov_btn",
+                                "Set Covariances",
+                                class = "btn-continue")))
       )
   )
 })
@@ -1123,7 +1120,7 @@ output$build_covariance_sliders_ui <- renderUI({
   })
 
   reset_all_btn <- fluidRow(
-    column(width = 12, class = "btn-spaced",
+    column(width = 12,
            tags$a(href = "#",
                   onclick = "Shiny.setInputValue('build_cov_reset_all', Math.random(), {priority: 'event'}); return false;",
                   tagList(icon("rotate-left"), "Reset all to zero")))
@@ -1308,7 +1305,7 @@ output$build_centroid_mover_ui <- renderUI({
           collapsed = TRUE,
           p(instructions$build_centroid_set, class = "text-instruction"),
           fluidRow(
-            column(width = 12, class = "btn-spaced",
+            column(width = 12,
                    actionLink("build_edit_centroid_link",
                               label = tagList(icon("pen"), "Edit centroid")))
           )
@@ -1324,10 +1321,11 @@ output$build_centroid_mover_ui <- renderUI({
       uiOutput("build_centroid_sliders_ui"),
       fluidRow(
         column(width = 12,
-               class = "btn-spaced",
-               actionButton("build_set_centroid_btn",
-                            "Set Centroid",
-                            class = "btn-primary"))
+               div(class = "action-btn-row",
+                   actionButton("build_set_centroid_btn",
+                                "Set Centroid",
+                                class = "btn-continue"))
+        )
       )
   )
 })

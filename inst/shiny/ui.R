@@ -79,6 +79,22 @@ dashboardPage(
         ),
 
         fluidRow(
+          column(width = 12,
+
+                 p("To ease the use of this app (front-end), an app walkthough is available in the following vigettes.",
+                   class = "text-instruction"),
+
+                 tags$a(href   = "https://castanedam.github.io/nicheR/articles/shiny_app_vignette.html",
+                        target = "_blank",
+                        icon("book"), "Shiny app vignette"),
+
+                 p("To understadn the back-end of the app, please refere to each sections unique vigettes", class = "text-instruction")
+
+
+                 )
+        ),
+
+        fluidRow(
           column(width = 2),
 
           column(width = 4,
@@ -98,7 +114,7 @@ dashboardPage(
                        })
                      ),
 
-                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/build.html",
+                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html",
                             target = "_blank",
                             icon("book"), " Build vignette")
                  )
@@ -121,7 +137,7 @@ dashboardPage(
                        })
                      ),
 
-                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/predict.html",
+                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/predict.html",
                             target = "_blank",
                             icon("book"), " Predict vignette")
                  )
@@ -129,6 +145,8 @@ dashboardPage(
 
           column(width = 2)
         ),
+
+        br(),
 
         fluidRow(
           column(width = 2),
@@ -150,7 +168,7 @@ dashboardPage(
                        })
                      ),
 
-                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/bias.html",
+                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/bias.html",
                             target = "_blank",
                             icon("book"), " Bias vignette")
                  )
@@ -173,14 +191,27 @@ dashboardPage(
                        })
                      ),
 
-                     tags$a(href   = "https://castanedaM.github.io/nicheR/articles/generate.html",
+                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/generating_occurrence.html",
                             target = "_blank",
                             icon("book"), " Generate vignette")
                  )
           ),
           column(width = 2),
-          br()
         ),
+
+        br(),
+
+        fluidRow(
+          column(width = 12,
+                 p("This app allows for some basic visualization for more speciallies and cosutimised visualization look at the ", class = "text-instruction"),
+
+                 tags$a(href   = "https://castanedam.github.io/nicheR/articles/plotting_vignette.html",
+                        target = "_blank",
+                        icon("brush"), " visualization vignette.")
+          )
+        ),
+
+        br(),
 
         fluidRow(
           column(width = 12,

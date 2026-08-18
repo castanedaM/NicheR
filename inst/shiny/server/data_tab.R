@@ -289,6 +289,14 @@ observeEvent(input$build_edit_variables_link, {
   # Nothing built yet, so there is nothing to lose
   if(length(session_data$ellipsoid_list) == 0){
     session_data$vars <- NULL
+
+    # Ranges
+    session_data$session_range <- NULL
+    session_data$df_range <- NULL
+
+    # Ellipsoids
+    session_data$current_ellipsoid <- NULL
+
     return()
   }
 
@@ -297,9 +305,10 @@ observeEvent(input$build_edit_variables_link, {
     p(instructions$build_edit_variables_tooltip, class = "text-instruction"),
     footer = tagList(
       modalButton("Cancel"),
-      actionButton("build_confirm_edit_variables_btn",
-                   "Yes, edit variables",
-                   class = "btn-warning")
+      div(class = "action-btn-row",
+          actionButton("build_confirm_edit_variables_btn",
+                       "Yes, edit variables",
+                       class = "btn-warning"))
     ),
     easyClose = FALSE
   ))
@@ -408,10 +417,10 @@ output$build_data_input_type_ui <- renderUI({
                        fluidRow(
                          column(
                            width = 12,
-                           class = "btn-spaced",
+                           div(class = "action-btn-row",
                            actionButton(inputId = "build_data_upload_btn",
                                         label = "Upload",
-                                        class = "btn-default")
+                                        class = "btn-continue"))
                          )
                        )
            ))
@@ -429,10 +438,10 @@ output$build_data_input_type_ui <- renderUI({
                        fluidRow(
                          column(
                            width = 12,
-                           class = "btn-spaced",
-                           actionButton(inputId = "build_load_session_btn",
-                                        label = "Load Session",
-                                        class = "btn-default")
+                           div(class = "action-btn-row",
+                               actionButton(inputId = "build_load_session_btn",
+                                            label = "Load Session",
+                                            class = "btn-continue"))
                          )
                        )
            ))
@@ -446,10 +455,10 @@ output$build_data_input_type_ui <- renderUI({
                        fluidRow(
                          column(
                            width = 12,
-                           class = "btn-spaced",
+                           div(class = "action-btn-row",
                            actionButton(inputId = "build_continue_virtual_btn",
                                         label = "Continue",
-                                        class = "btn-default")
+                                        class = "btn-continue"))
                          )
                        )
            ))
@@ -465,10 +474,10 @@ output$build_data_input_type_ui <- renderUI({
                  fluidRow(
                    column(
                      width = 12,
-                     class = "btn-spaced",
-                     actionButton(inputId = "build_continue_example_btn",
+                     div(class = "action-btn-row",
+                         actionButton(inputId = "build_continue_example_btn",
                                   label = "Continue",
-                                  class = "btn-default")
+                                  class = "btn-continue"))
                    )
                  )
              )
@@ -514,7 +523,7 @@ output$build_variable_selector_ui <- renderUI({
           p(paste("Selected variables:", paste(session_data$vars, collapse = ", ")),
             class = "text-instruction"),
           fluidRow(
-            column(12, class = "btn-spaced",
+            column(12,
                    actionLink("build_edit_variables_link",
                               label = tagList(icon("pen"), "Edit variables")))
           )
@@ -552,8 +561,13 @@ output$build_variable_selector_ui <- renderUI({
                                 min = 2, max = MAX_DIMS, step = 1))
           ),
           name_rows,
-          fluidRow(column(12, class = "btn-spaced",
-                          actionButton("build_confirm_variables_btn", "Confirm", class = "btn-default")))
+          fluidRow(
+            column(12,
+                   div(class = "action-btn-row",
+                   actionButton("build_confirm_variables_btn",
+                                "Confirm",
+                                class = "btn-continue")))
+            )
       )
     )
   }
@@ -591,8 +605,13 @@ output$build_variable_selector_ui <- renderUI({
       width = 12,
       p(instructions$build_variable_settings, class = "text-instruction"),
       var_slots,
-      fluidRow(column(12, class = "btn-spaced",
-                      actionButton("build_confirm_variables_btn", "Confirm", class = "btn-default")))
+      fluidRow(
+        column(12,
+               div(class = "action-btn-row",
+                   actionButton("build_confirm_variables_btn",
+                                "Confirm",
+                                class = "btn-continue")))
+        )
   )
 })
 

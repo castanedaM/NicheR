@@ -5,15 +5,14 @@
 #              prefixed with the tab they belong to, matching the input and
 #              output naming convention used in the server scripts.
 # Dependencies: depends on MAX_DIMS from global.R
-# Date last updated: 08/03/2026
+# Date last updated: 08/18/2026
 
 instructions <- list(
 
   # ABOUT TAB --------------------------------------------------------------
 
-  about_app = HTML("An R package for ellipsoid-based ecological niche
-modeling. Build niche models from environmental ranges, predict suitable
-areas, account for sampling bias, and generate virtual occurrences, all in
+  about_app = HTML("An R package for building ellipsoid-based ecological virtual niches.\nBuild niche from environmental ranges, predict suitable
+areas, account for sampling bias, and generate virtual data, all in
 a single reproducible workflow."),
 
   about_build = HTML("Define a species niche as an ellipsoid in environmental
@@ -22,8 +21,8 @@ space using background layers and user-defined variable ranges."),
   about_build_points = c(
     "Set ranges manually, from occurrence data, or from background statistics",
     "Adjust covariance to rotate the ellipsoid",
-    "Move the centroid without rebuilding",
-    "Save multiple named versions"
+    "Move the niche centroid without changing axis tolerance ranges",
+    "Save multiple named ellipsoid versions"
   ),
 
   about_predict = HTML("Project the ellipsoid onto raster layers or a data
@@ -46,7 +45,7 @@ generation toward areas with specific detection effort."),
     "Examples: urbanization, distance to water, road density, collector coverage, any detection proxy"
   ),
 
-  about_generate = HTML("Sample virtual presences from the fitted niche,
+  about_generate = HTML("Sample virtual data from the fitted niche,
 optionally weighted by the bias layer."),
 
   about_generate_points = c(
@@ -124,15 +123,12 @@ the plot update as you change these values. Use Reset to Defaults to restore
 them, then Initialize Ellipsoid when ready."),
 
   build_range_data = HTML("Upload a CSV with occurrence or other environmental
-data for your species of interest.<br>
-Column names must match your selected variables exactly, or the upload will
-not be recognized. Once matched, observed min/max values appear below, and
+data for your species of interest.\nColumn names must match your selected variables exactly, or the upload will not be recognized. Once matched, observed min/max values appear below, and
 Expand Min/Max (%) let you widen the range outward in either direction. Lines
 in the plot update as you adjust them."),
 
   build_range_stats = HTML("Provide summary statistics for the chosen
-variables.<br>
-Defaults shown here are derived from your background data, but can be changed
+variables. Defaults shown here are derived from your background data, but can be changed
 to known values for your species of interest. Expand Min/Max (%) widen the
 resulting range outward, not the mean itself. Confidence level controls how
 wide the range is before any expansion."),
@@ -165,13 +161,8 @@ variable needs a valid minimum below its maximum.",
   # BUILD TAB: COVARIANCE --------------------------------------------------
 
   build_covariance = HTML("Covariances describe the relationship between pairs
-of variables. With 3 variables you get 3 pairs, with 4 variables you get 6,
-and so on.<br>
-Drag a slider to rotate the ellipsoid along that pair; the plot updates to
-show the result in 2D or pairs view. Moving one slider updates the valid
-range of the others. If a combination would make the ellipsoid invalid, an
-error is shown and that slider resets. Click the rotate-left icon next to a
-slider to reset that pair back to zero. Click Set Covariances when ready."),
+of variables.\nDrag a slider to rotate the ellipsoid along that pair. Moving one slider updates the valid covariance limits of the others. If a combination would make the ellipsoid invalid, an error is shown and that slider resets. Click the rotate-left icon next to a
+slider to reset that pair back to zero. Click 'Set Covariances' when ready."),
 
   build_covariance_reset_tooltip = "Reset this pair's covariance back to zero.",
 
@@ -183,7 +174,7 @@ slider to reset that pair back to zero. Click Set Covariances when ready."),
   build_centroid_mover = HTML("Move the ellipsoid through environmental space
 without changing its shape or size. Each slider shifts the centroid along one
 variable, and the ellipsoid follows. Use Reset all to return to the centroid
-this version started from."),
+this version started from. Click 'Set centroid' when ready."),
 
   build_centroid_set = "Centroid has been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to original values or those of their root",
 
@@ -198,8 +189,8 @@ read-only, edited in place, copied into a new version, or deleted."),
   build_library_empty = "No saved versions yet. Save the working ellipsoid to
 add it here.",
 
-  build_view_only = "You are viewing a saved version. Editing is locked. Use
-Return to editing, or the copy button in the library, to make changes.",
+  build_view_only = "You are viewing a saved version. Editing is locked. Use the 'Edit'
+button to go back to editing, or the copy button in the library, to make changes.",
 
   build_save_ell_modal = "Give this ellipsoid a name. Use letters, numbers,
 and spaces only. Spaces will be replaced with underscores.",

@@ -1084,10 +1084,11 @@ output$build_plot_settings_ui <- renderUI({
       )
     ),
 
+    br(),
+
     # Export button and settings sit below the tabBox, outside all panels
     fluidRow(
       column(width = 4,
-             br(),
              actionButton("build_open_export_modal",
                           tagList(icon("download"), "Export Figure"),
                           class = "btn-default"))
