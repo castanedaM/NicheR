@@ -207,7 +207,9 @@ output$generate_controls_ui <- renderUI({
                                   class = "tooltip-icon")),
                radioButtons("generate_strict",
                             label = NULL,
-                            choiceNames = list("True", "False"),
+                            choiceNames = list(
+                              tags$span("True", class = "text-widget-inner"),
+                              tags$span("False", class = "text-widget-inner")),
                             choiceValues = c("TRUE", "FALSE"),
                             selected = "TRUE",
                             inline = TRUE))
@@ -237,7 +239,7 @@ output$generate_controls_ui <- renderUI({
         column(width = 12,
                div(class = "action-btn-row",
                    actionButton("generate_run_btn",
-                                tagList(icon("play"), "Generate"),
+                                label = "Generate",
                                 class = "btn-continue"))
         )
       )
@@ -341,7 +343,9 @@ generate_virtual_controls <- function(){
                                   title = instructions$generate_truncate_tooltip,
                                   class = "tooltip-icon")),
                radioButtons("generate_truncate", label = NULL,
-                            choiceNames = list("True", "False"),
+                            choiceNames = list(
+                              tags$span("True", class = "text-widget-inner"),
+                              tags$span("False", class = "text-widget-inner")),
                             choiceValues = c("TRUE", "FALSE"),
                             selected = "TRUE",
                             inline = TRUE))
@@ -361,7 +365,7 @@ generate_virtual_controls <- function(){
         column(width = 12,
                div(class = "action-btn-row",
                    actionButton("generate_run_btn",
-                                tagList(icon("play"), "Generate"),
+                                label = "Generate",
                                 class = "btn-continue")))
       )
   )
@@ -370,17 +374,13 @@ generate_virtual_controls <- function(){
 # Inverse and uniform need truncation, so they are removed rather than
 # offered and then rejected
 output$generate_effect_ui <- renderUI({
-
   truncate <- !identical(input$generate_truncate, "FALSE")
 
-  choices <- if(truncate){
-    c("Direct" = "direct", "Inverse" = "inverse", "Uniform" = "uniform")
-  } else {
-    c("Direct" = "direct")
-  }
+  effect_labels <- if(truncate) c("Direct", "Inverse", "Uniform") else "Direct"
+  effect_values <- if(truncate) c("direct", "inverse", "uniform") else "direct"
 
   keep <- if(!is.null(input$generate_effect) &&
-             input$generate_effect %in% choices){
+             input$generate_effect %in% effect_values){
     input$generate_effect
   } else {
     "direct"
@@ -388,7 +388,10 @@ output$generate_effect_ui <- renderUI({
 
   tagList(
     radioButtons("generate_effect", label = NULL,
-                 choices = choices, selected = keep, inline = TRUE),
+                 choiceNames = lapply(effect_labels,
+                                      function(x) tags$span(x, class = "text-widget-inner")),
+                 choiceValues = effect_values,
+                 selected = keep, inline = TRUE),
     if(!truncate){
       p(instructions$generate_effect_needs_truncate, class = "text-muted-small")
     }
@@ -648,12 +651,21 @@ observeEvent(input$generate_run_btn, {
                                 sampling_mask = sampling_mask,
                                 seed = seed)
 
+    # which layer names for this ellipsoid came from the biased prediction
+    biased_layers <- if(!is.null(bias_list[[id]])){
+      names(bias_list[[id]])
+    } else {
+      character(0)
+    }
+
     n_attempted <- n_attempted + length(target_layers)
 
     for(layer in names(res)){
 
       df <- res[[layer]]
       if(is.null(df) || nrow(df) == 0) next
+
+      biased <- layer %in% biased_layers
 
       # Metadata travels with the set so the summary can report how it was
       # made, and so the source raster can still be found from the layer

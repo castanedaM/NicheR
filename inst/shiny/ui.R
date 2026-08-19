@@ -70,9 +70,9 @@ dashboardPage(
         fluidRow(
           column(width = 12,
                  tags$div(tags$span("About nicheR", class = "text-app-title"),
-                          br(),
+                          br(), br(),
                           tags$span(instructions$about_app,
-                                    class = "text-instruction")
+                                    class = "text-about")
                  ),
                  br()
           )
@@ -80,18 +80,24 @@ dashboardPage(
 
         fluidRow(
           column(width = 12,
-
-                 p("To ease the use of this app (front-end), an app walkthough is available in the following vigettes.",
-                   class = "text-instruction"),
-
-                 tags$a(href   = "https://castanedam.github.io/nicheR/articles/shiny_app_vignette.html",
-                        target = "_blank",
-                        icon("book"), "Shiny app vignette"),
-
-                 p("To understadn the back-end of the app, please refere to each sections unique vigettes", class = "text-instruction")
-
-
-                 )
+                 p(class = "text-about",
+                   "For a walkthrough of the app itself, see the ",
+                   tags$a(href   = "https://castanedam.github.io/nicheR/articles/shiny_app_vignette.html",
+                          target = "_blank", rel = "noopener",
+                          icon("book"), " Shiny app vignette"),
+                   "."),
+                 p(class = "text-about",
+                   "Each step of the app corresponds to a set of functions in the ", tags$em("nicheR"),
+                   " package. To understand what runs underneath, see the vignettes on ",
+                   tags$a(href = "https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html",
+                          target = "_blank", rel = "noopener", "building ellipsoids"), ", ",
+                   tags$a(href = "https://castanedam.github.io/nicheR/articles/predict.html",
+                          target = "_blank", rel = "noopener", "making predictions"), ", ",
+                   tags$a(href = "https://castanedam.github.io/nicheR/articles/bias.html",
+                          target = "_blank", rel = "noopener", "sampling bias"), ", and ",
+                   tags$a(href = "https://castanedam.github.io/nicheR/articles/generating_occurrence.html",
+                          target = "_blank", rel = "noopener", "generating occurrences"), ".")
+          )
         ),
 
         fluidRow(
@@ -107,10 +113,10 @@ dashboardPage(
                      solidHeader = TRUE,
                      status = "primary",
 
-                     p(instructions$about_build, class = "text-instruction"),
+                     p(instructions$about_build, class = "text-about"),
                      tags$ul(
                        lapply(instructions$about_build_points, function(x) {
-                         tags$li(x, class = "text-instruction")
+                         tags$li(x, class = "text-about")
                        })
                      ),
 
@@ -130,10 +136,10 @@ dashboardPage(
                      solidHeader = TRUE,
                      status = "primary",
 
-                     p(instructions$about_predict, class = "text-instruction"),
+                     p(instructions$about_predict, class = "text-about"),
                      tags$ul(
                        lapply(instructions$about_predict_points, function(x) {
-                         tags$li(x, class = "text-instruction")
+                         tags$li(x, class = "text-about")
                        })
                      ),
 
@@ -161,10 +167,10 @@ dashboardPage(
                      solidHeader = TRUE,
                      status = "primary",
 
-                     p(instructions$about_bias, class = "text-instruction"),
+                     p(instructions$about_bias, class = "text-about"),
                      tags$ul(
                        lapply(instructions$about_bias_points, function(x) {
-                         tags$li(x, class = "text-instruction")
+                         tags$li(x, class = "text-about")
                        })
                      ),
 
@@ -184,10 +190,10 @@ dashboardPage(
                      status = "primary",
                      solidHeader = TRUE,
 
-                     p(instructions$about_generate, class = "text-instruction"),
+                     p(instructions$about_generate, class = "text-about"),
                      tags$ul(
                        lapply(instructions$about_generate_points, function(x) {
-                         tags$li(x, class = "text-instruction")
+                         tags$li(x, class = "text-about")
                        })
                      ),
 
@@ -203,11 +209,12 @@ dashboardPage(
 
         fluidRow(
           column(width = 12,
-                 p("This app allows for some basic visualization for more speciallies and cosutimised visualization look at the ", class = "text-instruction"),
-
-                 tags$a(href   = "https://castanedam.github.io/nicheR/articles/plotting_vignette.html",
-                        target = "_blank",
-                        icon("brush"), " visualization vignette.")
+                 p(class = "text-about",
+                   "This app allows for some basic visualization. For more specialised and customised visualization, see the ",
+                   tags$a(href   = "https://castanedam.github.io/nicheR/articles/plotting_vignette.html",
+                          target = "_blank",
+                          icon("brush"), " visualization vignette"),
+                   ".")
           )
         ),
 
@@ -217,11 +224,11 @@ dashboardPage(
           column(width = 12,
                  tags$a(href   = "https://castanedaM.github.io/nicheR/authors.html",
                         target = "_blank",
-                        class = "text-instruction",
+                        class = "text-about",
                         icon("user-group"), "If you use nicheR in your research, please cite:"),
                  br(),
                  tags$code(
-                   "Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026). ",
+                   "Castaneda-Guzman M, Hughes C, Paansri P, Cobos M E (2026). ",
                    "nicheR: Ellipsoid-based ecological niche modeling. ",
                    "R package version 0.1.0. DOI: ",
                    tags$a("10.32614/CRAN.package.nicheR",

@@ -13,8 +13,7 @@ output$predict_next_step_ui <- renderUI({
 
   div(class = "action-btn-row",
       actionButton(inputId = "predict_next_step_btn",
-                   label = tagList(tags$span("Continue",
-                                             class = "text-widget-title"),
+                   label = tagList("Continue",
                                    icon("arrow-right")),
                    class = "btn-save")
   )

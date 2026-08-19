@@ -31,13 +31,14 @@ Authors@R: c(
   )
 Description: Provides a robust set of tools for researchers and modelers to
     construct and define virtual ecological niches using ellipsoid geometries.
-    It enables the identification and extraction of suitable environmental
-    areas, simulation of species occurrence points with various sampling
-    strategies, and visualization of niche boundaries and simulated occurrences
-    in both environmental and geographic space. Inspired by methodologies in
-    'NicheA' and the 'virtualspecies' R package, 'nicheR' aims to streamline
-    the process of niche conceptualization and data generation for ecological
-    studies. Methodological and theoretical foundations are described in
+    It enables thru script writting and GUI the identification and extraction 
+    of suitable environmental areas, simulation of species occurrence points 
+    with various sampling strategies, and visualization of niche boundaries 
+    and simulated occurrences in both environmental and geographic space. 
+    Inspired by methodologies in 'NicheA' and the 'virtualspecies' R package,
+    'nicheR' aims to streamline the process of niche conceptualization and 
+    data generation for ecological studies. 
+    Methodological and theoretical foundations are described in
     Peterson et al. (2011, ISBN:9780691136882),
     Etherington et al. (2009) <doi:10.1111/j.1365-2699.2008.02041.x>,
     Qiao et al. (2015) <doi:10.1111/ecog.01961>,

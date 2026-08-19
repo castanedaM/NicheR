@@ -338,8 +338,11 @@ output$generate_espace_plot_top_options_ui <- renderUI({
     column(width = 3,
            radioButtons("generate_plot_espace_state",
                         label = NULL,
-                        choices = c("Pairs" = "generate_plot_pairs",
-                                    "2D" = "generate_plot_2d"),
+                        choiceNames = list(
+                          tags$span("Pairs", class = "text-widget-inner"),
+                          tags$span("2D", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("generate_plot_pairs", "generate_plot_2d"),
                         selected = "generate_plot_pairs",
                         inline = TRUE)),
 
@@ -544,8 +547,11 @@ output$generate_combined_plot_top_options_ui <- renderUI({
     column(width = 3,
            radioButtons("generate_plot_combined_layout",
                         label = NULL,
-                        choices = c("Side by side" = "row",
-                                    "Stacked" = "col"),
+                        choiceNames = list(
+                          tags$span("Side by side", class = "text-widget-inner"),
+                          tags$span("Stacked", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("row", "col"),
                         selected = "row",
                         inline = TRUE)),
     column(width = 2, tags$span("Variables:", class = "text-widget-title")),
@@ -800,6 +806,8 @@ output$generate_plot_settings_ui <- renderUI({
       color_input("generate_plot_map_bg_col", "Map background (NA)", "#F0F0F0")
     ),
 
+    br(),
+
     fluidRow(
       column(width = 12,
              class = "btn-spaced",
@@ -823,8 +831,12 @@ observeEvent(input$generate_open_export_modal, {
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
              radioButtons("generate_export_filetype", label = NULL,
-                          choices = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
-                          selected = if(!is.null(input$generate_export_filetype))
+                          choiceNames = list(
+                            tags$span("PNG", class = "text-widget-inner"),
+                            tags$span("PDF", class = "text-widget-inner"),
+                            tags$span("SVG", class = "text-widget-inner")
+                          ),
+                          choiceValues = c("png", "pdf", "svg"),                          selected = if(!is.null(input$generate_export_filetype))
                             input$generate_export_filetype else "png",
                           inline = TRUE)),
       column(width = 6,

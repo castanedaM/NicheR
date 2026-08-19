@@ -52,6 +52,15 @@
   line-height: 1.5;        /* adds breathing room between lines */
 }
 
+/* Body / instruction text — helper text explaining what to do */
+/* Used with p(instructions$x, class = "text-instruction") */
+.text-about {
+  font-size: 13px;
+  font-weight: 400;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
 .tooltip-icon {
   cursor: pointer;
   color: #888;

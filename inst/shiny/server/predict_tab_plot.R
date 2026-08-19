@@ -96,8 +96,8 @@ predict_draw_espace_panel <- function(v1, v2, s, layer = NULL, title = NULL){
       # Binary suitability is the same regardless of which layer is shown
       base_lyr <- if("suitability_trunc" %in% names(vals_df)){
         "suitability_trunc"
-      } else if("suitability" %in% names(vals_df)){
-        "suitability"
+      # } else if("suitability" %in% names(vals_df)){
+      #   "suitability"
       } else {
         NULL
       }
@@ -439,17 +439,20 @@ output$predict_espace_plot_top_options_ui <- renderUI({
   fluidRow(
 
     column(width = 1, tags$span("Layout:", class = "text-widget-title")),
-    column(width = 4,
+    column(width = 3,
            radioButtons("predict_plot_espace_state",
                         label = NULL,
-                        choices = c("Pairs" = "predict_plot_pairs",
-                                    "2D" = "predict_plot_2d"),
+                        choiceNames = list(
+                          tags$span("Pairs", class = "text-widget-inner"),
+                          tags$span("2D", class = "text-widget-inner")
+                        ),
+                        choiceValues = c("predict_plot_pairs", "predict_plot_2d"),
                         selected = "predict_plot_pairs",
                         inline = TRUE)),
 
     conditionalPanel(
       "input.predict_plot_espace_state == 'predict_plot_2d'",
-      column(width = 1, tags$span("Variables:", class = "text-widget-title")),
+      column(width = 2, tags$span("Variables:", class = "text-widget-title")),
       column(width = 3,
              selectInput("predict_plot_2d_x", label = NULL, choices = vars,
                          selected = vars[1])),
@@ -575,20 +578,28 @@ output$predict_gspace_plot_top_options_ui <- renderUI({
   # on-the-fly suitable area either way
   req(length(lyrs) > 0)
 
-  has_binary <- any(c("suitability", "suitability_trunc") %in% lyrs)
+  has_binary <- any(c("suitability_trunc", "Mahalanobis_trunc") %in% lyrs)
 
-  choices <- c("Prediction layers" = "layers")
-  if(has_binary) choices <- c(choices, "Suitable area" = "binary")
+  choice_names <- list(tags$span("Prediction layers", class = "text-widget-inner"))
+  choice_values <- "layers"
+
+  if(has_binary){
+    choice_names <- c(choice_names,
+                      list(tags$span("Suitable area", class = "text-widget-inner")))
+    choice_values <- c(choice_values, "binary")
+  }
 
   fluidRow(
     column(width = 1, tags$span("Show:", class = "text-widget-title")),
     column(width = 6,
            radioButtons("predict_plot_gspace_show",
                         label = NULL,
-                        choices = choices,
+                        choiceNames = choice_names,
+                        choiceValues = choice_values,
                         selected = "layers",
                         inline = TRUE))
   )
+
 })
 
 output$predict_gspace_plot <- renderPlot({
@@ -726,8 +737,11 @@ output$predict_combined_plot_top_options_ui <- renderUI({
       column(width = 3,
              radioButtons("predict_plot_combined_layout",
                           label = NULL,
-                          choices = c("Side by side" = "row",
-                                      "Stacked" = "col"),
+                          choiceNames = list(
+                            tags$span("Side by side", class = "text-widget-inner"),
+                            tags$span("Stacked", class = "text-widget-inner")
+                          ),
+                          choiceValues = c("row", "col"),
                           selected = "row",
                           inline = FALSE)),
 
@@ -1019,6 +1033,8 @@ output$predict_plot_settings_ui <- renderUI({
       color_input("predict_plot_map_bg_col", "Map background (NA)", "#F0F0F0")
     ),
 
+    br(),
+
     fluidRow(
       column(width = 12,
              class = "btn-spaced",
@@ -1039,8 +1055,12 @@ observeEvent(input$predict_open_export_modal, {
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
              radioButtons("predict_export_filetype", label = NULL,
-                          choices = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
-                          selected = if(!is.null(input$predict_export_filetype))
+                          choiceNames = list(
+                            tags$span("PNG", class = "text-widget-inner"),
+                            tags$span("PDF", class = "text-widget-inner"),
+                            tags$span("SVG", class = "text-widget-inner")
+                          ),
+                          choiceValues = c("png", "pdf", "svg"),                          selected = if(!is.null(input$predict_export_filetype))
                             input$predict_export_filetype else "png",
                           inline = TRUE)),
       column(width = 6,
@@ -1068,6 +1088,8 @@ observeEvent(input$predict_open_export_modal, {
     ),
 
     uiOutput("predict_export_settings_ui"),
+
+    br(),
 
     footer = tagList(
       modalButton("Cancel"),

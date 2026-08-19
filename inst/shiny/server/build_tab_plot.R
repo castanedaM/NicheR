@@ -386,8 +386,10 @@ output$build_espace_plot_top_options_ui <- renderUI({
            column(width = 3,
                   radioButtons("build_plot_espace_state",
                                label = NULL,
-                               choices = c("All pairs" = "build_plot_pairs",
-                                           "2D" = "build_plot_2d"),
+                               choiceNames = list(
+                                 tags$span("All pairs", class = "text-widget-inner"),
+                                 tags$span("2D", class = "text-widget-inner")),
+                               choiceValues = c("build_plot_pairs", "build_plot_2d"),
                                selected = "build_plot_pairs",
                                inline = TRUE)),
 
@@ -479,18 +481,22 @@ output$build_gspace_plot_top_options_ui <- renderUI({
 
   has_ell <- !is.null(isolate(session_data$current_ellipsoid))
 
-  show_choices <- if(has_ell){
-    c("Within range" = "range", "Suitable area" = "suitable")
+  show_choices_names <- if(has_ell){
+    list(tags$span("Within range", class = "text-widget-inner"),
+         tags$span("Suitable area", class = "text-widget-inner"))
   } else {
-    c("Within range" = "range")
+    list(tags$span("Within range", class = "text-widget-inner"))
   }
+  show_choices_values <- if(has_ell) c("range", "suitable") else "range"
+
 
   fluidRow(
     column(width = 1, tags$span("Show:", class = "text-widget-title")),
     column(width = 3,
            radioButtons("build_plot_gspace_show",
                         label = NULL,
-                        choices = show_choices,
+                        choiceNames = show_choices_names,
+                        choiceValues = show_choices_values,
                         selected = if(has_ell) "suitable" else "range",
                         inline = FALSE)),
 
@@ -502,8 +508,10 @@ output$build_gspace_plot_top_options_ui <- renderUI({
       column(width = 1,
              radioButtons("build_plot_gspace_state",
                           label = NULL,
-                          choices = c("All" = "build_plot_all",
-                                      "One" = "build_plot_one"),
+                          choiceNames = list(
+                            tags$span("All", class = "text-widget-inner"),
+                            tags$span("One", class = "text-widget-inner")),
+                          choiceValues = c("build_plot_all", "build_plot_one"),
                           selected = "build_plot_all",
                           inline = FALSE))
     ),
@@ -695,7 +703,10 @@ output$build_combined_plot_top_options_ui <- renderUI({
     column(width = 3,
            radioButtons("build_plot_combined_layout",
                         label = NULL,
-                        choices = c("Stacked" = "col", "Side by side" = "row"),
+                        choiceNames = list(
+                          tags$span("Stacked", class = "text-widget-inner"),
+                          tags$span("Side by side", class = "text-widget-inner")),
+                        choiceValues = c("col", "row"),
                         selected = "col",
                         inline = FALSE)),
     column(width = 2, tags$span("Variables:", class = "text-widget-title")),
@@ -1198,7 +1209,12 @@ observeEvent(input$build_open_export_modal, {
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
              radioButtons("build_export_filetype", label = NULL,
-                          choices  = c("PNG" = "png", "PDF" = "pdf", "SVG" = "svg"),
+                          choices = list(
+                            tags$span("PNG", class = "text-widget-inner"),
+                            tags$span("PDF", class = "text-widget-inner"),
+                            tags$span("SVG", class = "text-widget-inner")
+                          ),
+                          choiceValues = c("png", "pdf", "svg"),
                           selected = if(!is.null(input$build_export_filetype))
                             input$build_export_filetype else "png",
                           inline   = TRUE)),
@@ -1206,14 +1222,14 @@ observeEvent(input$build_open_export_modal, {
              tags$span("Unit", class = "text-widget-title"),
              radioButtons("build_export_unit", label = NULL,
                           choiceNames  = list(
-                            tags$span("mm",     class = "text-widget-inner"),
+                            tags$span("mm", class = "text-widget-inner"),
                             tags$span("inches", class = "text-widget-inner"),
-                            tags$span("px",     class = "text-widget-inner")
+                            tags$span("px", class = "text-widget-inner")
                           ),
                           choiceValues = c("mm", "in", "px"),
-                          selected     = if(!is.null(input$build_export_unit))
+                          selected = if(!is.null(input$build_export_unit))
                             input$build_export_unit else "mm",
-                          inline       = TRUE))
+                          inline = TRUE))
     ),
 
     # cex outside renderUI so it never resets when file type or unit changes

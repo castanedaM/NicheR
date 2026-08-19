@@ -46,8 +46,7 @@ output$bias_next_step_ui <- renderUI({
 
   div(class = "action-btn-row",
       actionButton(inputId = "bias_next_step_btn",
-                   label = tagList(tags$span("Continue",
-                                             class = "text-widget-title"),
+                   label = tagList("Continue",
                                    icon("arrow-right")),
                    class = "btn-save")
   )
@@ -311,7 +310,9 @@ output$bias_effect_directions_ui <- renderUI({
       column(width = 5,
              radioButtons(inputId = paste0("bias_dir_", i),
                           label = NULL,
-                          choiceNames = list("Direct", "Inverse"),
+                          choiceNames = list(
+                            tags$span("Direct", class = "text-widget-inner"),
+                            tags$span("Inverse", class = "text-widget-inner")),
                           choiceValues = c("direct", "inverse"),
                           selected = "direct",
                           inline = TRUE))
@@ -434,7 +435,9 @@ output$bias_prepare_ui <- renderUI({
                                   class = "tooltip-icon")),
                radioButtons(inputId = "bias_mask_na",
                             label = NULL,
-                            choiceNames = list("Union", "Intersection"),
+                            choiceNames = list(
+                              tags$span("Union", class = "text-widget-inner"),
+                              tags$span("Intersection", class = "text-widget-inner")),
                             choiceValues = c("FALSE", "TRUE"),
                             selected = "FALSE",
                             inline = TRUE))
@@ -536,7 +539,9 @@ output$bias_apply_ui <- renderUI({
                                   class = "tooltip-icon")),
                radioButtons("bias_effect_direction",
                             label = NULL,
-                            choiceNames = list("Direct", "Inverse"),
+                            choiceNames = list(
+                              tags$span("Direct", class = "text-widget-inner"),
+                              tags$span("Inverse", class = "text-widget-inner")),
                             choiceValues = c("direct", "inverse"),
                             selected = "direct",
                             inline = TRUE))
