@@ -5,7 +5,7 @@ vignette: >
   %\VignetteIndexEntry{Predicting suitability and Mahalanobis distance}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
+  editor_options: 
   chunk_output_type: console
 ---
 
@@ -22,32 +22,32 @@ knitr::opts_chunk$set(
 
 ## Summary
 
--   [Description](#description)
--   [Getting ready](#getting-ready)
--   [Loading example data](#loading-example-data)
--   [Using predict()](#using-predict)
-    -   [Basic predictions to a data frame](#basic-predictions-to-a-data-frame)
-    -   [Basic predictions to a SpatRaster](#basic-predictions-to-a-spatraster)
-    -   [Understanding the output](#understanding-the-output)
-    -   [Additional function arguments](#additional-function-arguments)
-    -   [All four outputs at once](#all-four-outputs-at-once)
-    -   [The role of the confidence level and truncation](#the-role-of-the-confidence-level-and-truncation)
-    -   [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions)
--   [Visualizing predictions in environmental space](#visualizing-predictions-in-environmental-space)
-    -   [Mahalanobis distance in E-space](#mahalanobis-distance-in-e-space)
-    -   [Suitability in E-space](#suitability-in-e-space)
-    -   [Truncated predictions in E-space](#truncated-predictions-in-e-space)
-    -   [Binary suitable vs. unsuitable environments](#binary-suitable-vs-unsuitable-environments)
--   [Visualizing predictions in geographic space](#visualizing-predictions-in-geographic-space)
-    -   [Mahalanobis distance map](#mahalanobis-distance-map)
-    -   [Suitability map](#suitability-map)
-    -   [Truncated suitability map](#truncated-suitability-map)
-    -   [Binary potential distribution map](#binary-potential-distribution-map)
--   [Three-dimensional example](#three-dimensional-example)
--   [Predicting with virtual data](#sec-predicting-with-virtual-data)
-    -   [Two-dimensional virtual data](#sec-two-dimensional-virtual-data)
-    -   [Three-dimensional virtual data](#sec-three-dimensional-virtual-data)
--   [Save and import](#save-and-import)
+- [Description](#description)
+- [Getting ready](#getting-ready)
+- [Loading example data](#loading-example-data)
+- [Using predict()](#using-predict)
+- [Basic predictions to a data frame](#basic-predictions-to-a-data-frame)
+- [Basic predictions to a SpatRaster](#basic-predictions-to-a-spatraster)
+- [Understanding the output](#understanding-the-output)
+- [Additional function arguments](#additional-function-arguments)
+- [All four outputs at once](#all-four-outputs-at-once)
+- [The role of the confidence level and truncation](#the-role-of-the-confidence-level-and-truncation)
+- [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions)
+- [Visualizing predictions in environmental space](#visualizing-predictions-in-environmental-space)
+- [Mahalanobis distance in E-space](#mahalanobis-distance-in-e-space)
+- [Suitability in E-space](#suitability-in-e-space)
+- [Truncated predictions in E-space](#truncated-predictions-in-e-space)
+- [Binary suitable vs. unsuitable environments](#binary-suitable-vs-unsuitable-environments)
+- [Visualizing predictions in geographic space](#visualizing-predictions-in-geographic-space)
+- [Mahalanobis distance map](#mahalanobis-distance-map)
+- [Suitability map](#suitability-map)
+- [Truncated suitability map](#truncated-suitability-map)
+- [Binary potential distribution map](#binary-potential-distribution-map)
+- [Three-dimensional example](#three-dimensional-example)
+- [Predicting with virtual data](#sec-predicting-with-virtual-data)
+- [Two-dimensional virtual data](#sec-two-dimensional-virtual-data)
+- [Three-dimensional virtual data](#sec-three-dimensional-virtual-data)
+- [Save and import](#save-and-import)
 
 <hr>
 
@@ -57,7 +57,7 @@ This vignette demonstrates how to use the `predict()` method for `nicheR_ellipso
 
 The main function covered in this vignette is:
 
--   `predict()`: generates Mahalanobis distance, suitability, and truncated versions of these metrics from a `nicheR_ellipsoid` object. It accepts environmental data as a `data.frame` or a `SpatRaster`.
+- `predict()`: generates Mahalanobis distance, suitability, and truncated versions of these metrics from a `nicheR_ellipsoid` object. It accepts environmental data as a `data.frame` or a `SpatRaster`.
 
 Understanding how predictions are computed and what each output represents is essential for interpreting virtual niches responsibly. This vignette covers the statistical theory behind the predictions, a detailed breakdown of all function arguments and output types, and visualizations of every output in both E-space and G-space.
 
@@ -88,8 +88,8 @@ getwd()
 original_par <- par(no.readonly = TRUE)
 
 # Shared margin settings and palettes used throughout this vignette
-mars     <- c(4, 4, 2, 1)
-marsr    <- c(0.5, 0.5, 2, 4)
+mars <- c(4, 4, 2, 1)
+marsr  <- c(0.5, 0.5, 2, 4)
 vir_pal  <- hcl.colors(100, palette = "Viridis")
 ```
 
@@ -205,18 +205,18 @@ The figure below brings these ideas together. The top row shows the E-space scat
 
 ```{r concept_figure, echo=FALSE, fig.width=7, fig.height=5, out.width="95%"}
 pred_ex <- predict(ref_ellipse,
-                   newdata   = back_data[, ref_ellipse$var_names],
-                   include_suitability    = TRUE,
-                   include_mahalanobis    = TRUE,
+                   newdata = back_data[, ref_ellipse$var_names],
+                   include_suitability  = TRUE,
+                   include_mahalanobis  = TRUE,
                    mahalanobis_truncated  = TRUE,
                    suitability_truncated  = TRUE,
                    verbose = FALSE)
 
-levels   <- c(0.50, 0.90, 0.99)
-p        <- ref_ellipse$dimensions
+levels <- c(0.50, 0.90, 0.99)
+p  <- ref_ellipse$dimensions
 d2_cuts  <- qchisq(levels, df = p)
 suit_cuts <- exp(-0.5 * d2_cuts)
-cols     <- c("#1b9e77", "#d95f02", "#7570b3")
+cols <- c("#1b9e77", "#d95f02", "#7570b3")
 
 par(mfrow = c(2, 2), mar = c(4, 4, 2.5, 1), cex = 0.85)
 
@@ -226,7 +226,7 @@ par(mfrow = c(2, 2), mar = c(4, 4, 2.5, 1), cex = 0.85)
 plot_ellipsoid(ref_ellipse,
                prediction = pred_ex,
                col_layer  = "Mahalanobis_trunc",
-               col_ell    = "#e10000",
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.4,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -260,7 +260,7 @@ legend("topright",
 plot_ellipsoid(ref_ellipse,
                prediction = pred_ex,
                col_layer  = "suitability_trunc",
-               col_ell    = "#e10000",
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.4,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -312,8 +312,8 @@ Beyond the basic call, `predict()` lets you control which outputs are returned i
 
 Two additional arguments control what is returned alongside predictions:
 
--   `keep_data`: whether predictor columns are included in the returned object. Default is `TRUE` for `data.frame` input and `FALSE` for `SpatRaster`. Coordinate columns (`x`, `y`, `lon`, `lat`, etc.) are always retained when `keep_data = TRUE`.
--   `adjust_truncation_level`: a number strictly between 0 and 1 that overrides the `cl` stored in the ellipsoid for truncated outputs, without refitting the ellipsoid. See [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions).
+- `keep_data`: whether predictor columns are included in the returned object. Default is `TRUE` for `data.frame` input and `FALSE` for `SpatRaster`. Coordinate columns (`x`, `y`, `lon`, `lat`, etc.) are always retained when `keep_data = TRUE`.
+- `adjust_truncation_level`: a number strictly between 0 and 1 that overrides the `cl` stored in the ellipsoid for truncated outputs, without refitting the ellipsoid. See [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions).
 
 <br>
 
@@ -324,8 +324,8 @@ Any combination of the four flags can be set to `TRUE` in a single call. All req
 ```{r df_predict_all}
 pred_df_all <- predict(ref_ellipse,
                        newdata = back_data[, ref_ellipse$var_names],
-                       include_mahalanobis   = TRUE,
-                       include_suitability   = TRUE,
+                       include_mahalanobis = TRUE,
+                       include_suitability = TRUE,
                        mahalanobis_truncated = TRUE,
                        suitability_truncated = TRUE)
 
@@ -351,8 +351,8 @@ The same applies to raster output:
 ```{r raster_predict_all}
 pred_rast_all <- predict(ref_ellipse,
                          newdata = ma_bios[[ref_ellipse$var_names]],
-                         include_mahalanobis   = TRUE,
-                         include_suitability   = TRUE,
+                         include_mahalanobis = TRUE,
+                         include_suitability = TRUE,
                          mahalanobis_truncated = TRUE,
                          suitability_truncated = TRUE)
 
@@ -368,8 +368,8 @@ The ellipsoid boundary is defined by the chi-square cutoff $\chi^2_{p,\,\text{cl
 
 Truncation operationalizes the ellipsoid boundary ecologically:
 
--   `mahalanobis_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive `NA`, meaning those environments are outside the niche and their distance is not reported.
--   `suitability_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive $S = 0$, meaning unsuitable environments are explicitly scored as zero rather than receiving a small positive value.
+- `mahalanobis_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive `NA`, meaning those environments are outside the niche and their distance is not reported.
+- `suitability_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive $S = 0$, meaning unsuitable environments are explicitly scored as zero rather than receiving a small positive value.
 
 The plots in [Truncated predictions in E-space](#truncated-predictions-in-e-space) and [Truncated suitability map](#truncated-suitability-map) below show truncated outputs. Outside points are rendered in grey so the full background extent is preserved in the view.
 
@@ -407,12 +407,12 @@ par(mfrow = c(1, 3), cex = 0.75, mar = c(3.5, 3.5, 2, 0.5))
 for (i in seq_along(cls_compare)) {
   pred_cl <- predict(ref_ellipse,
                      newdata = back_data[, ref_ellipse$var_names],
-                     include_mahalanobis     = FALSE,
-                     include_suitability     = FALSE,
-                     suitability_truncated   = TRUE,
+                     include_mahalanobis = FALSE,
+                     include_suitability = FALSE,
+                     suitability_truncated = TRUE,
                      adjust_truncation_level = cls_compare[i],
                      verbose = FALSE)
-
+  
   plot_ellipsoid(ref_ellipse,
                  xlab = "Bio1", ylab = "Bio12",
                  main = paste0("cl = ", cls_compare[i]))
@@ -451,7 +451,7 @@ par(mar = mars)
 plot_ellipsoid(ref_ellipse,
                prediction = maha_df,
                col_layer  = "Mahalanobis",
-               col_ell    = "#e10000",
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.5,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -489,8 +489,8 @@ par(mar = mars)
 plot_ellipsoid(ref_ellipse,
                prediction = suit_df,
                col_layer  = "suitability",
-               pal        = vir_pal,
-               col_ell    = "#e10000",
+               pal  = vir_pal,
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.5,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -519,8 +519,8 @@ Suitability peaks at the centroid and declines outward. The brightest colors mar
 ```{r trunc_espace, fig.width=7, fig.height=3.5, out.width="95%"}
 trunc_df <- predict(ref_ellipse,
                     newdata = back_data[, ref_ellipse$var_names],
-                    include_mahalanobis   = FALSE,
-                    include_suitability   = FALSE,
+                    include_mahalanobis = FALSE,
+                    include_suitability = FALSE,
                     mahalanobis_truncated = TRUE,
                     suitability_truncated = TRUE,
                     verbose = FALSE)
@@ -551,8 +551,8 @@ legend("topright",
 plot_ellipsoid(ref_ellipse,
                prediction = trunc_df,
                col_layer  = "suitability_trunc",
-               col_bg     = "#d4d4d4",
-               col_ell    = "#e10000",
+               col_bg = "#d4d4d4",
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.4,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -586,9 +586,9 @@ par(mar = mars)
 plot_ellipsoid(ref_ellipse,
                prediction = trunc_df,
                col_layer  = "suitability_trunc",
-               pal        = c("#d4d4d4", "#0004d5"),
-               col_bg     = "#d4d4d4",
-               col_ell    = "#e10000",
+               pal  = c("#d4d4d4", "#0004d5"),
+               col_bg = "#d4d4d4",
+               col_ell  = "#e10000",
                lwd = 2, pch = 16, cex_bg = 0.5,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
@@ -663,8 +663,8 @@ The suitability map shows the continuous gradient of potential habitat quality. 
 ```{r trunc_gspace, fig.width=7, fig.height=3.5, out.width="95%"}
 trunc_rast <- predict(ref_ellipse,
                       newdata = ma_bios[[ref_ellipse$var_names]],
-                      include_mahalanobis   = FALSE,
-                      include_suitability   = FALSE,
+                      include_mahalanobis = FALSE,
+                      include_suitability = FALSE,
                       mahalanobis_truncated = TRUE,
                       suitability_truncated = TRUE,
                       verbose = FALSE)
@@ -743,8 +743,8 @@ par(cex = 0.7)
 plot_ellipsoid_pairs(ellipse_3d,
                      prediction = as.data.frame(suit_3d),
                      col_layer  = "suitability_trunc",
-                     col_bg     = "#d4d4d4",
-                     col_ell    = "#e10000",
+                     col_bg = "#d4d4d4",
+                     col_ell  = "#e10000",
                      lwd = 2, pch = 16, cex_bg = 0.3)
 ```
 
@@ -823,13 +823,13 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
 
 ```{r save_preds, eval=FALSE}
 # 1. Define temporary file paths
-temp_df      <- file.path(tempdir(), "predictions_df.csv")
-temp_rast    <- file.path(tempdir(), "predictions_rast.tif")
+temp_df  <- file.path(tempdir(), "predictions_df.csv")
+temp_rast  <- file.path(tempdir(), "predictions_rast.tif")
 
-temp_3d_df   <- file.path(tempdir(), "predictions_3d_df.csv")
+temp_3d_df <- file.path(tempdir(), "predictions_3d_df.csv")
 temp_3d_rast <- file.path(tempdir(), "predictions_3d_rast.tif")
 
-temp_virt    <- file.path(tempdir(), "predictions_virt.csv")
+temp_virt  <- file.path(tempdir(), "predictions_virt.csv")
 temp_virt_3d <- file.path(tempdir(), "predictions_virt_3d.csv")
 
 
@@ -848,12 +848,12 @@ write.csv(pred_3d_virt, file = temp_virt_3d, row.names = FALSE)
 
 
 # 3. Import predictions back into R
-pred_df_imported      <- read.csv(temp_df)
-pred_rast_imported    <- terra::rast(temp_rast)
+pred_df_imported  <- read.csv(temp_df)
+pred_rast_imported  <- terra::rast(temp_rast)
 
-suit_3d_df_imported   <- read.csv(temp_3d_df)
+suit_3d_df_imported <- read.csv(temp_3d_df)
 suit_3d_rast_imported <- terra::rast(temp_3d_rast)
 
-pred_virt_imported    <- read.csv(temp_virt)
+pred_virt_imported  <- read.csv(temp_virt)
 pred_3d_virt_imported <- read.csv(temp_virt_3d)
 ```

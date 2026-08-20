@@ -27,8 +27,8 @@ navbar:
          href: articles/creating_ellipsoid_based_niches.html
       -  text: "2. Make a Prediction"
          href: articles/predict.html
-      -  text: "3. Generate Occurence Data"
-         href: articles/generating_occurrence.html
+      -  text: "3. Generate Data"
+         href: articles/generating_data.html
       -  text: "4. Working With Bias"
          href: articles/bias.html
       -  text: "5. Virtual Community Simulations"

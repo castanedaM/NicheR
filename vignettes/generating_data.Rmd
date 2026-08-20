@@ -166,6 +166,9 @@ occ_geo_basic <- sample_data(
   seed = 123
 )
 
+occ_geo_basic_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                                    occ_geo_basic[ , c("x", "y")])
+
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 
 # 1. Geographic Space
@@ -175,7 +178,7 @@ points(occ_geo_basic[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 # 2. Environmental Space
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), 
                dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Temp vs Precip")
-add_data(occ_geo_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_geo_basic_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
@@ -196,22 +199,29 @@ occ_cent <- sample_data(100, pred_2d, "suitability", sampling = "centroid", seed
 occ_edge <- sample_data(100, pred_2d, "suitability", sampling = "edge", seed = 123)
 occ_rand <- sample_data(100, pred_2d, "suitability", sampling = "random", seed = 123)
 
+occ_cent_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_cent[ , c("x", "y")])
+occ_edge_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_edge[ , c("x", "y")])
+occ_rand_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_rand[ , c("x", "y")])
+
 par(mfrow = c(3, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Centroid
 terra::plot(pred_2d[["suitability"]], main = "G-Space: Centroid Sampling"); points(occ_cent[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Centroid")
-add_data(occ_cent, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_cent_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Edge
 terra::plot(pred_2d[["suitability"]], main = "G-Space: Edge Sampling"); points(occ_edge[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Edge")
-add_data(occ_edge, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_edge_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Random
 terra::plot(pred_2d[["suitability"]], main = "G-Space: Random Sampling"); points(occ_rand[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Random")
-add_data(occ_rand, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_rand_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -225,20 +235,26 @@ The `method` argument controls the underlying mathematical weight used to draw t
 -   **`mahalanobis`**: Weights based on the multivariate environmental distance, creating a stricter concentration in optimal environments.
 
 ```{r}
-occ_meth_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
-occ_meth_maha <- sample_data(100, pred_2d, "Mahalanobis", method = "mahalanobis", seed = 123)
+occ_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
+occ_maha <- sample_data(100, pred_2d, "Mahalanobis", method = "mahalanobis", seed = 123)
+
+occ_suit_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_suit[ , c("x", "y")])
+occ_maha_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_maha[ , c("x", "y")])
+
 
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Suitability
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Method = Suitability"); points(occ_meth_suit[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Method = Suitability"); points(occ_suit[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Suitability")
-add_data(occ_meth_suit, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_suit_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Mahalanobis
-terra::plot(pred_2d[["Mahalanobis"]], main = "G-Space: Method = Mahalanobis"); points(occ_meth_maha[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["Mahalanobis"]], main = "G-Space: Method = Mahalanobis"); points(occ_maha[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Mahalanobis")
-add_data(occ_meth_maha, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_maha_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -248,20 +264,26 @@ add_data(occ_meth_maha, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 By default (`strict = FALSE`), generating occurrences allows points to fall slightly outside the strict boundaries of the fundamental niche to simulate sink populations. Setting `strict = TRUE` (using a truncated layer) establishes a hard boundary.
 
 ```{r}
-occ_lax <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
-occ_strict <- sample_data(100, pred_2d, "suitability_trunc", strict = TRUE, seed = 123)
+occ_strict_F <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
+occ_strict_T <- sample_data(100, pred_2d, "suitability_trunc", strict = TRUE, seed = 123)
+
+occ_strict_F_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_strict_F[ , c("x", "y")])
+occ_strict_T_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               occ_strict_T[ , c("x", "y")])
+
 
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Lax
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Strict = FALSE"); points(occ_lax[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Strict = FALSE"); points(occ_strict_F[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = FALSE")
-add_data(occ_lax, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_strict_F_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Strict
-terra::plot(pred_2d[["suitability_trunc"]], main = "G-Space: Strict = TRUE"); points(occ_strict[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability_trunc"]], main = "G-Space: Strict = TRUE"); points(occ_strict_T[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = TRUE")
-add_data(occ_strict, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_strict_T_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -273,15 +295,19 @@ Generating occurrences for a 3-dimensional niche operates exactly the same way. 
 ```{r}
 occ_geo_3d <- sample_data(100, pred_3d, "suitability", seed = 123)
 
+occ_geo_3d_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
+                               occ_geo_3d[ , c("x", "y")])
+
+
 par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
 terra::plot(pred_3d[["suitability"]], main = "G-Space: 3D Projection")
 points(occ_geo_3d[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
-add_data(occ_geo_3d, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_geo_3d_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
-add_data(occ_geo_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(occ_geo_3d_pts, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -307,6 +333,10 @@ occ_bias_xy <- sample_biased_data(
   seed = 123
 )
 
+occ_bias_xy_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
+                               occ_bias_xy[ , c("x", "y")])
+
+
 # Extract environmental data at these coordinates to view E-space distortion
 occ_bias_env <- terra::extract(bios, occ_bias_xy[, c("x", "y")])
 
@@ -315,7 +345,7 @@ terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map"
 terra::points(occ_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Distorted Niche")
-add_data(occ_bias_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_bias_xy_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
