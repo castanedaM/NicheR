@@ -30,7 +30,6 @@ Cobos
 [![R-CMD-check](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-
 ## GSoC project description
 
 **Student:** Mariana Castaneda-Guzman
@@ -107,9 +106,9 @@ and combined into a composite surface with `prepare_bias()`, then
 applied to a prediction with `apply_bias()`. The step is optional and
 can be skipped.
 
-**Generate.** Occurrences are drawn with `sample_data()`,
+**Generate.** data are drawn with `sample_data()`,
 `sample_biased_data()`, or `virtual_data()`, depending on how the
-session started and whether bias was applied. Occurrence sets accumulate
+session started and whether bias was applied. Data sets accumulate
 rather than replace, so a series varying sample size or seed builds up
 in one place and can be overlaid on the same plot.
 
@@ -122,13 +121,14 @@ and all derived results, can be saved and reloaded.
 
 ### Remaining work
 
-- Community building adn visualization unique tabs
+- Add community building and advanced visualization tabs.
+- Add and optional variable labels for better plotting.
+- Add an optional multiplier to bring variables onto a similar scale.
 
 A complete history of commits can be accessed
 [here](https://github.com/castanedaM/nicheR/commits/main/).
 
 <br>
-
 
 ## Background
 
@@ -364,7 +364,7 @@ vignette("creating_ellipsoid_based_niches")
 vignette("predict")
 
 # Guide to generate occurrence data from virtual niches
-vignette("generating_data")
+vignette("generate_occurrence")
 
 # Guide to preparing and applying sampling bias
 vignette("bias")

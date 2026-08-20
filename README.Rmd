@@ -23,6 +23,102 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+## GSoC project description
+
+**Student:** Mariana Castaneda-Guzman
+
+**GSoC Mentors:** Marlon E. Cobos, Vijay Barve
+
+**Organization:** R Project for Statistical Computing
+
+### Motivation
+
+[nicheR](https://castanedam.github.io/nicheR/) builds ellipsoid-based virtual
+ecological niches from environmental data, projects them onto a study area,
+applies sampling bias, and generates virtual occurrence records. Virtual
+species are used to benchmark niche models, because they are the only setting
+in which the true niche is known and model performance can be measured against
+it rather than estimated.
+
+Using the package well requires choices that are geometric and hard to
+anticipate from a function signature. The range of each variable sets the
+extent of the ellipsoid, the covariance between each pair of variables sets its
+orientation, and the confidence level sets where its boundary falls. Those
+choices interact, and their effect on the resulting niche is easiest to judge
+by looking at it. In practice this means writing a script, plotting, adjusting
+a number, and running it again, which is a slow way to develop an intuition and
+a barrier for students and researchers who are new to niche modeling.
+
+The goal of this project is a graphical interface to the existing nicheR
+functions, so that parameter choices can be made against a plot that updates as
+they are made, and so that several competing niche hypotheses can be carried
+through the full workflow at once and compared side by side. The interface is
+not a replacement for the package. Everything it does maps onto nicheR
+functions that can be called directly, and the interface is intended as a way
+to decide what those calls should be.
+
+Two problems shaped the design. First, the workflow is sequential and stateful:
+each step depends on the one before it, so editing an earlier choice has to
+invalidate everything downstream rather than silently leaving stale results in
+place. Second, comparing niche hypotheses requires bookkeeping that is tedious
+to do by hand. The app keeps a library of ellipsoids, records where each one
+came from, and stores predictions, biased surfaces, and occurrence sets
+separately for each, so that changing one hypothesis never overwrites another.
+
+### Status of the project
+
+At the time of submission for GSoC 2026, the app implements the full nicheR
+workflow across four steps.
+
+**Inputs.** Environmental data can be supplied as rasters, as a CSV, as a saved
+session, or from the bundled example data. Data can also be defined directly in
+environmental space with no geographic component. Tables without coordinates
+are supported and the app continues in environmental space only, matching the
+package behaviour where `predict()` accepts data frames and returns data
+frames.
+
+**Build.** Ranges can be set manually, from an occurrence table, or from
+published means and standard deviations, corresponding to `ranges_from_data()`
+and `ranges_from_stats()`. Covariances are set with one slider per variable
+pair, with limits computed so that the covariance matrix stays valid. The
+centroid can be moved without changing the shape of the ellipsoid. Every saved
+ellipsoid is kept in a library that records which ellipsoid each one was
+derived from, and lineage is broken when the geometry changes in a way that
+makes the relationship no longer meaningful.
+
+**Predict.** One or all saved ellipsoids can be projected in a single pass,
+producing suitability and Mahalanobis surfaces in truncated and untruncated
+form. Results are stored per ellipsoid, and re-predicting one clears the
+downstream results that depended on the old prediction.
+
+**Bias.** Sampling effort layers are assigned directions, standardised, and
+combined into a composite surface with `prepare_bias()`, then applied to a
+prediction with `apply_bias()`. The step is optional and can be skipped.
+
+**Generate.** data are drawn with `sample_data()`,
+`sample_biased_data()`, or `virtual_data()`, depending on how the session
+started and whether bias was applied. Data sets accumulate rather than
+replace, so a series varying sample size or seed builds up in one place and can
+be overlaid on the same plot.
+
+**Plotting and export.** Every step has environmental space, geographic space,
+and combined views, with figure export to PNG, PDF, or SVG at a specified size.
+
+**Sessions.** The full state, including every ellipsoid, its lineage, and all
+derived results, can be saved and reloaded.
+
+### Remaining work
+
+- Add community building and advanced visualization tabs.
+- Add and optional variable labels for better plotting.
+- Add an optional multiplier to bring variables onto a similar scale.
+
+A complete history of commits can be accessed
+[here](https://github.com/castanedaM/nicheR/commits/main/).
+
+<br>
+
 ## Background 
 
 The field of distributional ecology is evolving rapidly, with new algorithms, parameterization strategies, and hypotheses emerging at a fast pace. Evaluating these ideas requires software that can isolate mechanisms, account for bias, and clearly link ecological theory to model behavior.
@@ -254,100 +350,6 @@ vignette("plotting_vignette")
 # Guide to the shiny app
 vignette("shiny_app_vignette")
 ```
-
-<br>
-
-
-## GSoC project description
-
-**Student:** Mariana Castaneda-Guzman
-
-**GSoC Mentors:** Marlon E. Cobos, Vijay Barve
-
-**Organization:** R Project for Statistical Computing
-
-### Motivation
-
-[nicheR](https://castanedam.github.io/nicheR/) builds ellipsoid-based virtual
-ecological niches from environmental data, projects them onto a study area,
-applies sampling bias, and generates virtual occurrence records. Virtual
-species are used to benchmark niche models, because they are the only setting
-in which the true niche is known and model performance can be measured against
-it rather than estimated.
-
-Using the package well requires choices that are geometric and hard to
-anticipate from a function signature. The range of each variable sets the
-extent of the ellipsoid, the covariance between each pair of variables sets its
-orientation, and the confidence level sets where its boundary falls. Those
-choices interact, and their effect on the resulting niche is easiest to judge
-by looking at it. In practice this means writing a script, plotting, adjusting
-a number, and running it again, which is a slow way to develop an intuition and
-a barrier for students and researchers who are new to niche modeling.
-
-The goal of this project is a graphical interface to the existing nicheR
-functions, so that parameter choices can be made against a plot that updates as
-they are made, and so that several competing niche hypotheses can be carried
-through the full workflow at once and compared side by side. The interface is
-not a replacement for the package. Everything it does maps onto nicheR
-functions that can be called directly, and the interface is intended as a way
-to decide what those calls should be.
-
-Two problems shaped the design. First, the workflow is sequential and stateful:
-each step depends on the one before it, so editing an earlier choice has to
-invalidate everything downstream rather than silently leaving stale results in
-place. Second, comparing niche hypotheses requires bookkeeping that is tedious
-to do by hand. The app keeps a library of ellipsoids, records where each one
-came from, and stores predictions, biased surfaces, and occurrence sets
-separately for each, so that changing one hypothesis never overwrites another.
-
-### Status of the project
-
-At the time of submission for GSoC 2026, the app implements the full nicheR
-workflow across four steps.
-
-**Inputs.** Environmental data can be supplied as rasters, as a CSV, as a saved
-session, or from the bundled example data. Data can also be defined directly in
-environmental space with no geographic component. Tables without coordinates
-are supported and the app continues in environmental space only, matching the
-package behaviour where `predict()` accepts data frames and returns data
-frames.
-
-**Build.** Ranges can be set manually, from an occurrence table, or from
-published means and standard deviations, corresponding to `ranges_from_data()`
-and `ranges_from_stats()`. Covariances are set with one slider per variable
-pair, with limits computed so that the covariance matrix stays valid. The
-centroid can be moved without changing the shape of the ellipsoid. Every saved
-ellipsoid is kept in a library that records which ellipsoid each one was
-derived from, and lineage is broken when the geometry changes in a way that
-makes the relationship no longer meaningful.
-
-**Predict.** One or all saved ellipsoids can be projected in a single pass,
-producing suitability and Mahalanobis surfaces in truncated and untruncated
-form. Results are stored per ellipsoid, and re-predicting one clears the
-downstream results that depended on the old prediction.
-
-**Bias.** Sampling effort layers are assigned directions, standardised, and
-combined into a composite surface with `prepare_bias()`, then applied to a
-prediction with `apply_bias()`. The step is optional and can be skipped.
-
-**Generate.** Occurrences are drawn with `sample_data()`,
-`sample_biased_data()`, or `virtual_data()`, depending on how the session
-started and whether bias was applied. Occurrence sets accumulate rather than
-replace, so a series varying sample size or seed builds up in one place and can
-be overlaid on the same plot.
-
-**Plotting and export.** Every step has environmental space, geographic space,
-and combined views, with figure export to PNG, PDF, or SVG at a specified size.
-
-**Sessions.** The full state, including every ellipsoid, its lineage, and all
-derived results, can be saved and reloaded.
-
-### Remaining work
-
-- Community building adn visualization unique tabs
-
-A complete history of commits can be accessed
-[here](https://github.com/castanedaM/nicheR/commits/main/).
 
 <br>
 
