@@ -2168,9 +2168,6 @@ report_occ_code <- function(objs, row, out){
     "",
     call,
     "",
-    "  # The app keeps coordinates only. Drop this line to keep the",
-    "  # environmental columns the sampler returned as well.",
-    "  d[, c(\"x\", \"y\"), drop = FALSE]",
     "})")
 }
 
@@ -2455,7 +2452,7 @@ report_citation <- function(){
     if(!is.null(cit)){
       paste0("> ", unlist(strsplit(cit, "\n")))
     } else {
-      "> Castaneda-Guzman M, Hughes C, Paansri P, Cobos M (2026). nicheR."
+      "> Castaneda-Guzman M, Hughes C, Paansri P, Cobos M E (2026). nicheR."
     },
     "",
     "You can regenerate this citation at any time with `citation(\"nicheR\")`.",

@@ -532,6 +532,8 @@ add_ellipsoid <- function(object,
 #' \code{plot(type = "l")}. The boundary is derived from the selected
 #' covariance submatrix and the stored chi-square cutoff.
 #'
+#' @usage ellipsoid_boundary_2d(object, n_segments = 50, dim = c(1, 2))
+#'
 #' @param object A \code{nicheR_ellipsoid} object.
 #' @param n_segments Integer. Number of boundary points to generate
 #'   (must be >= 4).
@@ -541,7 +543,11 @@ add_ellipsoid <- function(object,
 #' @return A \code{data.frame} with \code{n_segments} ordered boundary points
 #'   in the selected dimensions.
 #'
-#' @keywords internal
+#' @examples
+#' data("example_sp_4", package = "nicheR")
+#' boundary_plot <- ellipsoid_boundary_2d(example_sp_4)
+#'
+#' @export
 ellipsoid_boundary_2d <- function(object,
                                   n_segments = 50,
                                   dim = c(1, 2)) {

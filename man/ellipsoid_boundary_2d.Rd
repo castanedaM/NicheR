@@ -25,4 +25,8 @@ Computes ordered boundary points for a two-dimensional slice of a
 \code{plot(type = "l")}. The boundary is derived from the selected
 covariance submatrix and the stored chi-square cutoff.
 }
-\keyword{internal}
+\examples{
+data("example_sp_4", package = "nicheR")
+boundary_plot <- ellipsoid_boundary_2d(example_sp_4)
+
+}

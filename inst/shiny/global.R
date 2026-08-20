@@ -1,3 +1,8 @@
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
+library(terra)
+library(nicheR)
 
 # Maximum dimensions the app uses
 MAX_DIMS <- 6

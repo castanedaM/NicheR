@@ -83,36 +83,28 @@ report_rmd <- function(){
 
 # DOWNLOAD ----------------------------------------------------------------
 
+# Has to zip to have both files in one folder
 output$create_report <- downloadHandler(
-
   filename = function(){
     paste0("nicheR_report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".zip")
   },
-
   contentType = "application/zip",
-
   content = function(file){
-
     if(!requireNamespace("rmarkdown", quietly = TRUE)){
       showNotification(instructions$report_needs_rmarkdown,
                        type = "error", duration = 6)
       return()
     }
-
     withProgress(message = "Building report", value = 0, {
-
       # render() writes intermediates beside its input, so it gets a directory
       # of its own rather than the shared tempdir
       dir <- file.path(tempdir(), paste0("nicheR_report_",
                                          format(Sys.time(), "%H%M%S")))
       dir.create(dir, recursive = TRUE, showWarnings = FALSE)
       on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-
       rmd <- file.path(dir, "nicheR_report.Rmd")
-
       incProgress(0.2, detail = "writing script")
       writeLines(report_rmd(), rmd)
-
       incProgress(0.3, detail = "rendering")
       html <- tryCatch(
         rmarkdown::render(rmd,
@@ -127,23 +119,18 @@ output$create_report <- downloadHandler(
           NULL
         }
       )
-
       incProgress(0.3, detail = "packaging")
-
       # zip() stores whatever path it is given, so it runs from inside the
       # directory to keep the archive flat
       old <- setwd(dir)
       on.exit(setwd(old), add = TRUE)
-
       keep <- c("nicheR_report.Rmd",
                 if(!is.null(html)) "nicheR_report.html")
-
       ok <- tryCatch({
         utils::zip(zipfile = normalizePath(file, mustWork = FALSE),
                    files = keep, flags = "-q")
         TRUE
       }, error = function(e) FALSE)
-
       # Without a zip binary there is no archive to deliver, so the script is
       # sent on its own rather than failing silently
       if(!ok || !file.exists(file)){
@@ -151,7 +138,6 @@ output$create_report <- downloadHandler(
                          type = "warning", duration = 8)
         file.copy("nicheR_report.Rmd", file, overwrite = TRUE)
       }
-
       incProgress(0.2)
     })
   }
