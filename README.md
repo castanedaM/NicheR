@@ -124,9 +124,11 @@ and all derived results, can be saved and reloaded.
 - Add community building and advanced visualization tabs.
 - Add and optional variable labels for better plotting.
 - Add an optional multiplier to bring variables onto a similar scale.
+- Merge the shinyApp branch into main after beta testing by the
+  coauthors
 
 A complete history of commits can be accessed
-[here](https://github.com/castanedaM/nicheR/commits/main/).
+[here](https://github.com/castanedaM/nicheR/commits/shinyApp/).
 
 <br>
 
