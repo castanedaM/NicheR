@@ -147,7 +147,7 @@ output$generate_controls_ui <- renderUI({
 
       fluidRow(
         column(width = 6,
-               tags$span("Number of occurrences", class = "text-widget-title"),
+               tags$span("Number of points", class = "text-widget-title"),
                numericInput("generate_n_occ",
                             label = NULL,
                             value = 100,
@@ -704,7 +704,7 @@ observeEvent(input$generate_run_btn, {
   }
 
   if(n_success == 0L){
-    showNotification("Occurrence generation failed for all selected combinations.",
+    showNotification("Data generation failed for all selected combinations.",
                      type = "error", duration = 5)
     return()
   }

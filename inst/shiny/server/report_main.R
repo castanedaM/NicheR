@@ -49,6 +49,14 @@ report_preamble <- function(){
     "report was generated, not the order in which things were tried. The code",
     "reproduces that state and can be run on its own.",
     "",
+    if(length(session_data$ellipsoid_list) > 0){
+      c("Each niche is built as its own object. The steps after that use",
+        "`lapply()`, which applies one call to a whole list of niches, so the",
+        "arguments are written once instead of repeated. Niches in the same",
+        "`lapply()` were given the same arguments; any handled differently get",
+        "their own call. Results stay in lists, so later steps can pull out the",
+        "piece belonging to each niche by name.", "")
+    },
     if(!report_can_eval()){
       c("This session used uploaded files, so the code chunks are shown but",
         "not run. Set `data_dir` in the first chunk to the folder holding",
@@ -56,7 +64,6 @@ report_preamble <- function(){
     },
     "")
 }
-
 
 #' Assemble the full report
 #'

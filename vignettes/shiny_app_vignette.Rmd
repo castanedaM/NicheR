@@ -42,6 +42,9 @@ knitr::opts_chunk$set(
     -   [Sampling in virtual mode](#sampling-in-virtual-mode)
     -   [Occurrence sets](#occurrence-sets)
 -   [Working with several ellipsoids](#working-with-several-ellipsoids)
+-   [The session report](#the-session-report)
+    -   [What the report contains depends on your path](#what-the-report-contains-depends-on-your-path)
+    -   [File paths](#file-paths)
 -   [Where to go next](#where-to-go-next)
 <hr>
 
@@ -87,7 +90,7 @@ scripted batch runs. For those, see the
 [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) vignette and work in
 the console.
 
-br()
+<br>
 
 ## The About page
 
@@ -109,7 +112,7 @@ Two buttons sit in the header and are available from every page:
 
 Click **START** at the bottom of the About page to move to step 1.
 
-br()
+<br>
 
 # Step 1: Build
 
@@ -162,7 +165,7 @@ fastest way to see the whole workflow.
 bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 ```
 
-br()
+<br>
 
 ## Selecting variables
 
@@ -361,7 +364,7 @@ width='100%'/>
 
 Click **Continue** to move to Prediction.
 
-br()
+<br>
 
 # Step 2: Predict
 
@@ -445,7 +448,7 @@ width='100%'/>
 
 The library on this tab is view-only. Editing happens on the Build tab.
 
-br()
+<br>
 
 # Step 3: Bias (optional)
 
@@ -501,7 +504,7 @@ align='center'
 height='100%' 
 width='100%'/>
 
-br()
+<br>
 
 # Step 4: Generate
 
@@ -520,11 +523,11 @@ align='center'
 height='100%' 
 width='100%'/>
 
-br() 
+<br> 
 
 ## Sampling from a prediction
 
-**Number of occurrences** sets how many points to draw.
+**Number of records** sets how many points to draw.
 
 **Sampling strategy** controls where they fall within the niche. *Centroid*
 weights toward the niche centre, *edge* toward the boundary, and *random*
@@ -598,7 +601,7 @@ align='center'
 height='100%' 
 width='100%'/>
 
-br()
+<br>
 
 # Working with several ellipsoids
 
@@ -621,7 +624,78 @@ programmatically. If your ellipsoids differ by a rule rather than by hand,
 them for you and scale past the handful the library is designed for. See the
 [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) vignette.
 
-br()
+<br>
+
+# The session report
+
+The **Report** button in the header writes a summary of the session as it
+stands. It produces a self-contained HTML document and the `.Rmd` source it was
+rendered from. The HTML is the record; the `.Rmd` is the more useful of the two,
+because it holds the `nicheR` calls with your parameters filled in, so it works
+as a starting script rather than only as a description of what you clicked.
+
+The report follows the same four steps as the app. Each section lists the
+parameters you used, the objects that resulted, and the code that would produce
+them from the console.
+
+
+<!-- SCREENSHOT: -->
+<img src='../man/figures/shiny_app_figures/Slide20.png' 
+align='center' 
+height='100%' 
+width='100%'/>
+
+<br>
+
+
+## What the report contains depends on your path
+
+Sections appear only when the objects they describe exist. Skipping bias, or
+working without geography, does not leave an empty heading in the report; the
+section is simply not written. The same rule applies within a section, so a
+Generate section built from three occurrence sets documents three, not a
+placeholder for every option you did not use.
+
+| How you started | Sections written |
+|---|---|
+| Rasters, or a CSV with gridded coordinates | Build, Predict, Bias, Generate |
+| The same, with **Skip bias** | Build, Predict, Generate |
+| CSV with no usable coordinates | Build, Predict, Generate, with no geographic figures |
+| Virtual mode | Build, Generate |
+
+**Virtual mode** produces the shortest report. There is no prediction and no
+bias surface to describe, and the Generate section documents `virtual_data()`
+rather than `sample_data()`, so the parameters recorded are truncation and point
+distribution rather than sampling strategy and weighting method. Every figure is
+in environmental space.
+
+**A CSV without coordinates** still gives you Build and Predict, since
+suitability values do not require geography, but the report carries no maps and
+no Bias section. This matches what the app itself allows.
+
+**Bias** is reported per composite surface. The layers you uploaded, their
+assigned directions, the NA handling rule, and the resulting formula are all
+recorded, and the Generate section cross-references which occurrence sets came
+from a biased layer and which did not.
+
+## File paths
+
+The report records the name of every file you uploaded, but not a working path
+to it. Uploaded files are copied to a temporary location that does not survive
+the session, so a path pointing there would be broken by the time you read the
+report. Where a path would normally appear, the report names the file and notes
+that the location is unavailable.
+
+The practical consequence is that the `.Rmd` will not run as it stands if your
+session used uploaded files. Point the reading calls at your own copies of those
+files and the rest of the script runs unchanged. A session built on the example
+data has no such problem, since those layers ship with the package and the
+report writes a `system.file()` call for them.
+
+Saving the session with the **Save** button is the reliable way to preserve
+state. The report preserves the reasoning; the `.rds` preserves the objects.
+
+<br>
 
 # Where to go next
 
