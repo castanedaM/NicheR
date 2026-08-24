@@ -8,6 +8,7 @@ Cobos
   - [Motivation](#motivation)
   - [Status of the project](#status-of-the-project)
   - [Remaining work](#remaining-work)
+  - [How to access work](#how-to-access-work)
 - [Background](#background)
 - [Package description](#package-description)
 - [Installing the package](#installing-the-package)
@@ -117,7 +118,7 @@ space, and combined views, with figure export to PNG, PDF, or SVG at a
 specified size.
 
 **Sessions.** The full state, including every ellipsoid, its lineage,
-and all derived results, can be saved and reloaded.
+and all derived results, can be saved and reloaded. <br>
 
 ### Remaining work
 
@@ -127,8 +128,26 @@ and all derived results, can be saved and reloaded.
 - Merge the shinyApp branch into main after beta testing by the
   coauthors
 
-A complete history of commits can be accessed
-[here](https://github.com/castanedaM/nicheR/commits/shinyApp/).
+### How to access work
+
+The full commit history for this work lives on the [`shinyApp`
+branch](https://github.com/castanedaM/nicheR/commits/shinyApp/).
+
+**Install the branch**
+
+Vignettes are not built by default when installing from GitHub, so
+`build_vignettes = TRUE` is required to get the Shiny app vignette.
+
+``` r
+remotes::install_github("castanedaM/nicheR", ref = "shinyApp",
+                        force = TRUE, build_vignettes = TRUE)
+```
+
+**View the Shiny app vignette**
+
+``` r
+vignette("shiny_app_vignette", package = "nicheR")
+```
 
 <br>
 
@@ -183,14 +202,18 @@ Note: Internet connection is required to install the package.
 The development version of nicheR can be installed using the code below.
 
 ``` r
-# Installing and loading packages
-if (!require("devtools")) install.packages("devtools")
 
-# To install the package use
-devtools::install_github("castanedaM/nicheR")
+# To install the branch with the app use remote
+remotes::install_github("castanedaM/nicheR", ref = "shinyApp")
 
-# To install the package and its vignettes use (if needed use: force = TRUE)
-devtools::install_github("castanedaM/nicheR", build_vignettes = TRUE)
+# # Installing and loading packages
+# if (!require("devtools")) install.packages("devtools")
+# 
+# # To install the package use
+# devtools::install_github("castanedaM/nicheR")
+# 
+# # To install the package and its vignettes use (if needed use: force = TRUE)
+# devtools::install_github("castanedaM/nicheR", build_vignettes = TRUE)
 ```
 
 <br>
