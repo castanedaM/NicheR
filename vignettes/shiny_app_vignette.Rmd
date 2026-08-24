@@ -2,11 +2,9 @@
 title: "Using the shiny app"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using the shiny app}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Virtual community simulation}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
