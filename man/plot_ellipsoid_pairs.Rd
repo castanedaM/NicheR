@@ -71,5 +71,5 @@ plot_ellipsoid_pairs(ell3d,
                      col_bg  = "#d4d4d4",
                      col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
 
-#'
+
 }

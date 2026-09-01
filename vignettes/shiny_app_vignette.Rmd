@@ -2,7 +2,7 @@
 title: "Using the shiny app"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Virtual community simulation}
+  %\VignetteIndexEntry{Using the shiny app}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -96,8 +96,8 @@ The app opens on the About page. Each of the four numbered boxes describes one
 step of the workflow and links to the matching package vignette. The sidebar on
 the left is how you move between steps once you have started.
 
-<!-- SCREENSHOT: About page, full browser window -->
-<img src='../man/figures/shiny_app_figures/Slide1.png' 
+
+<img src='figures/shiny_app_figures/Slide1.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -120,7 +120,7 @@ The Build page opens on the **Inputs** tab. Start by choosing one of four ways
 to supply your environmental data.
 
 <!-- SCREENSHOT: Inputs tab, input type radio buttons -->
-<img src='../man/figures/shiny_app_figures/Slide2.png' 
+<img src='figures/shiny_app_figures/Slide2.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -178,7 +178,7 @@ In virtual mode you instead choose how many dimensions you want and type a name
 for each. Blank names default to `var1`, `var2`, and so on.
 
 <!-- SCREENSHOT: variable selectors with three slots, one unchecked -->
-<img src='../man/figures/shiny_app_figures/Slide3.png' 
+<img src='figures/shiny_app_figures/Slide3.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -218,7 +218,7 @@ rare species.
 > [Building ellipsoids](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) vignette.
 
 <!-- SCREENSHOT: From Stats panel with three variables -->
-<img src='../man/figures/shiny_app_figures/Slide5.png' 
+<img src='figures/shiny_app_figures/Slide5.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -233,7 +233,7 @@ your edits until you either rebuild or switch away.
 **Initialize Ellipsoid** builds the ellipsoid and unlocks the Covariance and
 Centroid sections. Once one exists, that button reads **Rebuild Ellipsoid**.
 
-<img src='../man/figures/shiny_app_figures/Slide6.png' 
+<img src='figures/shiny_app_figures/Slide6.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -254,7 +254,7 @@ value unchanged. The rotate icon beside each slider resets that pair to zero,
 and **Reset all to zero** returns to the axis-aligned form.
 
 <!-- SCREENSHOT: covariance sliders for a three-variable ellipsoid -->
-<img src='../man/figures/shiny_app_figures/Slide7.png' 
+<img src='figures/shiny_app_figures/Slide7.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -278,7 +278,7 @@ that is the centroid of the ellipsoid it was copied from. For an ellipsoid built
 from its own ranges, it is the centre of those ranges.
 
 <!-- SCREENSHOT: centroid sliders with one shifted -->
-<img src='../man/figures/shiny_app_figures/Slide8.png' 
+<img src='figures/shiny_app_figures/Slide8.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -290,7 +290,7 @@ is the **working** ellipsoid, the one the plots and every later tab use. Its
 label shows whether you are editing or viewing it.
 
 <!-- SCREENSHOT: ellipsoid library with three saved versions -->
-<img src='../man/figures/shiny_app_figures/Slide9.png' 
+<img src='figures/shiny_app_figures/Slide9.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -340,7 +340,7 @@ suitable area. The **Show** control lets you move between the two.
 **Combined** places an E-space panel beside a G-space panel.
 
 <!-- SCREENSHOT: E-space pairs view with an ellipsoid -->
-<img src='../man/figures/shiny_app_figures/Slide10.png' 
+<img src='figures/shiny_app_figures/Slide10.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -350,7 +350,7 @@ shapes, sizes, and colours, and an **Export figure** button that writes PNG,
 PDF, or SVG at a size you specify. The default is a 166 x 166 mm full-page
 publication figure.
 
-<img src='../man/figures/shiny_app_figures/Slide11.png' 
+<img src='figures/shiny_app_figures/Slide11.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -370,7 +370,7 @@ Prediction projects a saved ellipsoid onto your background data to produce
 suitability surfaces.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide12.png' 
+<img src='figures/shiny_app_figures/Slide12.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -408,7 +408,7 @@ occurrences derived from the old prediction, since those would otherwise be
 stale.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide13.png' 
+<img src='figures/shiny_app_figures/Slide13.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -433,13 +433,13 @@ Continuous layers use a viridis palette by default, changeable and reversible in
 the settings panel.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide14.png' 
+<img src='figures/shiny_app_figures/Slide14.png' 
 align='center' 
 height='100%' 
 width='100%'/>
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide15.png' 
+<img src='figures/shiny_app_figures/Slide15.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -457,7 +457,7 @@ at the top moves straight to Generate, and occurrences will be sampled from the
 unbiased prediction.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide16.png' 
+<img src='figures/shiny_app_figures/Slide16.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -497,7 +497,7 @@ unbiased prediction beside every biased version of that layer, so the effect of
 the bias is visible directly. Applying bias jumps you to that tab automatically.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide17.png' 
+<img src='figures/shiny_app_figures/Slide17.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -516,7 +516,7 @@ on how you started, because the app calls a different function in each case.
 | Virtual mode | `virtual_data()` | environmental values only |
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide18.png' 
+<img src='figures/shiny_app_figures/Slide18.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -594,7 +594,7 @@ everything. The full download is a single CSV with `ell_id`, `ell_name`, and
 `layer` columns identifying each set.
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide19.png' 
+<img src='figures/shiny_app_figures/Slide19.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -638,7 +638,7 @@ them from the console.
 
 
 <!-- SCREENSHOT: -->
-<img src='../man/figures/shiny_app_figures/Slide20.png' 
+<img src='figures/shiny_app_figures/Slide20.png' 
 align='center' 
 height='100%' 
 width='100%'/>

@@ -30,3 +30,4 @@ data("example_sp_4", package = "nicheR")
 boundary_plot <- ellipsoid_boundary_2d(example_sp_4)
 
 }
+\keyword{internal}

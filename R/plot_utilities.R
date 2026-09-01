@@ -547,6 +547,7 @@ add_ellipsoid <- function(object,
 #' data("example_sp_4", package = "nicheR")
 #' boundary_plot <- ellipsoid_boundary_2d(example_sp_4)
 #'
+#' @keywords internal
 #' @export
 ellipsoid_boundary_2d <- function(object,
                                   n_segments = 50,
@@ -651,7 +652,7 @@ ellipsoid_boundary_2d <- function(object,
 #'                      col_bg  = "#d4d4d4",
 #'                      col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
 #'
-#' #'
+#'
 #' @export
 plot_ellipsoid_pairs <- function(object,
                                  background = NULL,
@@ -733,6 +734,7 @@ plot_ellipsoid_pairs <- function(object,
 #'   \code{[1, pal_len]}.
 #'
 #' @keywords internal
+#' @export
 map_to_pal <- function(vals, pal_len) {
   vmin <- min(vals, na.rm = TRUE)
   vmax <- max(vals, na.rm = TRUE)
@@ -761,6 +763,7 @@ map_to_pal <- function(vals, pal_len) {
 #'   numeric vector of length 2.
 #'
 #' @keywords internal
+#' @export
 safe_lims <- function(pts_xy, ell_xy) {
   all_x <- c(pts_xy[, 1], ell_xy[, 1])
   all_y <- c(pts_xy[, 2], ell_xy[, 2])
